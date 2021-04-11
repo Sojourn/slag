@@ -15,8 +15,8 @@ namespace slag {
     static constexpr size_t registry_nonce_bits = 32;
 
     enum class registry_locality {
-        spacial,
-        temporal,
+        spacial,  // O(1)      insertion and deletion; O(1) lookup.
+        temporal, // O(log(n)) insertion and deletion; O(1) lookup.
     };
 
     struct registry_key_base {
@@ -51,11 +51,15 @@ namespace slag {
 
     template<typename T, registry_locality locality>
     class registry {
+        registry(registry&&) = delete;
+        registry(const registry&) = delete;
+        registry& operator=(registry&&) = delete;
+        registry& operator=(const registry&) = delete;
+
     public:
         using key = registry_key<T>;
-        static constexpr size_t max_capacity = 1ull << registry_index_bits;
 
-        registry(size_t capacity=max_capacity)
+        registry(size_t capacity=max_capacity_)
             : storage_base_(nullptr)
             , storage_size_(capacity * sizeof(T))
             , capacity_(capacity)
@@ -127,7 +131,7 @@ namespace slag {
         }
 
         T* find(key k) {
-            if (!is_valid_key()) {
+            if (!is_valid_key(k)) {
                 return nullptr;
             }
 
@@ -135,7 +139,7 @@ namespace slag {
         }
 
         const T* find(key k) const {
-            if (!is_valid_key()) {
+            if (!is_valid_key(k)) {
                 return nullptr;
             }
 
@@ -197,6 +201,8 @@ namespace slag {
         }
 
     private:
+        static constexpr size_t max_capacity_ = 1ull << registry_index_bits;
+
         uint8_t*              storage_base_;
         size_t                storage_size_;
         size_t                capacity_;
