@@ -88,12 +88,24 @@ namespace slag {
             assert(rc >= 0);
         }
 
-        std::span<std::byte> data() {
-            return data_;
+        size_t size() const {
+            return data_.size();
         }
 
-        std::span<const std::byte> data() const {
-            return data_;
+        std::span<std::byte> make_span(size_t offset, size_t length) {
+            assert(length <= data_.size());
+            return std::span {
+                data_.data() + (offset & (data_.size() - 1)),
+                length
+            };
+        }
+
+        std::span<const std::byte> make_span(size_t offset, size_t length) const {
+            assert(length <= data_.size());
+            return std::span {
+                data_.data() + (offset & (data_.size() - 1)),
+                length
+            };
         }
 
     private:
