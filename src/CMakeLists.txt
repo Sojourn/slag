@@ -1,5 +1,6 @@
 set(SLAG_SOURCE_FILES
         event_loop.cpp
+        stream.cpp
         )
 
 set(SLAG_HEADER_FILES
