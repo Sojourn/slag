@@ -22,11 +22,19 @@ namespace slag {
         DATA_CONSUMED,
     };
 
-    std::string to_string(stream_event event_mask);
-    bool operator&(stream_event l, stream_event r);
+    stream_event operator&(stream_event l, stream_event r);
     void operator&=(stream_event& l, stream_event r);
-    bool operator|(stream_event l, stream_event r);
+    stream_event operator|(stream_event l, stream_event r);
     void operator|=(stream_event& l, stream_event r);
+    stream_event operator^(stream_event l, stream_event r);
+    void operator^=(stream_event& l, stream_event r);
+
+    class stream_transaction_aborted : public std::exception {
+    public:
+        using std::exception::exception;
+
+        const char* what() const noexcept override;
+    };
 
     class stream {
         stream(stream&&) = delete;
@@ -57,11 +65,8 @@ namespace slag {
     private:
         friend class stream_observer;
 
-        void add_observer(stream_observer& observer);
-        void update_observer_event_mask(stream_observer& observer, stream_event new_event_mask);
-        void remove_observer(stream_observer& observer);
+        void set_observer_event_mask(stream_observer& observer, stream_event new_event_mask);
         void notify_observers(stream_event event);
-        std::vector<stream_observer*>& event_observers(stream_event event);
 
     private:
         std::shared_ptr<stream_buffer> buffer_;
@@ -71,15 +76,6 @@ namespace slag {
         std::vector<stream_consumer*>  consumers_;
         std::vector<stream_observer*>  producer_observers_;
         std::vector<stream_observer*>  consumer_observers_;
-    };
-
-    class stream_transaction_aborted : public std::exception {
-    public:
-        using std::exception::exception;
-
-        const char* what() const noexcept override {
-            return "stream transaction aborted";
-        }
     };
 
     class stream_producer_transaction {
@@ -174,8 +170,14 @@ namespace slag {
         stream_event event_mask() const;
         void update_event_mask(stream_event event_mask);
 
-        virtual void on_stream_data_produced() {}
-        virtual void on_stream_data_consumed() {}
+        virtual void on_stream_data_produced();
+        virtual void on_stream_data_consumed();
+
+    private:
+        friend class stream;
+
+        void abandon();
+        void set_event_mask(stream_event event_mask);
 
     private:
         stream*      stream_;
