@@ -45,7 +45,7 @@ slag::stream::stream(size_t minimum_capacity)
 }
 
 slag::stream::~stream() {
-    // TODO: abandon producers, consumers, and observers
+    for ()
 }
 
 void slag::stream::add_producer(stream_producer& producer) {
@@ -72,27 +72,25 @@ void slag::stream::update_consumer_sequence() {
 size_t slag::stream::active_consumer_transaction_count() const {
 }
 
-void slag::stream::set_observer_event_mask(stream_observer& observer, stream_event new_event_mask) {
-    stream_event old_event_mask = observer.event_mask;
-    stream_event event_mask_changes = old_event_mask ^ new_event_mask;
-
-    if (static_cast<bool>(event_mask_changes & DATA_PRODUCED)) {
-        if (static_cast<bool>(new_event_mask & DATA_PRODUCED)) {
-            producer_observers_.push_back(&observer);
-        }
-        else {
-            bool removed = pop_and_swap(producer_observers_, &observer);
-            assert(removed);
-        }
+void slag::stream::add_observer(stream_observer& observer) {
+    stream_event event_mask = observer.event_mask;
+    if (static_cast<bool>(event_mask & DATA_PRODUCED)) {
+        producer_observers_.push_back(&observer);
     }
-    if (static_cast<bool>(event_mask_changes & DATA_CONSUMED)) {
-        if (static_cast<bool>(new_event_mask & DATA_CONSUMED)) {
-            consumer_observers_.push_back(&observer);
-        }
-        else {
-            bool removed = pop_and_swap(consumer_observers_, &observer);
-            assert(removed);
-        }
+    if (static_cast<bool>(event_mask & DATA_CONSUMED)) {
+        consumer_observers_.push_back(&observer);
+    }
+}
+
+void slag::stream::remove_observer(stream_observer& observer) {
+    stream_event event_mask = observer.event_mask;
+    if (static_cast<bool>(event_mask & DATA_PRODUCED)) {
+        bool removed = pop_and_swap(producer_observers_, &observer);
+        assert(removed);
+    }
+    if (static_cast<bool>(event_mask & DATA_CONSUMED)) {
+        bool removed = pop_and_swap(consumer_observers_, &observer);
+        assert(removed);
     }
 }
 
@@ -111,7 +109,7 @@ void slag::stream::notify_observers(stream_event event) {
             break;
         }
         default: {
-            assert(false); // event mask instead of an event?
+            assert(false); // should be a discrete event, not an event mask
             break;
         }
     }
@@ -119,23 +117,21 @@ void slag::stream::notify_observers(stream_event event) {
 
 slag::stream_observer::stream_observer(stream& s, stream_event event_mask)
     : stream_{&s}
-    , event_mask_{stream_event::NONE}
+    , event_mask_{event_mask}
 {
-    update_event_mask(event_mask);
+    if (stream_) {
+        stream_->add_observer(*this);
+    }
 }
 
 slag::stream_observer::~stream_observer() {
-    update_event_mask()
-
-    stream_->set_observer_event_mask(*this, stream_event::NONE);
+    if (stream_) {
+        stream_->remove_observer(*this);
+    }
 }
 
 slag::stream_event slag::stream_observer::event_mask() const {
     return event_mask_;
-}
-
-void slag::stream_observer::update_event_mask(stream_event event_mask) {
-    stream_->set_observer_event_mask(*this, event_mask);
 }
 
 void slag::stream_observer::on_stream_data_produced() {
@@ -144,4 +140,8 @@ void slag::stream_observer::on_stream_data_produced() {
 
 void slag::stream_observer::on_stream_data_consumed() {
     assert(false); // override if you care about this event...
+}
+
+void slag::stream_observer::abandon() {
+    stream_ = nullptr;
 }

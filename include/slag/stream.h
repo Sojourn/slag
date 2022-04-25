@@ -17,9 +17,8 @@ namespace slag {
     class stream_consumer_transaction;
 
     enum class stream_event {
-        NONE,
-        DATA_PRODUCED,
-        DATA_CONSUMED,
+        DATA_PRODUCED = (1 << 0),
+        DATA_CONSUMED = (1 << 1),
     };
 
     stream_event operator&(stream_event l, stream_event r);
@@ -65,7 +64,8 @@ namespace slag {
     private:
         friend class stream_observer;
 
-        void set_observer_event_mask(stream_observer& observer, stream_event new_event_mask);
+        void add_observer(stream_observer& observer);
+        void remove_observer(stream_observer& observer);
         void notify_observers(stream_event event);
 
     private:
@@ -79,8 +79,15 @@ namespace slag {
     };
 
     class stream_producer_transaction {
-    public:
+        friend class stream_producer;
+
         stream_producer_transaction(stream_producer& producer);
+
+    public:
+        stream_producer_transaction(stream_producer_transaction&& other);
+        stream_producer_transaction(const stream_producer_transaction& other) = delete;
+        stream_producer_transaction& operator=(stream_producer_transaction&& other);
+        stream_producer_transaction& operator=(const stream_producer_transaction& other) = delete;
         ~stream_producer_transaction();
 
         bool is_aborted() const;
@@ -138,7 +145,12 @@ namespace slag {
         [[nodiscard]] stream_producer_transaction make_transaction();
 
     private:
-        stream&                      stream_;
+        friend class stream;
+
+        void abandon();
+
+    private:
+        stream*                      stream_;
         stream_producer_transaction* transaction_;
     };
 
@@ -152,7 +164,12 @@ namespace slag {
         [[nodiscard]] stream_consumer_transaction make_transaction();
 
     private:
-        stream&                      stream_;
+        friend class stream;
+
+        void abandon();
+
+    private:
+        stream*                      stream_;
         uint64_t                     sequence_;
         stream_consumer_transaction* transaction_;
     };
@@ -164,11 +181,10 @@ namespace slag {
         stream_observer& operator=(const stream_observer&) = delete;
 
     public:
-        stream_observer(stream& s, stream_event event_mask = stream_event::NONE);
+        stream_observer(stream& s, stream_event event_mask);
         virtual ~stream_observer();
 
         stream_event event_mask() const;
-        void update_event_mask(stream_event event_mask);
 
         virtual void on_stream_data_produced();
         virtual void on_stream_data_consumed();
@@ -177,7 +193,6 @@ namespace slag {
         friend class stream;
 
         void abandon();
-        void set_event_mask(stream_event event_mask);
 
     private:
         stream*      stream_;
