@@ -52,7 +52,7 @@ namespace slag {
 
         size_t producer_segment_size() const;
         std::span<std::byte> producer_segment();
-        void resize_producer_segment(size_t minimum_capacity);
+        void resize_producer_segment(size_t minimum_size);
         void advance_producer_sequence(size_t byte_count);
 
         void add_producer(stream_producer& producer);
@@ -62,9 +62,12 @@ namespace slag {
     private:
         friend class stream_consumer;
 
+        size_t consumer_segment_size() const;
+        std::span<const std::byte> consumer_segment() const;
+        void update_consumer_sequence();
+
         void add_consumer(stream_consumer& consumer);
         void remove_consumer(stream_consumer& consumer);
-        void update_consumer_sequence();
         size_t active_consumer_transaction_count() const;
     
     private:

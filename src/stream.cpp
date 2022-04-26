@@ -61,26 +61,29 @@ slag::stream::~stream() {
 }
 
 std::span<std::byte> slag::stream::producer_segment() {
-    return buffer_->make_span(
-        producer_sequence_,
-        buffer_->size() - (producer_sequence_ - consumer_sequence_)
-    );
+    return buffer_->make_span(producer_sequence_, producer_segment_size());
 }
 
-void slag::stream::resize_producer_segment(size_t minimum_capacity) {
-    if (minimum_capacity <= producer_segment_capacity()) {
-        return; // segment is already meets the minimum capacity
+void slag::stream::resize_producer_segment(size_t minimum_size) {
+    if (minimum_size <= producer_segment_size()) {
+        return; // segment already meets the minimum size
     }
 
-    // TODO: clean this up
-    std::span<const std::byte> src = buffer_->make_span(consumer_sequence_, consumer_segment_capacity());
-    std::shared_ptr<stream_buffer> new_buffer = std::make_shared<stream_buffer>(src.size_bytes() + minimum_capacity);
-    std::span<std::byte> dst = new_buffer->make_span(consumer_sequence_, src.size_bytes());
-    memcpy(dst.data(), src.data(), dst.size_bytes());
+    // allocate a new buffer large enough to hold the consumer segment and a producer segment
+    // of at least minimum_size
+    size_t copy_size = consumer_segment_size();
+    std::shared_ptr<stream_buffer> new_buffer = std::make_shared<stream_buffer>(copy_size + minimum_size)
+
+    // copy the consumer segment
+    std::span<const std::byte> src = buffer_->make_span(consumer_segment_, copy_size);
+    std::span<std::byte> dst = new_buffer->make_span(consumer_segment_, copy_size);
+    memcpy(dst.data(), src.data(), copy_size);
+
+    std::exchange(buffer_, new_buffer);
 }
 
 void slag::stream::advance_producer_sequence(size_t byte_count) {
-    assert(byte_count <= producer_segment_capacity())
+    assert(byte_count <= producer_segment_size())
     producer_sequence_ += byte_count;
     notify_observers(stream_event::DATA_PRODUCED);
 }
@@ -102,16 +105,16 @@ size_t slag::stream::active_producer_transaction_count() const {
             count += 1;
         }
     }
+
+    return count;
 }
 
-void slag::stream::add_consumer(stream_consumer& consumer) {
-    assert(!std::count(consumers_.begin(), consumers_.end(), &consumer));
-    consumers_.push_back(&consumer);
+size_t slag::stream::consumer_segment_size() const {
+    return producer_sequence_ - consumer_sequence_;
 }
 
-void slag::stream::remove_consumer(stream_consumer& consumer) {
-    bool removed = swap_and_swap(consumers_, &consumer);
-    assert(removed);
+std::span<const std::byte> slag::stream::consumer_segment() const {
+    return buffer_->make_span(consumer_sequence_, consumer_segment_size);
 }
 
 void slag::stream::update_consumer_sequence() {
@@ -126,6 +129,16 @@ void slag::stream::update_consumer_sequence() {
     }
 }
 
+void slag::stream::add_consumer(stream_consumer& consumer) {
+    assert(!std::count(consumers_.begin(), consumers_.end(), &consumer));
+    consumers_.push_back(&consumer);
+}
+
+void slag::stream::remove_consumer(stream_consumer& consumer) {
+    bool removed = swap_and_swap(consumers_, &consumer);
+    assert(removed);
+}
+
 size_t slag::stream::active_consumer_transaction_count() const {
     size_t count = 0;
     for (const stream_consumer* consumer: consumers_) {
@@ -133,6 +146,8 @@ size_t slag::stream::active_consumer_transaction_count() const {
             count += 1;
         }
     }
+
+    return count;
 }
 
 void slag::stream::add_observer(stream_observer& observer) {
