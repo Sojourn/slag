@@ -16,6 +16,8 @@ namespace slag {
     class stream_producer_transaction;
     class stream_consumer_transaction;
 
+    using stream_sequence = uint32_t;
+
     enum class stream_event {
         DATA_PRODUCED = (1 << 0),
         DATA_CONSUMED = (1 << 1),
@@ -48,9 +50,13 @@ namespace slag {
     private:
         friend class stream_producer;
 
+        size_t producer_segment_size() const;
+        std::span<std::byte> producer_segment();
+        void resize_producer_segment(size_t minimum_capacity);
+        void advance_producer_sequence(size_t byte_count);
+
         void add_producer(stream_producer& producer);
         void remove_producer(stream_producer& producer);
-        void advance_producer_sequence(size_t byte_count);
         size_t active_producer_transaction_count() const;
 
     private:
@@ -70,8 +76,8 @@ namespace slag {
 
     private:
         std::shared_ptr<stream_buffer> buffer_;
-        uint64_t                       producer_sequence_;
-        uint64_t                       consumer_sequence_;
+        stream_sequence                producer_sequence_;
+        stream_sequence                consumer_sequence_;
         std::vector<stream_producer*>  producers_;
         std::vector<stream_consumer*>  consumers_;
         std::vector<stream_observer*>  producer_observers_;
@@ -103,7 +109,7 @@ namespace slag {
 
     private:
         stream_producer* producer_;
-        uint64_t         producer_sequence_;
+        stream_sequence  producer_sequence_;
     }:
 
     class stream_consumer_transaction {
@@ -131,8 +137,8 @@ namespace slag {
     private:
         stream_consumer*               consumer_;
         std::shared_ptr<stream_buffer> buffer_;
-        uint64_t                       consumer_sequence_;
-        uint64_t                       producer_sequence_;
+        stream_sequence                consumer_sequence_;
+        stream_sequence                producer_sequence_;
     };
 
     class stream_producer {
@@ -140,7 +146,7 @@ namespace slag {
         stream_producer(stream& stream);
         ~stream_producer();
 
-        uint64_t sequence() const;
+        stream_sequence sequence() const;
         bool has_active_transaction() const;
         [[nodiscard]] stream_producer_transaction make_transaction();
 
@@ -159,7 +165,7 @@ namespace slag {
         stream_consumer(stream& s);
         ~stream_consumer();
 
-        uint64_t sequence() const;
+        stream_sequence sequence() const;
         bool has_active_transaction() const;
         [[nodiscard]] stream_consumer_transaction make_transaction();
 
@@ -170,7 +176,7 @@ namespace slag {
 
     private:
         stream*                      stream_;
-        uint64_t                     sequence_;
+        stream_sequence              sequence_;
         stream_consumer_transaction* transaction_;
     };
 
@@ -186,8 +192,7 @@ namespace slag {
 
         stream_event event_mask() const;
 
-        virtual void on_stream_data_produced();
-        virtual void on_stream_data_consumed();
+        virtual void on_stream_event(stream_event event) = 0;
 
     private:
         friend class stream;

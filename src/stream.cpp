@@ -1,6 +1,7 @@
 #include "slag/stream.h"
 #include "slag/util.h"
 #include <type_traits>
+#include <limits>
 #include <cassert>
 
 slag::stream_event slag::operator&(stream_event l, stream_event r) {
@@ -45,31 +46,93 @@ slag::stream::stream(size_t minimum_capacity)
 }
 
 slag::stream::~stream() {
-    for ()
+    for (stream_producer* producer: producers_) {
+        producer->abandon();
+    }
+    for (stream_consumer* consumer: consumers_) {
+        consumer->abandon();
+    }
+    for (stream_observer* observer: producer_observers_) {
+        observer->abandon();
+    }
+    for (stream_observer* observer: consumer_observers_) {
+        observer->abandon();
+    }
 }
 
-void slag::stream::add_producer(stream_producer& producer) {
+std::span<std::byte> slag::stream::producer_segment() {
+    return buffer_->make_span(
+        producer_sequence_,
+        buffer_->size() - (producer_sequence_ - consumer_sequence_)
+    );
 }
 
-void slag::stream::remove_producer(stream_producer& producer) {
+void slag::stream::resize_producer_segment(size_t minimum_capacity) {
+    if (minimum_capacity <= producer_segment_capacity()) {
+        return; // segment is already meets the minimum capacity
+    }
+
+    // TODO: clean this up
+    std::span<const std::byte> src = buffer_->make_span(consumer_sequence_, consumer_segment_capacity());
+    std::shared_ptr<stream_buffer> new_buffer = std::make_shared<stream_buffer>(src.size_bytes() + minimum_capacity);
+    std::span<std::byte> dst = new_buffer->make_span(consumer_sequence_, src.size_bytes());
+    memcpy(dst.data(), src.data(), dst.size_bytes());
 }
 
 void slag::stream::advance_producer_sequence(size_t byte_count) {
+    assert(byte_count <= producer_segment_capacity())
+    producer_sequence_ += byte_count;
+    notify_observers(stream_event::DATA_PRODUCED);
+}
+
+void slag::stream::add_producer(stream_producer& producer) {
+    assert(!std::count(producers_.begin(), producers_.end(), &producer));
+    producers_.push_back(&producer);
+}
+
+void slag::stream::remove_producer(stream_producer& producer) {
+    bool removed = swap_and_swap(producers_, &producer);
+    assert(removed);
 }
 
 size_t slag::stream::active_producer_transaction_count() const {
+    size_t count = 0;
+    for (const stream_producer* producer: producers_) {
+        if (producer->has_active_transaction()) {
+            count += 1;
+        }
+    }
 }
 
 void slag::stream::add_consumer(stream_consumer& consumer) {
+    assert(!std::count(consumers_.begin(), consumers_.end(), &consumer));
+    consumers_.push_back(&consumer);
 }
 
 void slag::stream::remove_consumer(stream_consumer& consumer) {
+    bool removed = swap_and_swap(consumers_, &consumer);
+    assert(removed);
 }
 
 void slag::stream::update_consumer_sequence() {
+    stream_sequence minimum_consumer_sequence = std::numeric_limits<stream_sequence>::max();
+    for (const stream_consumer* consumer: consumers_) {
+        minimum_consumer_sequence = std::min(consumer->sequence(), minimum_consumer_sequence);
+    }
+
+    if (consumer_sequence_ < minimum_consumer_sequence) {
+        consumer_sequence_ = minimum_consumer_sequence;
+        notify_observers(stream_event::DATA_CONSUMED);
+    }
 }
 
 size_t slag::stream::active_consumer_transaction_count() const {
+    size_t count = 0;
+    for (const stream_consumer* consumer: consumers_) {
+        if (consumer->has_active_transaction()) {
+            count += 1;
+        }
+    }
 }
 
 void slag::stream::add_observer(stream_observer& observer) {
@@ -85,34 +148,35 @@ void slag::stream::add_observer(stream_observer& observer) {
 void slag::stream::remove_observer(stream_observer& observer) {
     stream_event event_mask = observer.event_mask;
     if (static_cast<bool>(event_mask & DATA_PRODUCED)) {
-        bool removed = pop_and_swap(producer_observers_, &observer);
+        bool removed = swap_and_pop(producer_observers_, &observer);
         assert(removed);
     }
     if (static_cast<bool>(event_mask & DATA_CONSUMED)) {
-        bool removed = pop_and_swap(consumer_observers_, &observer);
+        bool removed = swap_and_pop(consumer_observers_, &observer);
         assert(removed);
     }
 }
 
 void slag::stream::notify_observers(stream_event event) {
+    std::vector<stream_observer*>* observers = nullptr;
     switch (event) {
         case stream_event::DATA_PRODUCED: {
-            stable_for_each(producer_observers_, [](stream_observer* observer) {
-                observer->on_stream_data_produced();
-            });
+            observers = &producer_observers_;
             break;
         }
         case stream_event::DATA_CONSUMED: {
-            stable_for_each(consumer_observers_, [](stream_observer* observer) {
-                observer->on_stream_data_consumed();
-            });
+            observers = &consumer_observers_;
             break;
         }
         default: {
             assert(false); // should be a discrete event, not an event mask
-            break;
+            return;
         }
     }
+
+    stable_for_each(*observers, [](stream_observer* observer) {
+        observer->on_stream_event(event);
+    });
 }
 
 slag::stream_observer::stream_observer(stream& s, stream_event event_mask)
@@ -132,14 +196,6 @@ slag::stream_observer::~stream_observer() {
 
 slag::stream_event slag::stream_observer::event_mask() const {
     return event_mask_;
-}
-
-void slag::stream_observer::on_stream_data_produced() {
-    assert(false); // override if you care about this event...
-}
-
-void slag::stream_observer::on_stream_data_consumed() {
-    assert(false); // override if you care about this event...
 }
 
 void slag::stream_observer::abandon() {
