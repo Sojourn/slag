@@ -52,12 +52,46 @@ slag::stream::~stream() {
     for (stream_consumer* consumer: consumers_) {
         consumer->abandon();
     }
-    for (stream_observer* observer: producer_observers_) {
-        observer->abandon();
+    for (auto&& observers: {&producer_observers_, &consumer_observers_}) {
+        while (!observers->empty()) {
+            auto&& observer = observers.front();
+            observer->remove_hook(*this);
+        }
     }
-    for (stream_observer* observer: consumer_observers_) {
-        observer->abandon();
+}
+
+void slag::stream::add_observer(stream_observer& observer, stream_event event_mask) {
+    if (observer.has_hook(*this)) {
+        throw std::runtime_error("stream observer has already been added to stream");
     }
+
+    if (static_cast<bool>(event_mask & DATA_PRODUCED)) {
+        producer_observers_.push_back(&observer);
+    }
+    if (static_cast<bool>(event_mask & DATA_CONSUMED)) {
+        consumer_observers_.push_back(&observer);
+    }
+
+    observer.add_hook(*this, event_mask);
+}
+
+void slag::stream::remove_observer(stream_observer& observer) {
+    std::optional<stream_event> event_mask = observer.find_hook(*this);
+    if (!event_mask) {
+        assert(false); // post-condition holds (so fine in release), but still probably a bug
+        return;
+    }
+
+    if (static_cast<bool>(event_mask & DATA_PRODUCED)) {
+        bool removed = swap_and_pop(producer_observers_, &observer);
+        assert(removed);
+    }
+    if (static_cast<bool>(event_mask & DATA_CONSUMED)) {
+        bool removed = swap_and_pop(consumer_observers_, &observer);
+        assert(removed);
+    }
+
+    observer.remove_hook(*this);
 }
 
 std::span<std::byte> slag::stream::producer_segment() {
@@ -150,28 +184,6 @@ size_t slag::stream::active_consumer_transaction_count() const {
     return count;
 }
 
-void slag::stream::add_observer(stream_observer& observer) {
-    stream_event event_mask = observer.event_mask;
-    if (static_cast<bool>(event_mask & DATA_PRODUCED)) {
-        producer_observers_.push_back(&observer);
-    }
-    if (static_cast<bool>(event_mask & DATA_CONSUMED)) {
-        consumer_observers_.push_back(&observer);
-    }
-}
-
-void slag::stream::remove_observer(stream_observer& observer) {
-    stream_event event_mask = observer.event_mask;
-    if (static_cast<bool>(event_mask & DATA_PRODUCED)) {
-        bool removed = swap_and_pop(producer_observers_, &observer);
-        assert(removed);
-    }
-    if (static_cast<bool>(event_mask & DATA_CONSUMED)) {
-        bool removed = swap_and_pop(consumer_observers_, &observer);
-        assert(removed);
-    }
-}
-
 void slag::stream::notify_observers(stream_event event) {
     std::vector<stream_observer*>* observers = nullptr;
     switch (event) {
@@ -194,25 +206,82 @@ void slag::stream::notify_observers(stream_event event) {
     });
 }
 
-slag::stream_observer::stream_observer(stream& s, stream_event event_mask)
+slag::stream_producer::stream_producer(stream& stream) {
+}
+
+slag::stream_producer::~stream_producer() {
+}
+
+slag::stream_sequence slag::stream_producer::sequence() const {
+}
+
+bool slag::stream_producer::has_active_transaction() const {
+}
+
+slag::stream_producer_transaction slag::stream_producer::make_transaction() {
+}
+
+void slag::stream_producer::abandon() {
+}
+
+slag::stream_consumer::stream_consumer(stream& s)
     : stream_{&s}
-    , event_mask_{event_mask}
 {
+}
+
+slag::stream_consumer::~stream_consumer() {
     if (stream_) {
-        stream_->add_observer(*this);
+        stream_->remove_consumer(*this);
+    }
+}
+
+slag::stream_sequence slag::stream_consumer::sequence() const {
+    return sequence_;
+}
+
+bool slag::stream_consumer::has_active_transaction() const {
+}
+
+slag::stream_consumer_transaction slag::stream_consumer::make_transaction() {
+}
+
+void slag::stream_consumer::abandon() {
+}
+
+void slag::stream_consumer::transaction_complete() {
+    stream_consumer_transaction* transaction = std::exchange(transaction_, nullptr);
+    switch (transaction->state()) {
+        case stream_transaction_state::COMMITTED: {
+            sequence_ = transaction->consumer_sequence();
+            if (stream_) {
+                stream_->update_consumer_sequence();
+            }
+            break;
+        }
+        default: {
+            break;
+        }
     }
 }
 
 slag::stream_observer::~stream_observer() {
-    if (stream_) {
-        stream_->remove_observer(*this);
+    while (!hooks_.empty()) {
+        auto&& [subject, _] = *hooks_.begin();
+        subject->remove_observer(*this);
     }
 }
 
-slag::stream_event slag::stream_observer::event_mask() const {
-    return event_mask_;
+bool slag::has_hook(const stream& subject) const {
+    return hooks_.contains(&subject);
 }
 
-void slag::stream_observer::abandon() {
-    stream_ = nullptr;
+void slag::stream_observer::add_hook(stream& subject, stream_event event_mask) {
+    auto&& [_, inserted] = hooks_.insert(std::make_pair(&subject, event_mask));
+    assert(inserted);
+}
+
+void slag::stream_observer::remove_hook(stream& subject) {
+    auto it = hooks_.find(&subject);
+    assert(it != hooks_.end());
+    hooks_.erase(it);
 }

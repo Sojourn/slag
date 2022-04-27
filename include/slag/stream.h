@@ -3,6 +3,7 @@
 #include <span>
 #include <optional>
 #include <vector>
+#include <unordered_map>
 #include <stdexcept>
 #include <cstdint>
 #include <cstddef>
@@ -30,6 +31,13 @@ namespace slag {
     stream_event operator^(stream_event l, stream_event r);
     void operator^=(stream_event& l, stream_event r);
 
+    enum class stream_transaction_state {
+        ACTIVE,
+        ABORTED,
+        ROLLED_BACK,
+        COMMITTED,
+    };
+
     class stream_transaction_aborted : public std::exception {
     public:
         using std::exception::exception;
@@ -47,9 +55,13 @@ namespace slag {
         stream(size_t minimum_capacity);
         ~stream();
 
+        void add_observer(stream_observer& observer, stream_event event_mask);
+        void remove_observer(stream_observer& observer);
+
     private:
         friend class stream_producer;
 
+        stream_buffer& buffer();
         size_t producer_segment_size() const;
         std::span<std::byte> producer_segment();
         void resize_producer_segment(size_t minimum_size);
@@ -62,6 +74,7 @@ namespace slag {
     private:
         friend class stream_consumer;
 
+        const stream_buffer& buffer() const;
         size_t consumer_segment_size() const;
         std::span<const std::byte> consumer_segment() const;
         void update_consumer_sequence();
@@ -73,8 +86,6 @@ namespace slag {
     private:
         friend class stream_observer;
 
-        void add_observer(stream_observer& observer);
-        void remove_observer(stream_observer& observer);
         void notify_observers(stream_event event);
 
     private:
@@ -99,6 +110,7 @@ namespace slag {
         stream_producer_transaction& operator=(const stream_producer_transaction& other) = delete;
         ~stream_producer_transaction();
 
+        stream_transaction_state state() const;
         bool is_aborted() const;
         explicit operator bool() const;
 
@@ -111,8 +123,20 @@ namespace slag {
         void produce(size_t byte_count);
 
     private:
-        stream_producer* producer_;
-        stream_sequence  producer_sequence_;
+        friend class stream;
+        friend class stream_producer;
+
+        void set_state(stream_transaction_state state);
+        void set_buffer(std::shared_ptr<stream_buffer> buffer);
+
+    private:
+        stream_buffer& buffer();
+
+    private:
+        stream_producer*               producer_;
+        stream_transaction_state       state_;
+        stream_sequence                producer_sequence_;
+        std::shared_ptr<stream_buffer> buffer_;
     }:
 
     class stream_consumer_transaction {
@@ -127,6 +151,7 @@ namespace slag {
         stream_consumer_transaction& operator=(const stream_consumer_transaction& other) = delete;
         ~stream_consumer_transaction();
 
+        stream_transaction_state state() const;
         bool is_aborted() const;
         explicit operator bool() const;
 
@@ -138,10 +163,21 @@ namespace slag {
         void consume(size_t byte_count);
 
     private:
+        friend class stream;
+        friend class stream_producer;
+
+        void set_state(stream_transaction_state state);
+        void set_buffer(std::shared_ptr<stream_buffer> buffer);
+    
+    private:
+        const stream_buffer& buffer() const;
+
+    private:
         stream_consumer*               consumer_;
-        std::shared_ptr<stream_buffer> buffer_;
+        stream_transaction_state       state_;
         stream_sequence                consumer_sequence_;
         stream_sequence                producer_sequence_;
+        std::shared_ptr<stream_buffer> buffer_;
     };
 
     class stream_producer {
@@ -149,13 +185,12 @@ namespace slag {
         stream_producer(stream& stream);
         ~stream_producer();
 
-        stream_sequence sequence() const;
-        bool has_active_transaction() const;
         [[nodiscard]] stream_producer_transaction make_transaction();
 
     private:
         friend class stream;
 
+        stream_producer_transaction* transaction();
         void abandon();
 
     private:
@@ -178,6 +213,11 @@ namespace slag {
         void abandon();
 
     private:
+        friend class stream_consumer_transaction;
+
+        void transaction_complete();
+
+    private:
         stream*                      stream_;
         stream_sequence              sequence_;
         stream_consumer_transaction* transaction_;
@@ -190,20 +230,18 @@ namespace slag {
         stream_observer& operator=(const stream_observer&) = delete;
 
     public:
-        stream_observer(stream& s, stream_event event_mask);
         virtual ~stream_observer();
 
-        stream_event event_mask() const;
-
-        virtual void on_stream_event(stream_event event) = 0;
+        virtual void on_stream_event(stream& subject, stream_event event) = 0;
 
     private:
         friend class stream;
 
-        void abandon();
+        std::optional<stream_event> find_hook(const stream& subject) const;
+        void add_hook(stream& subject, stream_event event_mask);
+        void remove_hook(stream& subject);
 
     private:
-        stream*      stream_;
-        stream_event event_mask_;
+        std::unordered_map<stream*, stream_event> hooks_;
     };
 }
