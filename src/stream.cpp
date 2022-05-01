@@ -94,6 +94,14 @@ void slag::stream::remove_observer(stream_observer& observer) {
     observer.remove_hook(*this);
 }
 
+slag::stream_buffer& slag::stream::buffer() {
+    return *buffer_;
+}
+
+std::shared_ptr<slag::stream_buffer> slag::stream::shared_buffer() {
+    return buffer_;
+}
+
 std::span<std::byte> slag::stream::producer_segment() {
     return buffer_->make_span(producer_sequence_, producer_segment_size());
 }
@@ -112,6 +120,14 @@ void slag::stream::resize_producer_segment(size_t minimum_size) {
     std::span<const std::byte> src = buffer_->make_span(consumer_segment_, copy_size);
     std::span<std::byte> dst = new_buffer->make_span(consumer_segment_, copy_size);
     memcpy(dst.data(), src.data(), copy_size);
+
+    for (stream_consumer& consumer: consumers_) {
+        if (stream_consumer_transaction* transaction = consumer.transaction()) {
+            if (transaction->state() == stream_transaction_state::ACTIVE) {
+                transaction->set_buffer(buffer_);
+            }
+        }
+    }
 
     std::exchange(buffer_, new_buffer);
 }
@@ -246,6 +262,10 @@ slag::stream_consumer_transaction slag::stream_consumer::make_transaction() {
 }
 
 void slag::stream_consumer::abandon() {
+    stream_ = nullptr;
+    if (transaction_) {
+        transaction_->set_state(stream_transaction_state::ABORTED);
+    }
 }
 
 void slag::stream_consumer::transaction_complete() {

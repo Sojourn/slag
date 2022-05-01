@@ -62,6 +62,8 @@ namespace slag {
         friend class stream_producer;
 
         stream_buffer& buffer();
+        std::shared_ptr<stream_buffer> shared_buffer();
+
         size_t producer_segment_size() const;
         std::span<std::byte> producer_segment();
         void resize_producer_segment(size_t minimum_size);
@@ -74,7 +76,6 @@ namespace slag {
     private:
         friend class stream_consumer;
 
-        const stream_buffer& buffer() const;
         size_t consumer_segment_size() const;
         std::span<const std::byte> consumer_segment() const;
         void update_consumer_sequence();
@@ -203,13 +204,12 @@ namespace slag {
         stream_consumer(stream& s);
         ~stream_consumer();
 
-        stream_sequence sequence() const;
-        bool has_active_transaction() const;
         [[nodiscard]] stream_consumer_transaction make_transaction();
 
     private:
         friend class stream;
 
+        stream_consumer_transaction* transaction();
         void abandon();
 
     private:
