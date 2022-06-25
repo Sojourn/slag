@@ -1,13 +1,11 @@
 set(SLAG_SOURCE_FILES
-        event_loop.cpp
-        stream.cpp
-        )
+    operation_state_machine.cpp
+)
 
 set(SLAG_HEADER_FILES
-        ../include/slag/slag.h
-        ../include/slag/event_loop.h
-        ../include/slag/registry.h
-        )
+    ../include/slag/slag.h
+    ../include/slag/operation_state_machine.h
+)
 
 add_library(slag ${SLAG_SOURCE_FILES} ${SLAG_HEADER_FILES})
 target_link_libraries(slag uring)
