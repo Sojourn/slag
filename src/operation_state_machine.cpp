@@ -109,9 +109,8 @@ const char* slag::to_string(OperationAction action) {
     abort();
 }
 
-slag::OperationStateMachine::OperationStateMachine()
-    : state_{OperationState::SPOOLED}
-{
+slag::OperationStateMachine::OperationStateMachine() {
+    reset();
 }
 
 slag::OperationState slag::OperationStateMachine::state() const {
