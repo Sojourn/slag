@@ -25,6 +25,7 @@ namespace slag {
     private:
         friend class Driver;
 
+        [[nodiscard]] bool has_resource_context() const;
         [[nodiscard]] ResourceContext& resource_context();
         void set_resource_context(ResourceContext* resource_context);
 

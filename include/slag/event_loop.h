@@ -5,6 +5,7 @@ namespace slag {
     class EventLoop {
     public:
         [[nodiscard]] static EventLoop& local_instance();
+        [[nodiscard]] static const EventLoop& local_instance();
 
         EventLoop();
         EventLoop(EventLoop&&) noexcept = delete;

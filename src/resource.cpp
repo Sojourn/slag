@@ -45,6 +45,10 @@ const slag::EventLoop& slag::Resource::event_loop() const {
     return event_loop_;
 }
 
+bool slag::Resource::has_resource_context() {
+    return static_cast<bool>(resource_context_);
+}
+
 slag::ResourceContext& slag::Resource::resource_context() {
     if (!resource_context_) {
         event_loop_->attach_resource(*this, &resource_context_);

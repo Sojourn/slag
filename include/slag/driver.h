@@ -10,7 +10,7 @@ namespace slag {
 
     class Driver {
     public:
-        Driver();
+        Driver(EventLoop& event_loop);
         Driver(Driver&&) noexcept = delete;
         Driver(const Driver&) = delete;
         ~Driver();
@@ -24,9 +24,9 @@ namespace slag {
     private:
         friend class EventLoop;
 
-        void setup();
+        void startup();
         void step();
-        void cleanup();
+        void shutdown();
 
     private:
         friend class Resource;
@@ -44,9 +44,11 @@ namespace slag {
 
     private:
         EventLoop&                    event_loop_;
-        size_t                        resource_context_count_;
         std::vector<ResourceContext*> deferred_submit_actions_;
         std::vector<ResourceContext*> deferred_notify_actions_;
+
+        // TODO: use a intrusive_list
+        std::unordered_set<ResourceContext*> resource_contexts_;
     };
 
 }
