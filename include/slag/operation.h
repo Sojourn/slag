@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include "slag/opreation_types.h"
+#include "slag/operation_types.h"
 #include "slag/operation_parameters.h"
 #include "slag/operation_state_machine.h"
 
@@ -9,10 +9,14 @@ namespace slag {
 
     class ResourceContext;
 
+    enum class OperationFlags {
+        // linked, wait_for_previous, etc.
+    };
+
     class Operation {
     public:
         template<OperationType operation_type>
-        Operation(ResourceContext& resource_context, void* user_data, OperationParams<operation_type> operation_params);
+        Operation(ResourceContext& resource_context, void* user_data, OperationParameters<operation_type> operation_params);
         Operation(Operation&&) noexcept = delete;
         Operation(const Operation&) = delete;
         ~Operation();
@@ -33,22 +37,21 @@ namespace slag {
         [[nodiscard]] bool canceled() const;
 
         template<OperationType operation_type>
-        [[nodiscard]] OperationParameters& operation_parameters();
+        [[nodiscard]] OperationParameters<operation_type>& parameters();
 
         template<OperationType operation_type>
-        [[nodiscard]] const OperationParameters& operation_parameters() const;
+        [[nodiscard]] const OperationParameters<operation_type>& parameters() const;
 
         template<typename Visitor>
-        void visit_operation_parameters(Visitor&& visitor);
+        void visit_parameters(Visitor&& visitor);
 
         template<typename Visitor>
-        void visit_operation_parameters(Visitor&& visitor) const;
+        void visit_parameters(Visitor&& visitor) const;
 
     private:
         friend class Driver;
 
         [[nodiscard]] OperationStateMachine& state_machine();
-        [[nodiscard]] const OperationStateMachine& state_machine() const;
         void set_result(int64_t result);
 
     private:
@@ -64,4 +67,43 @@ namespace slag {
         > parameters_;
     };
 
+    template<OperationType operation_type>
+    inline OperationParameters<operation_type>& Operation::parameters() {
+        assert(type_ == operation_type);
+        return *reinterpret_cast<OperationParameters<operation_type>*>(&parameters_);
+    }
+
+    template<OperationType operation_type>
+    inline const OperationParameters<operation_type>& Operation::parameters() const {
+        assert(type_ == operation_type);
+        return *reinterpret_cast<const OperationParameters<operation_type>*>(&parameters_);
+    }
+
+    template<typename Visitor>
+    inline void Operation::visit_parameters(Visitor&& visitor) {
+        switch (type_) {
+#define X(SLAG_OPERATION_TYPE)                                             \
+            case OperationType::SLAG_OPERATION_TYPE: {                     \
+                visitor(parameters<OperationType::SLAG_OPERATION_TYPE>()); \
+                break;                                                     \
+            }
+
+            SLAG_OPERATION_TYPES(X)
+#undef X
+        }
+    }
+
+    template<typename Visitor>
+    inline void Operation::visit_parameters(Visitor&& visitor) const {
+        switch (type_) {
+#define X(SLAG_OPERATION_TYPE)                                             \
+            case OperationType::SLAG_OPERATION_TYPE: {                     \
+                visitor(parameters<OperationType::SLAG_OPERATION_TYPE>()); \
+                break;                                                     \
+            }
+
+            SLAG_OPERATION_TYPES(X)
+#undef X
+        }
+    }
 }

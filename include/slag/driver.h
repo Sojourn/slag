@@ -8,6 +8,7 @@ namespace slag {
     class ResourceContext;
     class Operation;
 
+    // TODO: rename to Reactor
     class Driver {
     public:
         Driver(EventLoop& event_loop);
@@ -24,9 +25,9 @@ namespace slag {
     private:
         friend class EventLoop;
 
-        void startup();
-        void step();
-        void shutdown();
+        virtual void startup();
+        virtual void step() = 0;
+        virtual void shutdown();
 
     private:
         friend class Resource;
@@ -40,12 +41,13 @@ namespace slag {
         void cancel_operation(Operation& operation);
 
     private:
-        // ...
+        void defer_operation_action(Operation& operation);
 
     private:
         EventLoop&                    event_loop_;
         std::vector<ResourceContext*> deferred_submit_actions_;
         std::vector<ResourceContext*> deferred_notify_actions_;
+        std::vector<ResourceContext*> deferred_remove_actions_;
 
         // TODO: use a intrusive_list
         std::unordered_set<ResourceContext*> resource_contexts_;

@@ -12,6 +12,7 @@ slag::Driver::Driver(EventLoop& event_loop)
 }
 
 slag::Driver::~Driver() {
+    // TODO: assert that we have shutdown cleanly
 }
 
 slag::EventLoop& slag::Driver::event_loop() {
@@ -58,8 +59,57 @@ void slag::Driver::detach_resource(Resource& resource) {
 }
 
 template<slag::OperationType>
-slag::Operation& slag::Driver::start_operation(ResourceContext& resource_context, void* user_data, OperationParams<type> operation_params) {
+slag::Operation& slag::Driver::start_operation(ResourceContext& resource_context, void* user_data, OperationParameters<type> operation_parameters) {
+    Operation* operation = new Operation{resource_context, user_data, std::move(operation_parameters)};
+    resource_context.operations.push_back(operation);
+    defer_operation_action(*operation); // defer submission
+    return *operation;
 }
+// TODO: explicit instantiation
 
 void slag::Driver::cancel_operation(Operation& operation) {
+    if (operation.state() == OperationState::TERMINAL) {
+        return; // this operation is doomed anyways
+    }
+
+    operation.state_machine().handle_event(OperationEvent::CANCEL);
+    defer_operation_action(operation);
+}
+
+void slag::Driver::defer_operation_action(Operation& operation) {
+    OperationAction operation_action = operation.action();
+    if (operation_action == OperationAction::PANIC) {
+        abort();
+    }
+
+    ResourceContext& resource_context = operation.resource_context();
+    if (resource_context.has_deferred_action(operation_action)) {
+        return;
+    }
+
+    switch (operation.action()) {
+        case OperationAction::WAIT: {
+            // not handled
+            break;
+        }
+        case OperationAction::SUBMIT: {
+            resource_context.set_deferred_action(operation_action);
+            deferred_notify_actions_.push_back(&resource_context);
+            break;
+        }
+        case OperationAction::NOTIFY: {
+            resource_context.set_deferred_action(operation_action);
+            deferred_notify_actions_.push_back(&resource_context);
+            break;
+        }
+        case OperationAction::REMOVE: {
+            resource_context.set_deferred_action(operation_action);
+            deferred_remove_actions_.push_back(&resource_context);
+            break;
+        }
+        case OperationAction::PANIC: {
+            // handled above
+            break;
+        }
+    }
 }
