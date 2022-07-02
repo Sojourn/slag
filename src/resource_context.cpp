@@ -40,11 +40,11 @@ bool slag::ResourceContext::has_deferred_action(OperationAction operation_action
 }
 
 void slag::ResourceContext::set_deferred_action(OperationAction operation_action) {
-    return deferred_actions_.set(to_index(operation_action));
+    deferred_actions_.set(to_index(operation_action));
 }
 
 void slag::ResourceContext::reset_deferred_action(OperationAction operation_action) {
-    return deferred_actions_.reset(to_index(operation_action));
+    deferred_actions_.reset(to_index(operation_action));
 }
 
 bool slag::ResourceContext::update_deferred_action(OperationAction operation_action) {

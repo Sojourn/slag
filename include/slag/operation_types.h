@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 
 #define SLAG_OPERATION_TYPES(X) \
     X(NOP)                      \
@@ -9,7 +10,7 @@
 
 namespace slag {
 
-    enum class OperationTypes : uint8_t {
+    enum class OperationType : uint8_t {
 #define X(SLAG_OPERATION_TYPE) SLAG_OPERATION_TYPE,
         SLAG_OPERATION_TYPES(X)
 #undef X

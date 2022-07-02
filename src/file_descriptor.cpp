@@ -1,6 +1,7 @@
 #include "slag/file_descriptor.h"
 #include "slag/util.h"
 #include <utility>
+#include <cerrno>
 #include <cassert>
 #include <fcntl.h>
 #include <unistd.h>

@@ -1,4 +1,5 @@
 #include "slag/resource_context_index.h"
+#include "slag/resource_context.h"
 #include <algorithm>
 
 template<slag::OperationAction operation_action>
@@ -30,7 +31,7 @@ slag::ResourceContextIndex<operation_action>::Cursor::~Cursor() {
 }
 
 template<slag::OperationAction operation_action>
-slag::ResourceContextIndex<operation_action>::Cursor& slag::ResourceContextIndex<operation_action>::Cursor::operator=(Cursor&& rhs) noexcept {
+typename slag::ResourceContextIndex<operation_action>::Cursor& slag::ResourceContextIndex<operation_action>::Cursor::operator=(Cursor&& rhs) noexcept {
     if (this != &rhs) {
         reset();
 
@@ -53,12 +54,12 @@ template<slag::OperationAction operation_action>
 slag::ResourceContext* slag::ResourceContextIndex<operation_action>::Cursor::next() {
     assert(parent_);
 
-    if (parent_->resource_contexts_.size() <= resource_context_index_) {
+    if (parent_->resource_contexts_.size() <= index_) {
         reset(); // finished; detach
         return nullptr;
     }
 
-    return parent_->resource_contexts_[resource_context_index_++];
+    return parent_->resource_contexts_[index_++];
 }
 
 template<slag::OperationAction operation_action>
@@ -68,14 +69,12 @@ void slag::ResourceContextIndex<operation_action>::Cursor::reset() {
     }
 
     --parent_->cursor_count_; // decref
-
     parent_ = nullptr;
-    resource_context_index_ = 0;
-    operation_index_ = 0;
+    index_ = 0;
 }
 
 template<slag::OperationAction operation_action>
-slag::ResourceContextIndex<operation_action>::Cursor slag::ResourceContextIndex<operation_action>::select() {
+typename slag::ResourceContextIndex<operation_action>::Cursor slag::ResourceContextIndex<operation_action>::select() {
     return Cursor{*this};
 }
 

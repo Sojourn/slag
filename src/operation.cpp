@@ -1,7 +1,8 @@
 #include "slag/operation.h"
+#include <cerrno>
 #include <cassert>
 
-template<OperationType operation_type>
+template<slag::OperationType operation_type>
 slag::Operation::Operation(ResourceContext& resource_context, void* user_data, OperationParameters<operation_type> parameters)
     : resource_context_{resource_context}
     , user_data_{user_data}
@@ -60,7 +61,7 @@ bool slag::Operation::failure() const {
 }
 
 bool slag::Operation::canceled() const {
-    return result_ == ECANCELED;
+    return result_ == -ECANCELED;
 }
 
 slag::OperationStateMachine& slag::Operation::state_machine() {

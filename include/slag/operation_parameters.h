@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include "slag/operation_types.h"
+#include "slag/file_descriptor.h"
 
 namespace slag {
 
@@ -18,7 +19,7 @@ namespace slag {
     };
 
     template<>
-    struct OperationParameters<OeprationType::CLOSE_FILE_DESCRIPTOR> {
+    struct OperationParameters<OperationType::CLOSE_FILE_DESCRIPTOR> {
     };
 
     constexpr size_t max_operation_parameters_size() {

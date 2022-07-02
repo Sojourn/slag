@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <cassert>
 #include "slag/operation_types.h"
 #include "slag/operation_parameters.h"
 #include "slag/operation_state_machine.h"
