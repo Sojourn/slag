@@ -1,12 +1,14 @@
 #pragma once
 
+#include <chrono>
 #include <vector>
+#include <unordered_set>
+#include "slag/operation.h"
 
 namespace slag {
 
     class Resource;
     class ResourceContext;
-    class Operation;
 
     // TODO: rename to Reactor
     class Driver {
@@ -26,7 +28,7 @@ namespace slag {
         friend class EventLoop;
 
         virtual void startup();
-        virtual void step() = 0;
+        virtual void step(std::chrono::milliseconds timeout) = 0;
         virtual void shutdown();
 
     private:

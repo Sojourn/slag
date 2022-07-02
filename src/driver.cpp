@@ -65,7 +65,6 @@ slag::Operation& slag::Driver::start_operation(ResourceContext& resource_context
     defer_operation_action(*operation); // defer submission
     return *operation;
 }
-// TODO: explicit instantiation
 
 void slag::Driver::cancel_operation(Operation& operation) {
     if (operation.state() == OperationState::TERMINAL) {
@@ -113,3 +112,11 @@ void slag::Driver::defer_operation_action(Operation& operation) {
         }
     }
 }
+
+// explicit templated function instantiation
+#define X(SLAG_OPERATION_TYPE)                                                                                                                                                                                          \
+template<>                                                                                                                                                                                                              \
+slag::Operation& slag::Driver::start_operation<slag::OperationType::SLAG_OPERATION_TYPE>(ResourceContext& resource_context, void* user_data, OperationParameters<slag::OperationType::SLAG_OPERATION_TYPE> parameters);
+
+SLAG_OPERATION_TYPES(X)
+#undef X
