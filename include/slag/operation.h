@@ -49,7 +49,7 @@ namespace slag {
         void visit_parameters(Visitor&& visitor) const;
 
     private:
-        friend class Driver;
+        friend class Reactor;
 
         [[nodiscard]] OperationStateMachine& state_machine();
         void set_result(int64_t result);

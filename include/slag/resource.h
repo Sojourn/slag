@@ -18,12 +18,14 @@ namespace slag {
         [[nodiscard]] EventLoop& event_loop();
         [[nodiscard]] const EventLoop& event_loop() const;
 
-        // Operation& start_nop_operation(void* user_data);
+    protected:
+        Operation& start_nop_operation(void* user_data);
+        void cancel_operation(Operation& operation):
 
         virtual void handle_operation_complete(Operation& operation) = 0;
 
     private:
-        friend class Driver;
+        friend class Reactor;
 
         [[nodiscard]] bool has_resource_context() const;
         [[nodiscard]] ResourceContext& resource_context();

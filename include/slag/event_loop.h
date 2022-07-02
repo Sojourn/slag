@@ -1,5 +1,8 @@
 #pragma once
 
+#include <memory>
+#include "slag/reactor.h"
+
 namespace slag {
 
     class EventLoop {
@@ -7,7 +10,7 @@ namespace slag {
         [[nodiscard]] static EventLoop& local_instance();
         [[nodiscard]] static const EventLoop& local_instance();
 
-        EventLoop();
+        EventLoop(std::unique_ptr<Reactor> reactor);
         EventLoop(EventLoop&&) noexcept = delete;
         EventLoop(const EventLoop&) = delete;
         ~EventLoop();
@@ -18,11 +21,12 @@ namespace slag {
         void run();
         void stop();
 
-        [[nodiscard]] Driver& driver();
-        [[nodiscard]] const Driver& driver() const;
+        [[nodiscard]] Reactor& reactor();
+        [[nodiscard]] const Reactor& reactor() const;
 
     private:
-        Driver& driver_;
+        std::unique_ptr<Reactor> reactor_;
+        bool                     running_;
     };
 
 }

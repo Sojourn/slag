@@ -1,64 +1,67 @@
 #include "slag/resource_context_index.h"
 #include <algorithm>
 
-template<OperationAction operation_action>
-slag::ResourceContextIndex<operation_action>::Cursor::Cursor(ResourceContextIndex& index) {
+template<slag::OperationAction operation_action>
+slag::ResourceContextIndex<operation_action>::Cursor::Cursor(ResourceContextIndex& parent)
+    : parent_{&parent}
+    , index_{0}
+{
 }
 
-template<OperationAction operation_action>
-slag::ResourceContextIndex<operation_action>::Cursor::Cursor() {
+template<slag::OperationAction operation_action>
+slag::ResourceContextIndex<operation_action>::Cursor::Cursor()
+    : parent_{nullptr}
+    , index_{0}
+{
 }
 
-template<OperationAction operation_action>
-slag::ResourceContextIndex<operation_action>::Cursor::Cursor(Cursor&& other) noexcept {
+template<slag::OperationAction operation_action>
+slag::ResourceContextIndex<operation_action>::Cursor::Cursor(Cursor&& other) noexcept
+    : parent_{other.parent_}
+    , index_{other.index_}
+{
+    other.parent_ = nullptr;
+    other.index_ = 0;
 }
 
-template<OperationAction operation_action>
-slag::ResourceContextIndex<operation_action>::Cursor::Cursor(const Cursor& other) {
-}
-
-template<OperationAction operation_action>
+template<slag::OperationAction operation_action>
 slag::ResourceContextIndex<operation_action>::Cursor::~Cursor() {
+    reset();
 }
 
-template<OperationAction operation_action>
+template<slag::OperationAction operation_action>
 slag::ResourceContextIndex<operation_action>::Cursor& slag::ResourceContextIndex<operation_action>::Cursor::operator=(Cursor&& rhs) noexcept {
-}
+    if (this != &rhs) {
+        reset();
 
-template<OperationAction operation_action>
-slag::ResourceContextIndex<operation_action>::Cursor& slag::ResourceContextIndex<operation_action>::Cursor::operator=(const Cursor& rhs) {
-}
+        parent_ = rhs.parent_;
+        index_ = 0;
 
-template<OperationAction operation_action>
-slag::ResourceContext* slag::ResourceContextIndex<operation_action>::Cursor::next_resource_context() {
-    if (!parent_) {
-        return nullptr;
+        rhs.parent_ = nullptr;
+        rhs.index_ = 0;
     }
 
+    return *this;
+}
+
+template<slag::OperationAction operation_action>
+slag::ResourceContextIndex::operator() bool const {
+    return static_cast<bool>(parent_);
+}
+
+template<slag::OperationAction operation_action>
+slag::ResourceContext* slag::ResourceContextIndex<operation_action>::Cursor::next() {
+    assert(parent_);
+
     if (parent_->resource_contexts_.size() <= resource_context_index_) {
-        reset();
+        reset(); // finished; detach
         return nullptr;
     }
 
     return parent_->resource_contexts_[resource_context_index_++];
 }
 
-template<OperationAction operation_action>
-slag::Operation* slag::ResourceContextIndex<operation_action>::Cursor::next_operation() {
-    if (!parent_) {
-        return nullptr;
-    }
-
-    // TODO: think about how nested iteration should work
-
-    auto&& resource_context = parent_->resource_contexts_[resource_context_index_];
-    auto&& operations = resource_context.operations();
-    if (operations.size() <= operation_index_) {
-        return nullptr;
-    }
-}
-
-template<OperationAction operation_action>
+template<slag::OperationAction operation_action>
 void slag::ResourceContextIndex<operation_action>::Cursor::reset() {
     if (!parent_) {
         return; // not attached
@@ -71,12 +74,12 @@ void slag::ResourceContextIndex<operation_action>::Cursor::reset() {
     operation_index_ = 0;
 }
 
-template<OperationAction operation_action>
+template<slag::OperationAction operation_action>
 slag::ResourceContextIndex<operation_action>::Cursor slag::ResourceContextIndex<operation_action>::select() {
     return Cursor{*this};
 }
 
-template<OperationAction operation_action>
+template<slag::OperationAction operation_action>
 void slag::ResourceContextIndex<operation_action>::insert(ResourceContext& resource_context) {
     if (resource_context.has_deferred_action(operation_action)) {
         return; // already in the index
@@ -86,7 +89,7 @@ void slag::ResourceContextIndex<operation_action>::insert(ResourceContext& resou
     resource_contexts_.push_back(&resource_context);
 }
 
-template<OperationAction operation_action>
+template<slag::OperationAction operation_action>
 void slag::ResourceContextIndex<operation_action>::vacuum() {
     if (cursor_count_) {
         return; // cannot vacuum while a select is in progress
@@ -107,7 +110,7 @@ void slag::ResourceContextIndex<operation_action>::vacuum() {
     resource_contexts_.erase(pos, end);
 }
 
-template<OperationAction operation_action>
+template<slag::OperationAction operation_action>
 void slag::ResourceContextIndex<operation_action>::truncate() {
     if (cursor_count_) {
         throw std::runtime_error("ResourceContextIndex cannot be truncated while a select is in progress");

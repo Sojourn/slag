@@ -2,7 +2,7 @@
 #include "slag/resource_context.h"
 #include "slag/operation.h"
 #include "slag/event_loop.h"
-#include "slag/driver.h"
+#include "slag/reactor.h"
 #include <cassert>
 
 slag::Resource::Resource(EventLoop& event_loop)
@@ -38,11 +38,22 @@ slag::Resource& slag::Resource::operator=(Resource&& rhs) noexcept {
 }
 
 slag::EventLoop& slag::Resource::event_loop() {
-    return event_loop_;
+    return *event_loop_;
 }
 
 const slag::EventLoop& slag::Resource::event_loop() const {
-    return event_loop_;
+    return *event_loop_;
+}
+
+slag::Operation& slag::Resource::start_nop_operation(void* user_data) {
+    return event_loop_->reactor().start_operation<OperationType::NOP>(
+        resource_context(),
+        user_data,
+    );
+}
+
+void slag::Resource::cancel_operation(Operation& operation) {
+    event_loop_->reactor().cancel_operation(operation):
 }
 
 bool slag::Resource::has_resource_context() {

@@ -5,7 +5,8 @@ set(SLAG_SOURCE_FILES
     operation.cpp
     resource.cpp
     resource_context.cpp
-    driver.cpp
+    resource_context_index.cpp
+    reactor.cpp
     event_loop.cpp
     file_descriptor.cpp
     util.cpp
@@ -19,7 +20,8 @@ set(SLAG_HEADER_FILES
     ../include/slag/operation.h
     ../include/slag/resource.h
     ../include/slag/resource_context.h
-    ../include/slag/driver.h
+    ../include/slag/resource_context_index.h
+    ../include/slag/reactor.h
     ../include/slag/event_loop.h
     ../include/slag/file_descriptor.h
     ../include/slag/util.h

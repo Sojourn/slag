@@ -12,26 +12,26 @@ namespace slag {
     class ResourceContextIndex {
     public:
         class Cursor {
-            Cursor(ResourceContextIndex& index);
+            Cursor(ResourceContextIndex& parent);
 
         public:
             Cursor();
             Cursor(Cursor&& other) noexcept;
-            Cursor(const Cursor& other);
+            Cursor(const Cursor&) = delete;
             ~Cursor();
 
             Cursor& operator=(Cursor&& rhs) noexcept;
-            Cursor& operator=(const Cursor& rhs);
+            Cursor& operator=(const Cursor&) = delete;
 
-            [[noexcept]] ResourceContext* next_resource_context();
-            [[noexcept]] Operation* next_operation();
+            explicit operator bool() const;
+
+            [[noexcept]] ResourceContext* next();
 
             void reset();
 
         private:
             ResourceContextIndex* parent_; // TODO: rename?
-            size_t                resource_context_index_; // TODO: rename?
-            size_t                operation_index_;
+            size_t                index_; // TODO: rename?
         };
 
         [[noexcept]] Cursor select();
