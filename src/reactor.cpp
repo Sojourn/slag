@@ -35,18 +35,15 @@ void slag::Reactor::defer_operation_action(Operation& operation, OperationAction
             break;
         }
         case OperationAction::SUBMIT: {
-            resource_context.set_deferred_action(operation_action);
-            deferred_notify_actions_.push_back(&resource_context);
+            submit_resource_context_index_.insert(resource_context);
             break;
         }
         case OperationAction::NOTIFY: {
-            resource_context.set_deferred_action(operation_action);
-            deferred_notify_actions_.push_back(&resource_context);
+            notify_resource_context_index_.insert(resource_context);
             break;
         }
         case OperationAction::REMOVE: {
-            resource_context.set_deferred_action(operation_action);
-            deferred_remove_actions_.push_back(&resource_context);
+            remove_resource_context_index_.insert(resource_context);
             break;
         }
         case OperationAction::PANIC: {
@@ -64,10 +61,6 @@ void slag::Reactor::shutdown() {
         if (resource_context->has_resource()) {
             throw std::runtime_error("Reactor cannot shutdown because a resource is still referencing it");
         }
-
-        for (Operation* operation: resource_context->operations()) {
-            cancel_operation(*operation);
-        }
     }
 
     while (!resource_contexts_.empty()) {
@@ -75,25 +68,51 @@ void slag::Reactor::shutdown() {
     }
 }
 
+slag::ResourceContext& slag::Reactor::allocate_resource_context(Resource& resource) {
+    return *(new ResourceContext{resource});
+}
+
+void slag::Reactor::cleanup_resource_context(ResourceContext& resource_context) {
+    for (Operation* operation: resource_context.operations()) {
+        cancel_operation(*operation);
+    }
+
+    // TODO: close file descriptor
+}
+
+void slag::Reactor::deallocate_resource_context(ResourceContext& resource_context) {
+    delete &resource_context;
+}
+
 void slag::Reactor::attach_resource(Resource& resource) {
     assert(!resource.has_resource_context());
+
+    ResourceContext& resource_context = allocate_resource_context(resource);
+    resource.set_resource_context(&resource_context);
 }
 
 void slag::Reactor::move_resource(Resource& target_resource, Resource& source_resource) {
     assert(source_resource.has_resource_context());
     assert(&target_resource != &source_resource);
+
+    if (target_resource.has_resource_context()) {
+        detach_resource(target_resource);
+    }
+
+    ResourceContext& resource_context = source_resource.resource_context();
+    source_resource.set_resource_context(nullptr);
+    target_resource.set_resource_context(&resource_context);
+    resource_context.update_resource(target_resource);
 }
 
 void slag::Reactor::detach_resource(Resource& resource) {
     assert(resource.has_resource_context());
-}
 
-template<slag::OperationType operation_type>
-slag::Operation& slag::Reactor::start_operation(ResourceContext& resource_context, void* user_data, OperationParameters<operation_type> operation_parameters) {
-    Operation* operation = new Operation{resource_context, user_data, std::move(operation_parameters)};
-    resource_context.operations().push_back(operation);
-    defer_operation_action(*operation, operation->action()); // defer submission
-    return *operation;
+    ResourceContext& resource_context = resource.resource_context();
+    resource_context.remove_resource();
+    resource.set_resource_context(nullptr);
+    cleanup_resource_context(resource_context);
+    remove_resource_context_index_.insert(resource_context);
 }
 
 void slag::Reactor::cancel_operation(Operation& operation) {
@@ -107,11 +126,3 @@ void slag::Reactor::cancel_operation(Operation& operation) {
 slag::Reactor& slag::local_reactor() {
     return local_event_loop().reactor();
 }
-
-// explicit templated function instantiation
-#define X(SLAG_OPERATION_TYPE)                                                                                                                                                                                          \
-template<>                                                                                                                                                                                                              \
-slag::Operation& slag::Reactor::start_operation<slag::OperationType::SLAG_OPERATION_TYPE>(ResourceContext& resource_context, void* user_data, OperationParameters<slag::OperationType::SLAG_OPERATION_TYPE> parameters);
-
-SLAG_OPERATION_TYPES(X)
-#undef X

@@ -69,6 +69,16 @@ namespace slag {
     };
 
     template<OperationType operation_type>
+    inline Operation::Operation(ResourceContext& resource_context, void* user_data, OperationParameters<operation_type> parameters)
+        : resource_context_{resource_context}
+        , user_data_{user_data}
+        , type_{operation_type}
+        , result_{0}
+    {
+        new(&parameters_) OperationParameters<operation_type>{std::move(parameters)};
+    }
+
+    template<OperationType operation_type>
     inline OperationParameters<operation_type>& Operation::parameters() {
         assert(type_ == operation_type);
         return *reinterpret_cast<OperationParameters<operation_type>*>(&parameters_);

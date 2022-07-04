@@ -6,6 +6,7 @@ set(SLAG_SOURCE_FILES
     resource_context.cpp
     resource_context_index.cpp
     reactor.cpp
+    io_uring_reactor.cpp
     event_loop.cpp
     file_descriptor.cpp
     util.cpp
@@ -21,6 +22,7 @@ set(SLAG_HEADER_FILES
     ../include/slag/resource_context.h
     ../include/slag/resource_context_index.h
     ../include/slag/reactor.h
+    ../include/slag/io_uring_reactor.h
     ../include/slag/event_loop.h
     ../include/slag/platform.h
     ../include/slag/file_descriptor.h

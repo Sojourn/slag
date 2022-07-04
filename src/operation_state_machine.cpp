@@ -5,6 +5,8 @@
 static_assert(slag::OPERATION_STATE_COUNT == 7, "Update operation transitions and actions");
 static_assert(slag::OPERATION_EVENT_COUNT == 4, "Update operation transitions");
 
+// TODO: add support for multishot modes and waiting for cancels to complete
+
 const slag::OperationState slag::operation_transitions[slag::OPERATION_STATE_COUNT][slag::OPERATION_EVENT_COUNT] = {
     // SPOOLED
     {

@@ -112,3 +112,7 @@ void slag::ResourceContextIndex<operation_action>::truncate() {
 
     resource_contexts_.clear();
 }
+
+template class slag::ResourceContextIndex<slag::OperationAction::SUBMIT>;
+template class slag::ResourceContextIndex<slag::OperationAction::NOTIFY>;
+template class slag::ResourceContextIndex<slag::OperationAction::REMOVE>;

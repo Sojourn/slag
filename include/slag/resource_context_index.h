@@ -12,10 +12,9 @@ namespace slag {
     class ResourceContextIndex {
     public:
         class Cursor {
-            Cursor(ResourceContextIndex& parent);
-
         public:
             Cursor();
+            Cursor(ResourceContextIndex& parent);
             Cursor(Cursor&& other) noexcept;
             Cursor(const Cursor&) = delete;
             ~Cursor();
