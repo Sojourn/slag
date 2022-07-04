@@ -46,11 +46,6 @@ typename slag::ResourceContextIndex<operation_action>::Cursor& slag::ResourceCon
 }
 
 template<slag::OperationAction operation_action>
-slag::ResourceContextIndex::operator() bool const {
-    return static_cast<bool>(parent_);
-}
-
-template<slag::OperationAction operation_action>
 slag::ResourceContext* slag::ResourceContextIndex<operation_action>::Cursor::next() {
     assert(parent_);
 
@@ -95,14 +90,14 @@ void slag::ResourceContextIndex<operation_action>::vacuum() {
     }
 
     for (ResourceContext*& resource_context: resource_contexts_) {
-        if (!resource_context.update_deferred_action(operation_action)) {
+        if (!resource_context->update_deferred_action(operation_action)) {
             resource_context = nullptr;
         }
     }
 
     auto beg = resource_contexts_.begin();
     auto end = resource_contexts_.end();
-    auto pos = std::remove_if(beg, end, []() {
+    auto pos = std::remove_if(beg, end, [](ResourceContext* resource_context) {
         return !resource_context;
     });
 

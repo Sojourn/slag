@@ -61,7 +61,7 @@ slag::FileDescriptor slag::FileDescriptor::duplicate() const {
     return duplicate(file_descriptor_);
 }
 
-slag::FileDescriptor slag::FileDescriptor::duplicate(int file_descriptor) const {
+slag::FileDescriptor slag::FileDescriptor::duplicate(int file_descriptor) {
     if (file_descriptor < 0) {
         return FileDescriptor{};
     }

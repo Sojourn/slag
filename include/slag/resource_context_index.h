@@ -23,8 +23,6 @@ namespace slag {
             Cursor& operator=(Cursor&& rhs) noexcept;
             Cursor& operator=(const Cursor&) = delete;
 
-            explicit operator bool() const;
-
             [[noexcept]] ResourceContext* next();
 
             void reset();

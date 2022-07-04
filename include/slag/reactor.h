@@ -12,16 +12,13 @@ namespace slag {
 
     class Reactor {
     public:
-        Reactor(EventLoop& event_loop);
+        Reactor();
         Reactor(Reactor&&) noexcept = delete;
         Reactor(const Reactor&) = delete;
         ~Reactor();
 
         Reactor& operator=(Reactor&&) noexcept = delete;
         Reactor& operator=(const Reactor&) = delete;
-
-        [[nodiscard]] EventLoop& event_loop();
-        [[nodiscard]] const EventLoop& event_loop() const;
 
     protected:
         void complete_operation(Operation& operation, int64_t result);
@@ -32,22 +29,21 @@ namespace slag {
         friend class EventLoop;
 
         virtual void startup();
-        virtual void step(std::chrono::milliseconds timeout) = 0;
+        virtual void step() = 0;
         virtual void shutdown();
 
     private:
         friend class Resource;
 
         void attach_resource(Resource& resource);
-        void move_resource(Resource& target_resource, Resource& source_resource)
+        void move_resource(Resource& target_resource, Resource& source_resource);
         void detach_resource(Resource& resource);
 
-        template<OperationType>
-        Operation& start_operation(ResourceContext& resource_context, void* user_data, OperationParams<type> operation_params);
+        template<OperationType operation_type>
+        Operation& start_operation(ResourceContext& resource_context, void* user_data, OperationParameters<operation_type> operation_parameters);
         void cancel_operation(Operation& operation);
 
     private:
-        EventLoop&                    event_loop_;
         std::vector<ResourceContext*> deferred_submit_actions_;
         std::vector<ResourceContext*> deferred_notify_actions_;
         std::vector<ResourceContext*> deferred_remove_actions_;
@@ -55,5 +51,7 @@ namespace slag {
         // TODO: use a intrusive_list
         std::unordered_set<ResourceContext*> resource_contexts_;
     };
+
+    [[nodiscard]] Reactor& local_reactor();
 
 }

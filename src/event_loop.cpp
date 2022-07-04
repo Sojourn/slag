@@ -3,34 +3,24 @@
 #include <cassert>
 
 namespace slag {
-    thread_local EventLoop* local_instance_ = nullptr;
-}
-
-slag::EventLoop& slag::EventLoop::local_instance() {
-    assert(local_instance_);
-    return *local_instance_;
-}
-
-const slag::EventLoop& slag::EventLoop::local_instance() {
-    assert(local_instance_);
-    return *local_instance_;
+    thread_local EventLoop* local_event_loop_ = nullptr;
 }
 
 slag::EventLoop::EventLoop(std::unique_ptr<Reactor> reactor)
     : reactor_{std::move(reactor)}
     , running_{false}
 {
-    if (local_instance_) {
+    if (local_event_loop_) {
         throw std::runtime_error("A local event loop already exists");
     }
 
-    local_instance_ = this;
+    local_event_loop_ = this;
     reactor_->startup();
 }
 
 slag::EventLoop::~EventLoop() {
     reactor_->shutdown();
-    local_instance_ = nullptr;
+    local_event_loop_ = nullptr;
 }
 
 void slag::EventLoop::run() {
@@ -54,4 +44,9 @@ slag::Reactor& slag::EventLoop::reactor() {
 
 const slag::Reactor& slag::EventLoop::reactor() const {
     return *reactor_;
+}
+
+slag::EventLoop& slag::local_event_loop() {
+    assert(local_event_loop_);
+    return *local_event_loop_;
 }

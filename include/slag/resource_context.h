@@ -21,7 +21,7 @@ namespace slag {
         ResourceContext& operator=(const ResourceContext&) = delete;
 
     private:
-        friend class Driver;
+        friend class Reactor;
 
         [[nodiscard]] bool has_resource() const;
         [[nodiscard]] Resource& resource();

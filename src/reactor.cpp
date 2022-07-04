@@ -6,26 +6,16 @@
 #include "slag/event_loop.h"
 #include <stdexcept>
 
-slag::Reactor::Reactor(EventLoop& event_loop)
-    : event_loop_{event_loop}
-{
+slag::Reactor::Reactor() {
 }
 
 slag::Reactor::~Reactor() {
     // TODO: assert that we have shutdown cleanly
 }
 
-slag::EventLoop& slag::Reactor::event_loop() {
-    return event_loop_;
-}
-
-const slag::EventLoop& slag::Reactor::event_loop() const {
-    return event_loop_;
-}
-
 void slag::Reactor::handle_operation_event(Operation& operation, OperationEvent operation_event) {
     operation.state_machine().handle_event(operation_event);
-    defer_operation_action(operation.action());
+    defer_operation_action(operation, operation.action());
 }
 
 void slag::Reactor::defer_operation_action(Operation& operation, OperationAction operation_action) {
@@ -69,16 +59,13 @@ void slag::Reactor::defer_operation_action(Operation& operation, OperationAction
 void slag::Reactor::startup() {
 }
 
-void slag::Reactor::step() {
-}
-
 void slag::Reactor::shutdown() {
     for (ResourceContext* resource_context: resource_contexts_) {
         if (resource_context->has_resource()) {
             throw std::runtime_error("Reactor cannot shutdown because a resource is still referencing it");
         }
 
-        for (Operation* operation: resource_context->operations) {
+        for (Operation* operation: resource_context->operations()) {
             cancel_operation(*operation);
         }
     }
@@ -101,11 +88,11 @@ void slag::Reactor::detach_resource(Resource& resource) {
     assert(resource.has_resource_context());
 }
 
-template<slag::OperationType>
-slag::Operation& slag::Reactor::start_operation(ResourceContext& resource_context, void* user_data, OperationParameters<type> operation_parameters) {
+template<slag::OperationType operation_type>
+slag::Operation& slag::Reactor::start_operation(ResourceContext& resource_context, void* user_data, OperationParameters<operation_type> operation_parameters) {
     Operation* operation = new Operation{resource_context, user_data, std::move(operation_parameters)};
-    resource_context.operations.push_back(operation);
-    defer_operation_action(*operation); // defer submission
+    resource_context.operations().push_back(operation);
+    defer_operation_action(*operation, operation->action()); // defer submission
     return *operation;
 }
 
@@ -114,8 +101,11 @@ void slag::Reactor::cancel_operation(Operation& operation) {
         return; // this operation is doomed anyways
     }
 
-    operation.state_machine().handle_event(OperationEvent::CANCEL);
-    defer_operation_action(operation, operation.action());
+    handle_operation_event(operation, OperationEvent::CANCEL);
+}
+
+slag::Reactor& slag::local_reactor() {
+    return local_event_loop().reactor();
 }
 
 // explicit templated function instantiation

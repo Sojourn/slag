@@ -49,8 +49,8 @@ void slag::ResourceContext::reset_deferred_action(OperationAction operation_acti
 
 bool slag::ResourceContext::update_deferred_action(OperationAction operation_action) {
     reset_deferred_action(operation_action);
-    for (const Operation& operation: operations_) {
-        if (operation.action() == operation_action) {
+    for (const Operation* operation: operations_) {
+        if (operation->action() == operation_action) {
             set_deferred_action(operation_action);
             break;
         }

@@ -7,9 +7,6 @@ namespace slag {
 
     class EventLoop {
     public:
-        [[nodiscard]] static EventLoop& local_instance();
-        [[nodiscard]] static const EventLoop& local_instance();
-
         EventLoop(std::unique_ptr<Reactor> reactor);
         EventLoop(EventLoop&&) noexcept = delete;
         EventLoop(const EventLoop&) = delete;
@@ -28,5 +25,7 @@ namespace slag {
         std::unique_ptr<Reactor> reactor_;
         bool                     running_;
     };
+
+    [[nodiscard]] EventLoop& local_event_loop();
 
 }
