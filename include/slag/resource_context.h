@@ -21,9 +21,9 @@ namespace slag {
         ResourceContext& operator=(const ResourceContext&) = delete;
 
     private:
-        template<OperationAction operation_action>
-        friend class ResourceContextIndex;
         friend class Reactor;
+        friend class IOURingReactor;
+        friend class ResourceContextIndex;
 
         [[nodiscard]] bool has_resource() const;
         [[nodiscard]] Resource& resource();

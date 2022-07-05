@@ -6,11 +6,20 @@
 #include "slag/event_loop.h"
 #include <stdexcept>
 
-slag::Reactor::Reactor() {
+slag::Reactor::Reactor()
+    : submit_resource_context_index_{OperationAction::SUBMIT}
+    , notify_resource_context_index_{OperationAction::NOTIFY}
+    , remove_resource_context_index_{OperationAction::REMOVE}
+{
 }
 
 slag::Reactor::~Reactor() {
     // TODO: assert that we have shutdown cleanly
+}
+
+void slag::Reactor::complete_operation(Operation& operation, int64_t result) {
+    operation.set_result(result);
+    handle_operation_event(operation, OperationEvent::COMPLETION);
 }
 
 void slag::Reactor::handle_operation_event(Operation& operation, OperationEvent operation_event) {
@@ -51,6 +60,14 @@ void slag::Reactor::defer_operation_action(Operation& operation, OperationAction
             break;
         }
     }
+}
+
+slag::ResourceContextIndex::Cursor slag::Reactor::deferred_submit_operation_actions() {
+    return submit_resource_context_index_.select();
+}
+
+slag::ResourceContextIndex::Cursor slag::Reactor::deferred_notify_operation_actions() {
+    return notify_resource_context_index_.select();
 }
 
 void slag::Reactor::startup() {

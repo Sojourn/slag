@@ -1,4 +1,5 @@
 #include "slag/operation_state_machine.h"
+#include <iostream>
 #include <cstdlib>
 #include <cassert>
 

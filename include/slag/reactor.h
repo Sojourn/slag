@@ -27,8 +27,8 @@ namespace slag {
         void handle_operation_event(Operation& operation, OperationEvent operation_event);
         void defer_operation_action(Operation& operation, OperationAction operation_action);
 
-        ResourceContextIndex<OperationAction::SUBMIT>::Cursor deferred_submit_operation_actions();
-        ResourceContextIndex<OperationAction::NOTIFY>::Cursor deferred_notify_operation_actions();
+        ResourceContextIndex::Cursor deferred_submit_operation_actions();
+        ResourceContextIndex::Cursor deferred_notify_operation_actions();
 
     private:
         friend class EventLoop;
@@ -53,9 +53,9 @@ namespace slag {
         void cancel_operation(Operation& operation);
 
     private:
-        ResourceContextIndex<OperationAction::SUBMIT> submit_resource_context_index_;
-        ResourceContextIndex<OperationAction::NOTIFY> notify_resource_context_index_;
-        ResourceContextIndex<OperationAction::REMOVE> remove_resource_context_index_;
+        ResourceContextIndex submit_resource_context_index_;
+        ResourceContextIndex notify_resource_context_index_;
+        ResourceContextIndex remove_resource_context_index_;
 
         // TODO: use a intrusive_list
         std::unordered_set<ResourceContext*> resource_contexts_;

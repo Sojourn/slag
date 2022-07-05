@@ -8,7 +8,6 @@ namespace slag {
 
     class ResourceContext;
 
-    template<OperationAction operation_action>
     class ResourceContextIndex {
     public:
         class Cursor {
@@ -27,9 +26,16 @@ namespace slag {
             void reset();
 
         private:
-            ResourceContextIndex* parent_; // TODO: rename?
-            size_t                index_; // TODO: rename?
+            ResourceContextIndex* parent_;
+            size_t                offset_;
         };
+
+        ResourceContextIndex(OperationAction operation_action);
+        ResourceContextIndex(ResourceContextIndex&&) noexcept = delete;
+        ResourceContextIndex(const ResourceContextIndex&) = delete;
+
+        ResourceContextIndex& operator=(ResourceContextIndex&&) noexcept = delete;
+        ResourceContextIndex& operator=(const ResourceContextIndex&) = delete;
 
         [[noexcept]] Cursor select();
         void insert(ResourceContext& resource_context);
@@ -37,8 +43,9 @@ namespace slag {
         void truncate();
 
     private:
-        std::vector<ResourceContext*> resource_contexts_;
+        OperationAction               operation_action_;
         size_t                        cursor_count_;
+        std::vector<ResourceContext*> resource_contexts_;
     };
 
 }

@@ -23,6 +23,7 @@ namespace slag {
 
     private:
         friend class Reactor;
+        friend class IOURingReactor;
 
         [[nodiscard]] bool has_resource_context() const;
         [[nodiscard]] ResourceContext& resource_context();
