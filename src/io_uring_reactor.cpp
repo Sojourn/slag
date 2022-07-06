@@ -77,8 +77,10 @@ void slag::IOURingReactor::process_completions() {
     else if (count > 0) {
         for (int i = 0; i < count; ++i) {
             struct io_uring_cqe* cqe = cqes[i];
+            Operation* operation = reinterpret_cast<Operation*>(cqe->user_data);
+            int64_t result = cqe->res;
 
-            (void)cqe; // TODO: handle cqe
+            complete_operation(*operation, result);
         }
 
         io_uring_cq_advance(&ring_, static_cast<unsigned>(count));
