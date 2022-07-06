@@ -30,16 +30,20 @@ namespace slag {
         ResourceContextIndex::Cursor deferred_submit_operation_actions();
         ResourceContextIndex::Cursor deferred_notify_operation_actions();
 
+        virtual void startup();
+        virtual void step();
+        virtual void shutdown();
+
     private:
         friend class EventLoop;
-
-        virtual void startup();
-        virtual void step() = 0;
-        virtual void shutdown();
 
         virtual ResourceContext& allocate_resource_context(Resource& resource);
         virtual void cleanup_resource_context(ResourceContext& resource_context);
         virtual void deallocate_resource_context(ResourceContext& resource_context);
+
+        void garbage_collect();
+        void garbage_collect(ResourceContext& resource_context);
+        void garbage_collect(std::vector<Operation*>& operations);
 
     private:
         friend class Resource;

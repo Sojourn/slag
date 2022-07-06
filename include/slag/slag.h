@@ -5,3 +5,4 @@
 #include "resource.h"
 #include "reactor.h"
 #include "io_uring_reactor.h"
+#include "logging.h"

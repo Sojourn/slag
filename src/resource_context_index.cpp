@@ -6,6 +6,7 @@ slag::ResourceContextIndex::Cursor::Cursor(ResourceContextIndex& parent)
     : parent_{&parent}
     , offset_{0}
 {
+    ++parent_->cursor_count_;
 }
 
 slag::ResourceContextIndex::Cursor::Cursor()

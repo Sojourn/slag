@@ -26,11 +26,13 @@ set(SLAG_HEADER_FILES
     ../include/slag/event_loop.h
     ../include/slag/platform.h
     ../include/slag/file_descriptor.h
+    ../include/slag/logging.h
     ../include/slag/util.h
 )
 
 add_library(slag ${SLAG_SOURCE_FILES} ${SLAG_HEADER_FILES})
 target_link_libraries(slag uring)
+target_link_libraries(slag fmt)
 target_include_directories(slag
         PUBLIC
             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>

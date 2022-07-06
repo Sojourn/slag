@@ -4,6 +4,8 @@
 #include "slag/operation.h"
 #include "slag/operation_parameters.h"
 #include "slag/event_loop.h"
+#include "slag/logging.h"
+#include <algorithm>
 #include <stdexcept>
 
 slag::Reactor::Reactor()
@@ -18,12 +20,29 @@ slag::Reactor::~Reactor() {
 }
 
 void slag::Reactor::complete_operation(Operation& operation, int64_t result) {
+    info(
+        "Reactor/{} complete_operation Operation/{} result/{}"
+        , (const void*)this
+        , (const void*)&operation
+        , result
+    );
+
     operation.set_result(result);
     handle_operation_event(operation, OperationEvent::COMPLETION);
 }
 
 void slag::Reactor::handle_operation_event(Operation& operation, OperationEvent operation_event) {
+    OperationState original_state = operation.state();
     operation.state_machine().handle_event(operation_event);
+
+    info(
+        "Operation/{} {} + {} -> {}"
+        , (const void*)&operation
+        , to_string(original_state)
+        , to_string(operation_event)
+        , to_string(operation.state())
+    );
+
     defer_operation_action(operation, operation.action());
 }
 
@@ -32,6 +51,13 @@ void slag::Reactor::defer_operation_action(Operation& operation, OperationAction
     if (operation_action == OperationAction::PANIC) {
         abort();
     }
+
+    info(
+        "Reactor/{} defer_operation_action Operation/{} action/{}"
+        , (const void*)this
+        , (const void*)&operation
+        , to_string(operation_action) 
+    );
 
     ResourceContext& resource_context = operation.resource_context();
     if (resource_context.has_deferred_action(operation_action)) {
@@ -71,9 +97,27 @@ slag::ResourceContextIndex::Cursor slag::Reactor::deferred_notify_operation_acti
 }
 
 void slag::Reactor::startup() {
+    info(
+        "Reactor/{} startup beginning"
+        , (const void*)this
+    );
+
+    info(
+        "Reactor/{} startup complete"
+        , (const void*)this
+    );
+}
+
+void slag::Reactor::step() {
+    garbage_collect();
 }
 
 void slag::Reactor::shutdown() {
+    info(
+        "Reactor/{} shutdown beginning"
+        , (const void*)this
+    );
+
     for (ResourceContext* resource_context: resource_contexts_) {
         if (resource_context->has_resource()) {
             throw std::runtime_error("Reactor cannot shutdown because a resource is still referencing it");
@@ -83,6 +127,11 @@ void slag::Reactor::shutdown() {
     while (!resource_contexts_.empty()) {
         step();
     }
+
+    info(
+        "Reactor/{} shutdown complete"
+        , (const void*)this
+    );
 }
 
 slag::ResourceContext& slag::Reactor::allocate_resource_context(Resource& resource) {
@@ -99,6 +148,52 @@ void slag::Reactor::cleanup_resource_context(ResourceContext& resource_context) 
 
 void slag::Reactor::deallocate_resource_context(ResourceContext& resource_context) {
     delete &resource_context;
+}
+
+void slag::Reactor::garbage_collect() {
+    submit_resource_context_index_.vacuum();
+    notify_resource_context_index_.vacuum();
+
+    {
+        auto cursor = remove_resource_context_index_.select();
+        while (ResourceContext* resource_context = cursor.next()) {
+            garbage_collect(*resource_context);
+        }
+    }
+
+    remove_resource_context_index_.truncate();
+}
+
+void slag::Reactor::garbage_collect(ResourceContext& resource_context) {
+    garbage_collect(resource_context.operations());
+    resource_context.reset_deferred_action(OperationAction::REMOVE);
+
+    if (!resource_context.is_referenced()) {
+        deallocate_resource_context(resource_context);
+    }
+}
+
+void slag::Reactor::garbage_collect(std::vector<Operation*>& operations) {
+    for (Operation*& operation: operations) {
+        if (operation->action() == OperationAction::REMOVE) {
+            delete operation;
+            operation = nullptr;
+        }
+    }
+
+    auto beg = operations.begin();
+    auto end = operations.end();
+    auto pos = std::remove_if(
+        beg,
+        end,
+        [](Operation* operation) {
+            return !operation;
+        }
+    );
+
+    if (pos != end) {
+        operations.erase(pos, end);
+    }
 }
 
 void slag::Reactor::attach_resource(Resource& resource) {

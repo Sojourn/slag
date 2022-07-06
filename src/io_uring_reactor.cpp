@@ -19,14 +19,18 @@ slag::IOURingReactor::~IOURingReactor() {
 }
 
 void slag::IOURingReactor::startup() {
+    Reactor::startup();
 }
 
 void slag::IOURingReactor::step() {
     process_submissions();
     process_completions();
+
+    Reactor::step();
 }
 
 void slag::IOURingReactor::shutdown() {
+    Reactor::shutdown();
 }
 
 void slag::IOURingReactor::process_submissions() {
@@ -54,6 +58,7 @@ void slag::IOURingReactor::process_submissions() {
                     submit_operation(*sqe, *operation, operation_parameters);
                 });
 
+                handle_operation_event(*operation, OperationEvent::SUBMISSION);
                 ++submission_count;
             }
         }
