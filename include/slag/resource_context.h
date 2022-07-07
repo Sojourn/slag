@@ -8,7 +8,6 @@
 namespace slag {
 
     class Resource;
-    class Operation;
 
     class ResourceContext {
     public:

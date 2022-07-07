@@ -4,6 +4,7 @@
 #include "slag/reactor.h"
 #include "slag/resource.h"
 #include "slag/resource_context.h"
+#include "slag/io_uring_resource_context.h"
 #include "slag/pool_allocator.h"
 
 namespace slag {
@@ -31,8 +32,8 @@ namespace slag {
         void submit_cancel(struct io_uring_sqe& sqe, Operation& operation);
 
     private:
-        struct io_uring                ring_;
-        PoolAllocator<ResourceContext> resource_context_allocator_;
+        struct io_uring                       ring_;
+        PoolAllocator<IOURingResourceContext> resource_context_allocator_;
     };
 
 }

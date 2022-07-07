@@ -44,7 +44,9 @@ void slag::IOURingReactor::cleanup_resource_context(ResourceContext& resource_co
 }
 
 void slag::IOURingReactor::deallocate_resource_context(ResourceContext& resource_context) {
-    resource_context_allocator_.deallocate(resource_context);
+    resource_context_allocator_.deallocate(
+        static_cast<IOURingResourceContext&>(resource_context)
+    );
 }
 
 void slag::IOURingReactor::process_submissions() {

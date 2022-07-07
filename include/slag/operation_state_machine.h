@@ -74,6 +74,8 @@ namespace slag {
     const char* to_string(OperationEvent event);
     const char* to_string(OperationAction action);
 
+    // This could take a pointer to a transition table (if reactors can't all use the same one).
+    //
     class OperationStateMachine {
     public:
         OperationStateMachine();
