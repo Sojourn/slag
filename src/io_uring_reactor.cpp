@@ -3,7 +3,9 @@
 #include <liburing/io_uring.h>
 #include <stdexcept>
 
-slag::IOURingReactor::IOURingReactor() {
+slag::IOURingReactor::IOURingReactor()
+    : resource_context_allocator_{1024} // TODO: make configurable
+{
     int result;
     do {
         result = io_uring_queue_init(4096, &ring_, 0);
@@ -31,6 +33,18 @@ void slag::IOURingReactor::step() {
 
 void slag::IOURingReactor::shutdown() {
     Reactor::shutdown();
+}
+
+slag::ResourceContext& slag::IOURingReactor::allocate_resource_context(Resource& resource) {
+    return resource_context_allocator_.allocate(resource);
+}
+
+void slag::IOURingReactor::cleanup_resource_context(ResourceContext& resource_context) {
+    Reactor::cleanup_resource_context(resource_context);
+}
+
+void slag::IOURingReactor::deallocate_resource_context(ResourceContext& resource_context) {
+    resource_context_allocator_.deallocate(resource_context);
 }
 
 void slag::IOURingReactor::process_submissions() {

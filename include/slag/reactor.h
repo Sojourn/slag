@@ -1,11 +1,10 @@
 #pragma once
 
-#include <chrono>
 #include <vector>
-#include <unordered_set>
 #include "slag/operation.h"
 #include "slag/resource_context.h"
 #include "slag/resource_context_index.h"
+#include "slag/pool_allocator.h"
 
 namespace slag {
 
@@ -17,7 +16,7 @@ namespace slag {
         Reactor();
         Reactor(Reactor&&) noexcept = delete;
         Reactor(const Reactor&) = delete;
-        ~Reactor();
+        virtual ~Reactor();
 
         Reactor& operator=(Reactor&&) noexcept = delete;
         Reactor& operator=(const Reactor&) = delete;
@@ -34,12 +33,12 @@ namespace slag {
         virtual void step();
         virtual void shutdown();
 
+        virtual [[nodiscard]] ResourceContext& allocate_resource_context(Resource& resource) = 0;
+        virtual void cleanup_resource_context(ResourceContext& resource_context);
+        virtual void deallocate_resource_context(ResourceContext& resource_context) = 0;
+
     private:
         friend class EventLoop;
-
-        virtual ResourceContext& allocate_resource_context(Resource& resource);
-        virtual void cleanup_resource_context(ResourceContext& resource_context);
-        virtual void deallocate_resource_context(ResourceContext& resource_context);
 
         void garbage_collect();
         void garbage_collect(ResourceContext& resource_context);
@@ -57,12 +56,12 @@ namespace slag {
         void cancel_operation(Operation& operation);
 
     private:
-        ResourceContextIndex submit_resource_context_index_;
-        ResourceContextIndex notify_resource_context_index_;
-        ResourceContextIndex remove_resource_context_index_;
-
-        // TODO: use a intrusive_list
-        std::unordered_set<ResourceContext*> resource_contexts_;
+        ResourceContextIndex     submit_resource_context_index_;
+        ResourceContextIndex     notify_resource_context_index_;
+        ResourceContextIndex     remove_resource_context_index_;
+        PoolAllocator<Operation> operation_allocator_;
+        size_t                   resource_context_count_;
+        size_t                   attached_resource_count_;
     };
 
     [[nodiscard]] Reactor& local_reactor();

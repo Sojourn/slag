@@ -1,7 +1,10 @@
 #pragma once
 
 #include <liburing.h>        
-#include "reactor.h"
+#include "slag/reactor.h"
+#include "slag/resource.h"
+#include "slag/resource_context.h"
+#include "slag/pool_allocator.h"
 
 namespace slag {
 
@@ -15,6 +18,10 @@ namespace slag {
         void step() override;
         void shutdown() override;
 
+        ResourceContext& allocate_resource_context(Resource& resource) override;
+        void cleanup_resource_context(ResourceContext& resource_context) override;
+        void deallocate_resource_context(ResourceContext& resource_context) override;
+
     private:
         void process_submissions();
         void process_completions();
@@ -24,7 +31,8 @@ namespace slag {
         void submit_cancel(struct io_uring_sqe& sqe, Operation& operation);
 
     private:
-        struct io_uring ring_;
+        struct io_uring                ring_;
+        PoolAllocator<ResourceContext> resource_context_allocator_;
     };
 
 }

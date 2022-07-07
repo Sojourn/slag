@@ -26,6 +26,8 @@ set(SLAG_HEADER_FILES
     ../include/slag/event_loop.h
     ../include/slag/platform.h
     ../include/slag/file_descriptor.h
+    ../include/slag/pool_allocator.h
+    ../include/slag/pool_allocator.hpp
     ../include/slag/logging.h
     ../include/slag/util.h
 )

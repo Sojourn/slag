@@ -7,16 +7,20 @@
 #include "slag/logging.h"
 #include <algorithm>
 #include <stdexcept>
+#include <cassert>
 
 slag::Reactor::Reactor()
     : submit_resource_context_index_{OperationAction::SUBMIT}
     , notify_resource_context_index_{OperationAction::NOTIFY}
     , remove_resource_context_index_{OperationAction::REMOVE}
+    , operation_allocator_{4096} // TODO: make configurable
+    , resource_context_count_{0}
+    , attached_resource_count_{0}
 {
 }
 
 slag::Reactor::~Reactor() {
-    // TODO: assert that we have shutdown cleanly
+    assert(!resource_context_count_);
 }
 
 void slag::Reactor::complete_operation(Operation& operation, int64_t result) {
@@ -118,13 +122,11 @@ void slag::Reactor::shutdown() {
         , (const void*)this
     );
 
-    for (ResourceContext* resource_context: resource_contexts_) {
-        if (resource_context->has_resource()) {
-            throw std::runtime_error("Reactor cannot shutdown because a resource is still referencing it");
-        }
+    if (attached_resource_count_) {
+        throw std::runtime_error("Cannot shutdown while a resource is still attached");
     }
 
-    while (!resource_contexts_.empty()) {
+    while (resource_context_count_) {
         step();
     }
 
@@ -134,20 +136,12 @@ void slag::Reactor::shutdown() {
     );
 }
 
-slag::ResourceContext& slag::Reactor::allocate_resource_context(Resource& resource) {
-    return *(new ResourceContext{resource});
-}
-
 void slag::Reactor::cleanup_resource_context(ResourceContext& resource_context) {
     for (Operation* operation: resource_context.operations()) {
         cancel_operation(*operation);
     }
 
     // TODO: close file descriptor
-}
-
-void slag::Reactor::deallocate_resource_context(ResourceContext& resource_context) {
-    delete &resource_context;
 }
 
 void slag::Reactor::garbage_collect() {
@@ -170,7 +164,7 @@ void slag::Reactor::garbage_collect(ResourceContext& resource_context) {
     garbage_collect(resource_context.operations());
 
     if (!resource_context.is_referenced()) {
-        resource_contexts_.erase(&resource_context);
+        --resource_context_count_;
         deallocate_resource_context(resource_context);
     }
 }
@@ -202,9 +196,10 @@ void slag::Reactor::attach_resource(Resource& resource) {
     assert(!resource.has_resource_context());
 
     ResourceContext& resource_context = allocate_resource_context(resource);
-    resource_contexts_.insert(&resource_context);
-
+    ++resource_context_count_;
+    
     resource.set_resource_context(&resource_context);
+    ++attached_resource_count_;
 }
 
 void slag::Reactor::move_resource(Resource& target_resource, Resource& source_resource) {
@@ -227,6 +222,8 @@ void slag::Reactor::detach_resource(Resource& resource) {
     ResourceContext& resource_context = resource.resource_context();
     resource_context.remove_resource();
     resource.set_resource_context(nullptr);
+    --attached_resource_count_;
+
     cleanup_resource_context(resource_context);
     remove_resource_context_index_.insert(resource_context);
 }

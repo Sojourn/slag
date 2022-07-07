@@ -15,7 +15,7 @@ namespace slag {
         explicit ResourceContext(Resource& resource);
         ResourceContext(ResourceContext&&) noexcept = delete;
         ResourceContext(const ResourceContext&) = delete;
-        ~ResourceContext();
+        virtual ~ResourceContext();
 
         ResourceContext& operator=(ResourceContext&&) noexcept = delete;
         ResourceContext& operator=(const ResourceContext&) = delete;
@@ -42,7 +42,7 @@ namespace slag {
         [[nodiscard]] FileDescriptor& file_descriptor();
         [[nodiscard]] const FileDescriptor& file_descriptor() const;
 
-        [[nodiscard]] bool is_referenced() const;
+        [[nodiscard]] virtual bool is_referenced() const;
 
     private:
         Resource*                           resource_;
