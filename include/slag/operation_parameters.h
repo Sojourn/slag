@@ -30,6 +30,7 @@ namespace slag {
 
     template<>
     struct OperationParameters<OperationType::ACCEPT> {
+        FileDescriptor file_descriptor; // out
     };
 
     template<>
