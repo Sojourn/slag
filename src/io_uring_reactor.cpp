@@ -139,6 +139,48 @@ void slag::IOURingReactor::submit_operation<slag::OperationType::NOP>(struct io_
     io_uring_sqe_set_data(&sqe, &operation);
 }
 
+template<>
+void slag::IOURingReactor::submit_operation<slag::OperationType::ASSIGN>(struct io_uring_sqe& sqe, Operation& operation, OperationParameters<OperationType::ASSIGN>& operation_parameters) {
+    (void)sqe;
+    (void)operation;
+    (void)operation_parameters;
+}
+
+template<>
+void slag::IOURingReactor::submit_operation<slag::OperationType::CLOSE>(struct io_uring_sqe& sqe, Operation& operation, OperationParameters<OperationType::CLOSE>& operation_parameters) {
+    (void)sqe;
+    (void)operation;
+    (void)operation_parameters;
+}
+
+template<>
+void slag::IOURingReactor::submit_operation<slag::OperationType::CONNECT>(struct io_uring_sqe& sqe, Operation& operation, OperationParameters<OperationType::CONNECT>& operation_parameters) {
+    (void)sqe;
+    (void)operation;
+    (void)operation_parameters;
+}
+
+template<>
+void slag::IOURingReactor::submit_operation<slag::OperationType::ACCEPT>(struct io_uring_sqe& sqe, Operation& operation, OperationParameters<OperationType::ACCEPT>& operation_parameters) {
+    (void)sqe;
+    (void)operation;
+    (void)operation_parameters;
+}
+
+template<>
+void slag::IOURingReactor::submit_operation<slag::OperationType::SEND>(struct io_uring_sqe& sqe, Operation& operation, OperationParameters<OperationType::SEND>& operation_parameters) {
+    (void)sqe;
+    (void)operation;
+    (void)operation_parameters;
+}
+
+template<>
+void slag::IOURingReactor::submit_operation<slag::OperationType::RECEIVE>(struct io_uring_sqe& sqe, Operation& operation, OperationParameters<OperationType::RECEIVE>& operation_parameters) {
+    (void)sqe;
+    (void)operation;
+    (void)operation_parameters;
+}
+
 void slag::IOURingReactor::submit_cancel(struct io_uring_sqe& sqe, Operation& operation) {
     io_uring_prep_cancel(&sqe, &operation, 0);
 }

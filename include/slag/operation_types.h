@@ -5,8 +5,12 @@
 
 #define SLAG_OPERATION_TYPES(X) \
     X(NOP)                      \
-    X(ASSIGN_FILE_DESCRIPTOR)   \
-    X(CLOSE_FILE_DESCRIPTOR)
+    X(ASSIGN)                   \
+    X(CLOSE)                    \
+    X(CONNECT)                  \
+    X(ACCEPT)                   \
+    X(SEND)                     \
+    X(RECEIVE)
 
 namespace slag {
 

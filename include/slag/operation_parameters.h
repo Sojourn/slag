@@ -3,6 +3,7 @@
 #include <algorithm>
 #include "slag/operation_types.h"
 #include "slag/file_descriptor.h"
+#include "slag/address.h"
 
 namespace slag {
 
@@ -14,12 +15,29 @@ namespace slag {
     };
 
     template<>
-    struct OperationParameters<OperationType::ASSIGN_FILE_DESCRIPTOR> {
+    struct OperationParameters<OperationType::ASSIGN> {
         FileDescriptor file_descriptor;
     };
 
     template<>
-    struct OperationParameters<OperationType::CLOSE_FILE_DESCRIPTOR> {
+    struct OperationParameters<OperationType::CLOSE> {
+    };
+
+    template<>
+    struct OperationParameters<OperationType::CONNECT> {
+        Address address;
+    };
+
+    template<>
+    struct OperationParameters<OperationType::ACCEPT> {
+    };
+
+    template<>
+    struct OperationParameters<OperationType::SEND> {
+    };
+
+    template<>
+    struct OperationParameters<OperationType::RECEIVE> {
     };
 
     constexpr size_t max_operation_parameters_size() {
