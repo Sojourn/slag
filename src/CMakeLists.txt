@@ -9,6 +9,7 @@ set(SLAG_SOURCE_FILES
     io_uring_reactor.cpp
     event_loop.cpp
     file_descriptor.cpp
+    address.cpp
     util.cpp
 )
 
@@ -26,6 +27,7 @@ set(SLAG_HEADER_FILES
     ../include/slag/event_loop.h
     ../include/slag/platform.h
     ../include/slag/file_descriptor.h
+    ../include/slag/address.h
     ../include/slag/pool_allocator.h
     ../include/slag/pool_allocator.hpp
     ../include/slag/logging.h
