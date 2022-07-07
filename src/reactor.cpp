@@ -157,6 +157,8 @@ void slag::Reactor::garbage_collect() {
     {
         auto cursor = remove_resource_context_index_.select();
         while (ResourceContext* resource_context = cursor.next()) {
+            resource_context->reset_deferred_action(OperationAction::REMOVE);
+
             garbage_collect(*resource_context);
         }
     }
@@ -166,9 +168,9 @@ void slag::Reactor::garbage_collect() {
 
 void slag::Reactor::garbage_collect(ResourceContext& resource_context) {
     garbage_collect(resource_context.operations());
-    resource_context.reset_deferred_action(OperationAction::REMOVE);
 
     if (!resource_context.is_referenced()) {
+        resource_contexts_.erase(&resource_context);
         deallocate_resource_context(resource_context);
     }
 }
@@ -200,6 +202,8 @@ void slag::Reactor::attach_resource(Resource& resource) {
     assert(!resource.has_resource_context());
 
     ResourceContext& resource_context = allocate_resource_context(resource);
+    resource_contexts_.insert(&resource_context);
+
     resource.set_resource_context(&resource_context);
 }
 
