@@ -63,6 +63,11 @@ void slag::IOURingReactor::process_submissions() {
                 continue;
             }
 
+            bool is_barrier = operation.test_flag(OperationFlag::BARRIER);
+            if (is_barrier && (operation_index > 0)) {
+                break;
+            }
+
             operation.visit_parameters([&]<OperationType operation_type>(OperationParameters<operation_type>& operation_parameters) {
                 Subject<operation_type> subject = {
                     .resource_context     = static_cast<IOURingResourceContext&>(*resource_context),
@@ -89,6 +94,10 @@ void slag::IOURingReactor::process_submissions() {
             }
 
             ++prepared_submission_count;
+
+            if (is_barrier) {
+                break; // wait for this operation to complete before submitting subsequent operations
+            }
         }
         if (!ok) {
             break;

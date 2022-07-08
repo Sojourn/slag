@@ -1,18 +1,17 @@
 #pragma once
 
+#include <bitset>
+#include <initializer_list>
 #include <cstdint>
 #include <cassert>
 #include "slag/operation_types.h"
+#include "slag/operation_flags.h"
 #include "slag/operation_parameters.h"
 #include "slag/operation_state_machine.h"
 
 namespace slag {
 
     class ResourceContext;
-
-    enum class OperationFlags {
-        // linked, wait_for_previous, etc.
-    };
 
     class Operation {
     public:
@@ -32,6 +31,7 @@ namespace slag {
         [[nodiscard]] OperationType type() const;
         [[nodiscard]] OperationState state() const;
         [[nodiscard]] OperationAction action() const;
+        [[nodiscard]] bool test_flag(OperationFlag flag) const;
         [[nodiscard]] int64_t result() const;
         [[nodiscard]] bool success() const;
         [[nodiscard]] bool failure() const;
@@ -53,13 +53,17 @@ namespace slag {
         friend class Reactor;
 
         [[nodiscard]] OperationStateMachine& state_machine();
+        void set_flag(OperationFlag flag);
+        void set_flags(std::initializer_list<OperationFlag> flags);
         void set_result(int64_t result);
+
 
     private:
         ResourceContext&      resource_context_;
         void*                 user_data_;
         OperationStateMachine state_machine_;
         OperationType         type_;
+        OperationFlags        flags_;
         int64_t               result_;
 
         std::aligned_storage_t<
