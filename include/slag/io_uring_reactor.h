@@ -25,7 +25,7 @@ namespace slag {
 
     private:
         template<OperationType operation_type>
-        struct SubmitSubject {
+        struct Subject {
             IOURingResourceContext&              resource_context;
             Operation&                           operation;
             OperationParameters<operation_type>& operation_parameters;
@@ -34,16 +34,16 @@ namespace slag {
         void process_submissions();
 
         template<OperationType operation_type>
-        bool prepare_submission(SubmitSubject<operation_type>& submit_subject);
+        bool prepare_submission(Subject<operation_type>& subject);
 
         template<OperationType operation_type>
-        bool prepare_cancel_submission(SubmitSubject<operation_type>& submit_subject);
+        bool prepare_cancel_submission(Subject<operation_type>& subject);
 
     private:
         void process_completions();
 
         template<OperationType operation_type>
-        void process_operation_completion(Operation& operation, OperationParameters<operation_type>& operation_parameters, int64_t result);
+        void process_completion(Subject<operation_type>& subject, int64_t result);
 
     private:
         struct io_uring                       ring_;

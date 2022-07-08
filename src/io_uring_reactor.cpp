@@ -64,7 +64,7 @@ void slag::IOURingReactor::process_submissions() {
             }
 
             operation.visit_parameters([&]<OperationType operation_type>(OperationParameters<operation_type>& operation_parameters) {
-                SubmitSubject submit_subject = {
+                Subject<operation_type> subject = {
                     .resource_context     = static_cast<IOURingResourceContext&>(*resource_context),
                     .operation            = operation,
                     .operation_parameters = operation_parameters,
@@ -72,11 +72,11 @@ void slag::IOURingReactor::process_submissions() {
 
                 switch (operation.state()) {
                     case OperationState::SPOOLED: {
-                        ok = prepare_submission(submit_subject);
+                        ok = prepare_submission(subject);
                         break;
                     }
                     case OperationState::CANCEL_SPOOLED: {
-                        ok = prepare_cancel_submission(submit_subject);
+                        ok = prepare_cancel_submission(subject);
                         break;
                     }
                     default: {
@@ -88,7 +88,6 @@ void slag::IOURingReactor::process_submissions() {
                 break;
             }
 
-            handle_operation_event(operation, OperationEvent::SUBMISSION);
             ++prepared_submission_count;
         }
         if (!ok) {
@@ -102,14 +101,14 @@ void slag::IOURingReactor::process_submissions() {
 }
 
 template<slag::OperationType operation_type>
-bool slag::IOURingReactor::prepare_submission(SubmitSubject<operation_type>& subject) {
+bool slag::IOURingReactor::prepare_submission(Subject<operation_type>& subject) {
     (void)subject;
 
     abort();
 }
 
 template<>
-bool slag::IOURingReactor::prepare_submission<slag::OperationType::NOP>(SubmitSubject<OperationType::NOP>& subject) {
+bool slag::IOURingReactor::prepare_submission<slag::OperationType::NOP>(Subject<OperationType::NOP>& subject) {
     struct io_uring_sqe* sqe = io_uring_get_sqe(&ring_);
     if (!sqe) {
         return false;
@@ -118,11 +117,38 @@ bool slag::IOURingReactor::prepare_submission<slag::OperationType::NOP>(SubmitSu
     io_uring_prep_nop(sqe);
     io_uring_sqe_set_data(sqe, &subject.operation);
 
+    handle_operation_event(subject.operation, OperationEvent::SUBMISSION);
+    return true;
+}
+
+template<>
+bool slag::IOURingReactor::prepare_submission<slag::OperationType::ASSIGN>(Subject<OperationType::ASSIGN>& subject) {
+    struct io_uring_sqe* sqe = io_uring_get_sqe(&ring_);
+    if (!sqe) {
+        return false;
+    }
+
+    FileDescriptor& source_file_descriptor = subject.operation_parameters.file_descriptor;
+    FileDescriptor& target_file_descriptor = subject.resource_context.file_descriptor();
+
+    int64_t result = 0;
+    if (!source_file_descriptor.is_open()) {
+        result = -EINVAL;
+    }
+    else if (target_file_descriptor.is_open()) {
+        result = -EINVAL;
+    }
+    else {
+        target_file_descriptor = std::move(source_file_descriptor);
+    }
+
+    handle_operation_event(subject.operation, OperationEvent::SUBMISSION);
+    process_completion(subject, result);
     return true;
 }
 
 template<slag::OperationType operation_type>
-bool slag::IOURingReactor::prepare_cancel_submission(SubmitSubject<operation_type>& subject) {
+bool slag::IOURingReactor::prepare_cancel_submission(Subject<operation_type>& subject) {
     struct io_uring_sqe* sqe = io_uring_get_sqe(&ring_);
     if (!sqe) {
         return false;
@@ -130,6 +156,7 @@ bool slag::IOURingReactor::prepare_cancel_submission(SubmitSubject<operation_typ
 
     io_uring_prep_cancel(sqe, &subject.operation, 0);
 
+    handle_operation_event(subject.operation, OperationEvent::SUBMISSION);
     return true;
 }
 
@@ -148,7 +175,13 @@ void slag::IOURingReactor::process_completions() {
             struct io_uring_cqe* cqe = cqes[i];
             Operation* operation = reinterpret_cast<Operation*>(cqe->user_data);
             operation->visit_parameters([&]<OperationType operation_type>(OperationParameters<operation_type>& operation_parameters) {
-                process_operation_completion(*operation, operation_parameters, cqe->res);
+                Subject subject = {
+                    .resource_context     = static_cast<IOURingResourceContext&>(operation->resource_context()),
+                    .operation            = *operation,
+                    .operation_parameters = operation_parameters,
+                };
+
+                process_completion(subject, cqe->res);
             });
         }
 
@@ -173,18 +206,16 @@ void slag::IOURingReactor::process_completions() {
 }
 
 template<slag::OperationType operation_type>
-void slag::IOURingReactor::process_operation_completion(Operation& operation, OperationParameters<operation_type>& operation_parameters, int64_t result) {
-    (void)operation_parameters;
-
-    complete_operation(operation, result);
+void slag::IOURingReactor::process_completion(Subject<operation_type>& subject, int64_t result) {
+    complete_operation(subject.operation, result);
 }
 
 template<>
-void slag::IOURingReactor::process_operation_completion<slag::OperationType::ACCEPT>(Operation& operation, OperationParameters<OperationType::ACCEPT>& operation_parameters, int64_t result) {
+void slag::IOURingReactor::process_completion<slag::OperationType::ACCEPT>(Subject<OperationType::ACCEPT>& subject, int64_t result) {
     if (result >= 0) {
-        operation_parameters.file_descriptor = FileDescriptor{static_cast<int>(result)};
+        subject.operation_parameters.file_descriptor = FileDescriptor{static_cast<int>(result)};
         result = 0;
     }
 
-    complete_operation(operation, result);
+    complete_operation(subject.operation, result);
 }
