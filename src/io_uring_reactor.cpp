@@ -50,102 +50,87 @@ void slag::IOURingReactor::deallocate_resource_context(ResourceContext& resource
 }
 
 void slag::IOURingReactor::process_submissions() {
-    size_t submission_count = 0;
-    bool busy = false;
-    {
-        auto cursor = deferred_submit_operation_actions();
-        ResourceContext* resource_context = nullptr;
-        while (!busy && (resource_context = cursor.next())) {
-            auto&& operations = resource_context->operations();
-            size_t operation_count = operations.size();
-            for (size_t operation_index = 0; operation_index < operation_count; ++operation_index) {
-                Operation* operation = resource_context->operations()[operation_index];
-                if (operation->action() != OperationAction::SUBMIT) {
-                    continue;
-                }
+    size_t prepared_submission_count = 0;
+    bool ok = true;
 
-                struct io_uring_sqe* sqe = io_uring_get_sqe(&ring_);
-                if (!sqe) {
-                    busy = true;
-                    break;
-                }
-
-                operation->visit_parameters([&]<OperationType operation_type>(OperationParameters<operation_type>& operation_parameters) {
-                    submit_operation(*sqe, *operation, operation_parameters);
-                });
-
-                handle_operation_event(*operation, OperationEvent::SUBMISSION);
-                ++submission_count;
+    auto cursor = deferred_submit_operation_actions();
+    while (ResourceContext* resource_context = cursor.next()) {
+        auto&& operations = resource_context->operations();
+        size_t operation_count = operations.size();
+        for (size_t operation_index = 0; operation_index < operation_count; ++operation_index) {
+            Operation& operation = *operations[operation_index];
+            if (operation.action() != OperationAction::SUBMIT) {
+                continue;
             }
+
+            operation.visit_parameters([&]<OperationType operation_type>(OperationParameters<operation_type>& operation_parameters) {
+                SubmitSubject submit_subject = {
+                    .resource_context     = static_cast<IOURingResourceContext&>(*resource_context),
+                    .operation            = operation,
+                    .operation_parameters = operation_parameters,
+                };
+
+                switch (operation.state()) {
+                    case OperationState::SPOOLED: {
+                        ok = prepare_submission(submit_subject);
+                        break;
+                    }
+                    case OperationState::CANCEL_SPOOLED: {
+                        ok = prepare_cancel_submission(submit_subject);
+                        break;
+                    }
+                    default: {
+                        abort();
+                    }
+                }
+            });
+            if (!ok) {
+                break;
+            }
+
+            handle_operation_event(operation, OperationEvent::SUBMISSION);
+            ++prepared_submission_count;
+        }
+        if (!ok) {
+            break;
         }
     }
 
-    if (submission_count > 0) {
+    if (prepared_submission_count > 0) {
         io_uring_submit(&ring_);
     }
 }
 
 template<slag::OperationType operation_type>
-void slag::IOURingReactor::submit_operation(struct io_uring_sqe& sqe, Operation& operation, OperationParameters<operation_type>& operation_parameters) {
-    (void)sqe;
-    (void)operation;
-    (void)operation_parameters;
+bool slag::IOURingReactor::prepare_submission(SubmitSubject<operation_type>& subject) {
+    (void)subject;
 
     abort();
 }
 
 template<>
-void slag::IOURingReactor::submit_operation<slag::OperationType::NOP>(struct io_uring_sqe& sqe, Operation& operation, OperationParameters<OperationType::NOP>& operation_parameters) {
-    (void)operation_parameters;
+bool slag::IOURingReactor::prepare_submission<slag::OperationType::NOP>(SubmitSubject<OperationType::NOP>& subject) {
+    struct io_uring_sqe* sqe = io_uring_get_sqe(&ring_);
+    if (!sqe) {
+        return false;
+    }
 
-    io_uring_prep_nop(&sqe);
-    io_uring_sqe_set_data(&sqe, &operation);
+    io_uring_prep_nop(sqe);
+    io_uring_sqe_set_data(sqe, &subject.operation);
+
+    return true;
 }
 
-template<>
-void slag::IOURingReactor::submit_operation<slag::OperationType::ASSIGN>(struct io_uring_sqe& sqe, Operation& operation, OperationParameters<OperationType::ASSIGN>& operation_parameters) {
-    (void)sqe;
-    (void)operation;
-    (void)operation_parameters;
-}
+template<slag::OperationType operation_type>
+bool slag::IOURingReactor::prepare_cancel_submission(SubmitSubject<operation_type>& subject) {
+    struct io_uring_sqe* sqe = io_uring_get_sqe(&ring_);
+    if (!sqe) {
+        return false;
+    }
 
-template<>
-void slag::IOURingReactor::submit_operation<slag::OperationType::CLOSE>(struct io_uring_sqe& sqe, Operation& operation, OperationParameters<OperationType::CLOSE>& operation_parameters) {
-    (void)sqe;
-    (void)operation;
-    (void)operation_parameters;
-}
+    io_uring_prep_cancel(sqe, &subject.operation, 0);
 
-template<>
-void slag::IOURingReactor::submit_operation<slag::OperationType::CONNECT>(struct io_uring_sqe& sqe, Operation& operation, OperationParameters<OperationType::CONNECT>& operation_parameters) {
-    (void)sqe;
-    (void)operation;
-    (void)operation_parameters;
-}
-
-template<>
-void slag::IOURingReactor::submit_operation<slag::OperationType::ACCEPT>(struct io_uring_sqe& sqe, Operation& operation, OperationParameters<OperationType::ACCEPT>& operation_parameters) {
-    (void)sqe;
-    (void)operation;
-    (void)operation_parameters;
-}
-
-template<>
-void slag::IOURingReactor::submit_operation<slag::OperationType::SEND>(struct io_uring_sqe& sqe, Operation& operation, OperationParameters<OperationType::SEND>& operation_parameters) {
-    (void)sqe;
-    (void)operation;
-    (void)operation_parameters;
-}
-
-template<>
-void slag::IOURingReactor::submit_operation<slag::OperationType::RECEIVE>(struct io_uring_sqe& sqe, Operation& operation, OperationParameters<OperationType::RECEIVE>& operation_parameters) {
-    (void)sqe;
-    (void)operation;
-    (void)operation_parameters;
-}
-
-void slag::IOURingReactor::submit_cancel(struct io_uring_sqe& sqe, Operation& operation) {
-    io_uring_prep_cancel(&sqe, &operation, 0);
+    return true;
 }
 
 void slag::IOURingReactor::process_completions() {

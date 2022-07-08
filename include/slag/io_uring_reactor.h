@@ -24,11 +24,20 @@ namespace slag {
         void deallocate_resource_context(ResourceContext& resource_context) override;
 
     private:
+        template<OperationType operation_type>
+        struct SubmitSubject {
+            IOURingResourceContext&              resource_context;
+            Operation&                           operation;
+            OperationParameters<operation_type>& operation_parameters;
+        };
+
         void process_submissions();
 
         template<OperationType operation_type>
-        void submit_operation(struct io_uring_sqe& sqe, Operation& operation, OperationParameters<operation_type>& operation_parameters);
-        void submit_cancel(struct io_uring_sqe& sqe, Operation& operation);
+        bool prepare_submission(SubmitSubject<operation_type>& submit_subject);
+
+        template<OperationType operation_type>
+        bool prepare_cancel_submission(SubmitSubject<operation_type>& submit_subject);
 
     private:
         void process_completions();
