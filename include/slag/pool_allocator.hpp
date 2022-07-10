@@ -2,8 +2,8 @@
 #include <tuple>
 
 template<typename T>
-slag::PoolAllocator<T>::PoolAllocator(size_t capacity) {
-    while (unused_storage_.size() < capacity) {
+slag::PoolAllocator<T>::PoolAllocator(size_t initial_capacity) {
+    while (unused_storage_.size() < initial_capacity) {
         allocate_block();
     }
 }

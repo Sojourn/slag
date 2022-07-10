@@ -12,7 +12,7 @@ namespace slag {
     template<typename T>
     class PoolAllocator {
     public:
-        PoolAllocator(size_t capacity);
+        PoolAllocator(size_t initial_capacity = 0);
         PoolAllocator(PoolAllocator&&) noexcept = delete;
         PoolAllocator(const PoolAllocator&) = delete;
         ~PoolAllocator();

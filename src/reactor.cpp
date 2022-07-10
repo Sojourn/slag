@@ -193,7 +193,7 @@ void slag::Reactor::garbage_collect(ResourceContext& resource_context) {
 void slag::Reactor::garbage_collect(std::vector<Operation*>& operations) {
     for (Operation*& operation: operations) {
         if (operation->action() == OperationAction::REMOVE) {
-            delete operation;
+            operation_allocator_.deallocate(*operation);
             operation = nullptr;
         }
     }

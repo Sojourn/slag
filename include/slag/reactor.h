@@ -72,10 +72,10 @@ namespace slag {
 
     template<OperationType operation_type>
     inline Operation& Reactor::start_operation(ResourceContext& resource_context, void* user_data, OperationParameters<operation_type> operation_parameters) {
-        Operation* operation = new Operation{resource_context, user_data, std::move(operation_parameters)};
-        resource_context.operations().push_back(operation);
-        defer_operation_action(*operation, operation->action()); // defer submission
-        return *operation;
+        Operation& operation = operation_allocator_.allocate(resource_context, user_data, std::move(operation_parameters));
+        resource_context.operations().push_back(&operation);
+        defer_operation_action(operation, operation.action()); // defer submission
+        return operation;
     }
 
 }
