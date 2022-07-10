@@ -100,6 +100,27 @@ slag::ResourceContextIndex::Cursor slag::Reactor::deferred_notify_operation_acti
     return notify_resource_context_index_.select();
 }
 
+void slag::Reactor::notify() {
+    auto cursor = deferred_notify_operation_actions();
+    while (ResourceContext* resource_context = cursor.next()) {
+        size_t operation_count = resource_context->operations().size();
+        for (size_t operation_index = 0; operation_index < operation_count; ++operation_index) {
+            Operation* operation = resource_context->operations()[operation_index];
+            if (operation->action() != OperationAction::NOTIFY) {
+                continue;
+            }
+
+            handle_operation_event(*operation, OperationEvent::NOTIFICATION);
+            if (operation->test_flag(OperationFlag::INTERNAL)) {
+                handle_internal_operation_complete(*operation);
+            }
+            else if (resource_context->has_resource()) {
+                resource_context->resource().handle_operation_complete(*operation);
+            }
+        }
+    }
+}
+
 void slag::Reactor::startup() {
     info(
         "Reactor/{} startup beginning"

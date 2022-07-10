@@ -49,6 +49,10 @@ void slag::IOURingReactor::deallocate_resource_context(ResourceContext& resource
     );
 }
 
+void slag::IOURingReactor::handle_internal_operation_complete(Operation& operation) {
+    assert(operation.success());
+}
+
 void slag::IOURingReactor::process_submissions() {
     size_t prepared_submission_count = 0;
     bool ok = true;
@@ -156,6 +160,22 @@ bool slag::IOURingReactor::prepare_submission<slag::OperationType::ASSIGN>(Subje
     return true;
 }
 
+template<>
+bool slag::IOURingReactor::prepare_submission<slag::OperationType::CLOSE>(Subject<OperationType::CLOSE>& subject) {
+    FileDescriptor& file_descriptor = subject.resource_context.file_descriptor();
+
+    struct io_uring_sqe* sqe = io_uring_get_sqe(&ring_);
+    if (!sqe) {
+        return false;
+    }
+
+    io_uring_prep_close(sqe, file_descriptor.release());
+    io_uring_sqe_set_data(sqe, &subject.operation);
+
+    handle_operation_event(subject.operation, OperationEvent::SUBMISSION);
+    return true;
+}
+
 template<slag::OperationType operation_type>
 bool slag::IOURingReactor::prepare_cancel_submission(Subject<operation_type>& subject) {
     struct io_uring_sqe* sqe = io_uring_get_sqe(&ring_);
@@ -197,21 +217,7 @@ void slag::IOURingReactor::process_completions() {
         io_uring_cq_advance(&ring_, static_cast<unsigned>(count));
     }
 
-    auto cursor = deferred_notify_operation_actions();
-    while (ResourceContext* resource_context = cursor.next()) {
-        size_t operation_count = resource_context->operations().size();
-        for (size_t operation_index = 0; operation_index < operation_count; ++operation_index) {
-            Operation* operation = resource_context->operations()[operation_index];
-            if (operation->action() != OperationAction::NOTIFY) {
-                continue;
-            }
-
-            handle_operation_event(*operation, OperationEvent::NOTIFICATION);
-            if (resource_context->has_resource()) {
-                resource_context->resource().handle_operation_complete(*operation);
-            }
-        }
-    }
+    notify();
 }
 
 template<slag::OperationType operation_type>

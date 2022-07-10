@@ -23,6 +23,8 @@ namespace slag {
         void cleanup_resource_context(ResourceContext& resource_context) override;
         void deallocate_resource_context(ResourceContext& resource_context) override;
 
+        void handle_internal_operation_complete(Operation& operation) override;
+
     private:
         template<OperationType operation_type>
         struct Subject {

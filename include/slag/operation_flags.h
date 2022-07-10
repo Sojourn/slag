@@ -6,7 +6,8 @@
 #include <cstdint>
 
 #define SLAG_OPERATION_FLAGS(X) \
-    X(BARRIER)
+    X(BARRIER)                  \
+    X(INTERNAL)
 
 namespace slag {
 
