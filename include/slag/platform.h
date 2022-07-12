@@ -10,13 +10,20 @@ namespace slag {
 
     class Platform {
     public:
-        virtual ~Platform() = default;
+        Platform() = default;
+        Platform(Platform&&) noexcept = delete;
+        Platform(const Platform&) = delete;
+        ~Platform() = default;
 
-        virtual [[nodiscard]] int get_process_id();
-        virtual [[nodiscard]] int get_thread_id();
-        virtual [[nodiscard]] int open(const char* file_path, int flags, mode_t mode = 0644);
-        virtual [[nodiscard]] int close(int file_descriptor);
-        virtual [[nodiscard]] int duplicate(int file_descriptor);
+        Platform& operator=(Platform&&) noexcept = delete;
+        Platform& operator=(const Platform&) = delete;
+
+        [[nodiscard]] int get_parent_process_id();
+        [[nodiscard]] int get_process_id();
+        [[nodiscard]] int get_thread_id();
+        [[nodiscard]] int open(const char* file_path, int flags, mode_t mode = 0644);
+        [[nodiscard]] int close(int file_descriptor);
+        [[nodiscard]] int duplicate(int file_descriptor);
     };
 
 }

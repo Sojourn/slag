@@ -1,4 +1,5 @@
 #include "slag/file_descriptor.h"
+#include "slag/event_loop.h"
 #include "slag/util.h"
 #include <utility>
 #include <cerrno>
@@ -44,7 +45,7 @@ bool slag::FileDescriptor::is_open() const {
 
 void slag::FileDescriptor::close() {
     if (is_open()) {
-        int result = ::close(release());
+        int result = local_event_loop().platform().close(release());
         assert(result >= 0);
     }
 }
@@ -66,11 +67,7 @@ slag::FileDescriptor slag::FileDescriptor::duplicate(int file_descriptor) {
         return FileDescriptor{};
     }
 
-    int new_file_descriptor = -1;
-    do {
-        new_file_descriptor = ::dup(file_descriptor);
-    } while ((new_file_descriptor < 0) && (errno == EINTR || errno == EBUSY));
-
+    int new_file_descriptor = local_event_loop().platform().duplicate(file_descriptor);
     if (new_file_descriptor < 0) {
         raise_system_error("Failed to duplicate file descriptor");
     }

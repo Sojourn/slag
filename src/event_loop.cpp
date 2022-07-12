@@ -7,7 +7,8 @@ namespace slag {
 }
 
 slag::EventLoop::EventLoop(std::unique_ptr<Reactor> reactor)
-    : reactor_{std::move(reactor)}
+    : platform_{std::make_unique<Platform>()}
+    , reactor_{std::move(reactor)}
     , running_{false}
 {
     if (local_event_loop_) {
@@ -38,11 +39,11 @@ void slag::EventLoop::stop() {
     running_ = false;
 }
 
-slag::Reactor& slag::EventLoop::reactor() {
-    return *reactor_;
+slag::Platform& slag::EventLoop::platform() {
+    return *platform_;
 }
 
-const slag::Reactor& slag::EventLoop::reactor() const {
+slag::Reactor& slag::EventLoop::reactor() {
     return *reactor_;
 }
 

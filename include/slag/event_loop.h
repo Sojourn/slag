@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include "slag/platform.h"
 #include "slag/reactor.h"
 
 namespace slag {
@@ -18,12 +19,13 @@ namespace slag {
         void run();
         void stop();
 
+        [[nodiscard]] Platform& platform();
         [[nodiscard]] Reactor& reactor();
-        [[nodiscard]] const Reactor& reactor() const;
 
     private:
-        std::unique_ptr<Reactor> reactor_;
-        bool                     running_;
+        std::unique_ptr<Platform> platform_;
+        std::unique_ptr<Reactor>  reactor_;
+        bool                      running_;
     };
 
     [[nodiscard]] EventLoop& local_event_loop();

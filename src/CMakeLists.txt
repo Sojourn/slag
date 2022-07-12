@@ -10,6 +10,7 @@ set(SLAG_SOURCE_FILES
     io_uring_reactor.cpp
     io_uring_resource_context.cpp
     event_loop.cpp
+    platform.cpp
     file_descriptor.cpp
     address.cpp
     util.cpp
