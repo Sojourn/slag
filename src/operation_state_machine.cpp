@@ -3,10 +3,8 @@
 #include <cstdlib>
 #include <cassert>
 
-static_assert(slag::OPERATION_STATE_COUNT == 7, "Update operation transitions and actions");
-static_assert(slag::OPERATION_EVENT_COUNT == 4, "Update operation transitions");
-
-// TODO: add support for multishot modes and waiting for cancels to complete
+static_assert(slag::OPERATION_STATE_COUNT == 5, "Update operation transitions and actions");
+static_assert(slag::OPERATION_EVENT_COUNT == 3, "Update operation transitions");
 
 const slag::OperationState slag::operation_transitions[slag::OPERATION_STATE_COUNT][slag::OPERATION_EVENT_COUNT] = {
     // SPOOLED
@@ -14,57 +12,36 @@ const slag::OperationState slag::operation_transitions[slag::OPERATION_STATE_COU
         slag::OperationState::WORKING,        // SUBMISSION
         slag::OperationState::INVALID,        // COMPLETION
         slag::OperationState::INVALID,        // NOTIFICATION
-        slag::OperationState::COMPLETE,       // CANCEL
     },
     // WORKING
     {
         slag::OperationState::INVALID,        // SUBMISSION
         slag::OperationState::COMPLETE,       // COMPLETION
         slag::OperationState::INVALID,        // NOTIFICATION
-        slag::OperationState::CANCEL_SPOOLED, // CANCEL
-    },
-    // CANCEL_SPOOLED
-    {
-        slag::OperationState::CANCEL_WORKING, // SUBMISSION
-        slag::OperationState::COMPLETE,       // COMPLETION
-        slag::OperationState::INVALID,        // NOTIFICATION
-        slag::OperationState::CANCEL_SPOOLED, // CANCEL
-    },
-    // CANCEL_WORKING
-    {
-        slag::OperationState::INVALID,        // SUBMISSION
-        slag::OperationState::COMPLETE,       // COMPLETION
-        slag::OperationState::INVALID,        // NOTIFICATION
-        slag::OperationState::CANCEL_WORKING, // CANCEL
     },
     // COMPLETE
     {
         slag::OperationState::INVALID,        // SUBMISSION
         slag::OperationState::INVALID,        // COMPLETION
         slag::OperationState::TERMINAL,       // NOTIFICATION
-        slag::OperationState::COMPLETE,       // CANCEL
     },
     // TERMINAL
     {
         slag::OperationState::INVALID,        // SUBMISSION
         slag::OperationState::INVALID,        // COMPLETION
         slag::OperationState::INVALID,        // NOTIFICATION
-        slag::OperationState::INVALID,        // CANCEL
     },
     // INVALID
     {
         slag::OperationState::INVALID,        // SUBMISSION
         slag::OperationState::INVALID,        // COMPLETION
         slag::OperationState::INVALID,        // NOTIFICATION
-        slag::OperationState::INVALID,        // CANCEL
     },
 };
 
 const slag::OperationAction slag::operation_actions[OPERATION_STATE_COUNT]  = {
     slag::OperationAction::SUBMIT, // SPOOLED
     slag::OperationAction::WAIT,   // WORKING
-    slag::OperationAction::SUBMIT, // CANCEL_SPOOLED
-    slag::OperationAction::WAIT,   // CANCEL_WORKING
     slag::OperationAction::NOTIFY, // COMPLETE
     slag::OperationAction::REMOVE, // TERMINAL
     slag::OperationAction::PANIC,  // INVALID

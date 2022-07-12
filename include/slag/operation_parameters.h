@@ -7,11 +7,18 @@
 
 namespace slag {
 
+    class Operation;
+
     template<OperationType operation_type>
     struct OperationParameters;
 
     template<>
     struct OperationParameters<OperationType::NOP> {
+    };
+
+    template<>
+    struct OperationParameters<OperationType::CANCEL> {
+        Operation* target_operation; // the operation we are trying to cancel
     };
 
     template<>

@@ -6,8 +6,6 @@
 #define SLAG_OPERATION_STATES(X) \
     X(SPOOLED)                   \
     X(WORKING)                   \
-    X(CANCEL_SPOOLED)            \
-    X(CANCEL_WORKING)            \
     X(COMPLETE)                  \
     X(TERMINAL)                  \
     X(INVALID)
@@ -15,8 +13,7 @@
 #define SLAG_OPERATION_EVENTS(X) \
     X(SUBMISSION)                \
     X(COMPLETION)                \
-    X(NOTIFICATION)              \
-    X(CANCEL)
+    X(NOTIFICATION)
 
 #define SLAG_OPERATION_ACTIONS(X) \
     X(WAIT)                       \

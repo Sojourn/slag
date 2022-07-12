@@ -250,11 +250,20 @@ void slag::Reactor::detach_resource(Resource& resource) {
 }
 
 void slag::Reactor::cancel_operation(Operation& operation) {
+    assert(operation.type() != OperationType::CANCEL);
     if (operation.state() == OperationState::TERMINAL) {
         return; // this operation is doomed anyways
     }
+    if (operation.test_flag(OperationFlag::CANCELING)) {
+        return; // the operation is already being canceled
+    }
 
-    handle_operation_event(operation, OperationEvent::CANCEL);
+    Operation& cancel_operation = start_operation(operation.resource_context(), nullptr, OperationParameters<OperationType::CANCEL> {
+        .target_operation = &operation,
+    });
+
+    cancel_operation.set_flag(OperationFlag::INTERNAL);
+    operation.set_flag(OperationFlag::CANCELING);
 }
 
 slag::Reactor& slag::local_reactor() {

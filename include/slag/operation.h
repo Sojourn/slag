@@ -53,10 +53,11 @@ namespace slag {
         friend class Reactor;
 
         [[nodiscard]] OperationStateMachine& state_machine();
+        [[nodiscard]] bool is_referenced() const;
+
         void set_flag(OperationFlag flag);
         void set_flags(std::initializer_list<OperationFlag> flags);
         void set_result(int64_t result);
-
 
     private:
         ResourceContext&      resource_context_;

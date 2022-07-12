@@ -62,6 +62,13 @@ slag::OperationStateMachine& slag::Operation::state_machine() {
     return state_machine_;
 }
 
+bool slag::Operation::is_referenced() const {
+    bool referenced = false;
+    referenced |= (state() != OperationState::TERMINAL);
+    referenced |= test_flag(OperationFlag::CANCELING);
+    return referenced;
+}
+
 void slag::Operation::set_flag(OperationFlag flag) {
     flags_.set(to_index(flag));
 }

@@ -5,6 +5,7 @@
 
 #define SLAG_OPERATION_TYPES(X) \
     X(NOP)                      \
+    X(CANCEL)                   \
     X(ASSIGN)                   \
     X(CLOSE)                    \
     X(CONNECT)                  \

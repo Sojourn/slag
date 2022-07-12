@@ -7,7 +7,8 @@
 
 #define SLAG_OPERATION_FLAGS(X) \
     X(BARRIER)                  \
-    X(INTERNAL)
+    X(INTERNAL)                 \
+    X(CANCELING)
 
 namespace slag {
 

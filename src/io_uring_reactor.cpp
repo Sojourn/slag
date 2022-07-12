@@ -79,19 +79,7 @@ void slag::IOURingReactor::process_submissions() {
                     .operation_parameters = operation_parameters,
                 };
 
-                switch (operation.state()) {
-                    case OperationState::SPOOLED: {
-                        ok = prepare_submission(subject);
-                        break;
-                    }
-                    case OperationState::CANCEL_SPOOLED: {
-                        ok = prepare_cancel_submission(subject);
-                        break;
-                    }
-                    default: {
-                        abort();
-                    }
-                }
+                ok = prepare_submission(subject);
             });
             if (!ok) {
                 break;
