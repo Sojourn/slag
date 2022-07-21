@@ -1,6 +1,9 @@
 #pragma once
 
+#include <vector>
 #include <algorithm>
+#include <cstddef>
+#include <cstdint>
 #include "slag/platform.h"
 #include "slag/operation_types.h"
 #include "slag/file_descriptor.h"
@@ -45,10 +48,12 @@ namespace slag {
 
     template<>
     struct OperationParameters<OperationType::SEND> {
+        std::vector<std::byte> buffer; // TEMP TEMP TEMP
     };
 
     template<>
     struct OperationParameters<OperationType::RECEIVE> {
+        std::vector<std::byte> buffer; // TEMP TEMP TEMP
     };
 
     constexpr size_t max_operation_parameters_size() {
