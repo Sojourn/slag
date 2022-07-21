@@ -122,6 +122,20 @@ bool slag::IOURingReactor::prepare_submission<slag::OperationType::NOP>(Subject<
     return true;
 }
 
+template<slag::OperationType operation_type>
+bool slag::IOURingReactor::prepare_cancel_submission(Subject<operation_type>& subject) {
+    struct io_uring_sqe* sqe = io_uring_get_sqe(&ring_);
+    if (!sqe) {
+        return false;
+    }
+
+    io_uring_prep_cancel(sqe, subject.operation_parameters.target_operation, 0);
+    io_uring_sqe_set_data(sqe, &subject.operation);
+
+    handle_operation_event(subject.operation, OperationEvent::SUBMISSION);
+    return true;
+}
+
 template<>
 bool slag::IOURingReactor::prepare_submission<slag::OperationType::ASSIGN>(Subject<OperationType::ASSIGN>& subject) {
     struct io_uring_sqe* sqe = io_uring_get_sqe(&ring_);
@@ -164,14 +178,49 @@ bool slag::IOURingReactor::prepare_submission<slag::OperationType::CLOSE>(Subjec
     return true;
 }
 
-template<slag::OperationType operation_type>
-bool slag::IOURingReactor::prepare_cancel_submission(Subject<operation_type>& subject) {
+template<>
+bool slag::IOURingReactor::prepare_submission<slag::OperationType::CONNECT>(Subject<OperationType::CONNECT>& subject) {
+    FileDescriptor& file_descriptor = subject.resource_context.file_descriptor();
+
+    auto&& [
+        address
+    ] = subject.operation_parameters;
+
     struct io_uring_sqe* sqe = io_uring_get_sqe(&ring_);
     if (!sqe) {
         return false;
     }
 
-    io_uring_prep_cancel(sqe, &subject.operation, 0);
+    io_uring_prep_connect(sqe, file_descriptor.borrow(), &address.addr(), address.size());
+    io_uring_sqe_set_data(sqe, &subject.operation);
+
+    handle_operation_event(subject.operation, OperationEvent::SUBMISSION);
+    return true;
+}
+
+template<>
+bool slag::IOURingReactor::prepare_submission<slag::OperationType::ACCEPT>(Subject<OperationType::ACCEPT>& subject) {
+    FileDescriptor& file_descriptor = subject.resource_context.file_descriptor();
+
+    auto&& [
+        _,
+        address_storage,
+        address_length
+    ] = subject.operation_parameters;
+
+    struct io_uring_sqe* sqe = io_uring_get_sqe(&ring_);
+    if (!sqe) {
+        return false;
+    }
+
+    io_uring_prep_accept(
+        sqe,
+        file_descriptor.borrow(),
+        reinterpret_cast<struct sockaddr*>(&address_storage),
+        &address_length,
+        SOCK_CLOEXEC
+    );
+    io_uring_sqe_set_data(sqe, &subject.operation);
 
     handle_operation_event(subject.operation, OperationEvent::SUBMISSION);
     return true;

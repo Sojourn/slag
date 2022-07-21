@@ -3,28 +3,23 @@
 #include <cstring>
 #include <cassert>
 
-slag::Address::Address(const struct sockaddr& address) {
-    switch (address.sa_family) {
-        case AF_INET: {
-            memcpy(&storage_, &address, sizeof(struct sockaddr_in));
-            break;
-        }
-        case AF_INET6: {
-            memcpy(&storage_, &address, sizeof(struct sockaddr_in6));
-            break;
-        }
-        default: {
-            abort();
-        }
-    }
+slag::Address::Address() {
+    memset(this, 0, sizeof(*this));
 }
 
-slag::Address::Address(const struct sockaddr_in& address) {
-    memcpy(&storage_, &address, sizeof(address));
+slag::Address::Address(const struct sockaddr& address, socklen_t size) {
+    assert(size <= sizeof(storage_));
+    memcpy(&storage_, &address, size);
 }
 
-slag::Address::Address(const struct sockaddr_in6& address) {
-    memcpy(&storage_, &address, sizeof(address));
+slag::Address::Address(const struct sockaddr_in& address)
+    : Address(reinterpret_cast<const struct sockaddr&>(address), sizeof(address))
+{
+}
+
+slag::Address::Address(const struct sockaddr_in6& address)
+    : Address(reinterpret_cast<const struct sockaddr&>(address), sizeof(address))
+{
 }
 
 slag::Address::Address(const Address& other) {
@@ -52,7 +47,7 @@ socklen_t slag::Address::size() const {
             return sizeof(struct sockaddr_in6);
         }
         default: {
-            abort();
+            return sizeof(storage_);
         }
     }
 }

@@ -50,3 +50,12 @@ int slag::Platform::duplicate(int file_descriptor) {
 
     return result;
 }
+
+int slag::Platform::socket(int domain, int type, int protocol) {
+    int result = 0;
+    do {
+        result = ::socket(domain, type, protocol);
+    } while ((result < 0) && (errno == EINTR));
+
+    return result;
+}

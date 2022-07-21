@@ -2,8 +2,11 @@
 
 #include <cstdint>
 #include <cstddef>
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
 #include <fcntl.h>
 
 namespace slag {
@@ -24,6 +27,7 @@ namespace slag {
         [[nodiscard]] int open(const char* file_path, int flags, mode_t mode = 0644);
         [[nodiscard]] int close(int file_descriptor);
         [[nodiscard]] int duplicate(int file_descriptor);
+        [[nodiscard]] int socket(int domain, int type, int protocol = 0);
     };
 
 }

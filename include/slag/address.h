@@ -1,15 +1,13 @@
 #pragma once
 
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netinet/ip.h>
+#include "slag/platform.h"
 
 namespace slag {
 
     class Address {
     public:
-        explicit Address(const struct sockaddr& address);
+        Address();
+        explicit Address(const struct sockaddr& address, socklen_t size);
         explicit Address(const struct sockaddr_in& address);
         explicit Address(const struct sockaddr_in6& address);
         Address(const Address& other);

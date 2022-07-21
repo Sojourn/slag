@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include "slag/platform.h"
 #include "slag/operation_types.h"
 #include "slag/file_descriptor.h"
 #include "slag/address.h"
@@ -37,7 +38,9 @@ namespace slag {
 
     template<>
     struct OperationParameters<OperationType::ACCEPT> {
-        FileDescriptor file_descriptor; // out
+        FileDescriptor          file_descriptor; // out
+        struct sockaddr_storage address_storage; // out
+        socklen_t               address_length;  // out
     };
 
     template<>
