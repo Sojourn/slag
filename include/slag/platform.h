@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include <cstdint>
@@ -28,6 +29,8 @@ namespace slag {
         [[nodiscard]] int close(int file_descriptor);
         [[nodiscard]] int duplicate(int file_descriptor);
         [[nodiscard]] int socket(int domain, int type, int protocol = 0);
+        [[nodiscard]] int bind(int file_descriptor, const struct sockaddr* address, socklen_t address_length);
+        [[nodiscard]] int listen(int file_descriptor, int backlog = 4096);
     };
 
 }
