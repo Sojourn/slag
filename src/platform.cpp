@@ -60,6 +60,15 @@ int slag::Platform::socket(int domain, int type, int protocol) {
     return result;
 }
 
+int slag::Platform::socketpair(int domain, int type, int protocol, int (&file_descriptors)[2]) {
+    int result = 0;
+    do {
+        result = ::socketpair(domain, type, protocol, file_descriptors);
+    } while ((result < 0) && (errno == EINTR));
+
+    return result;
+}
+
 int slag::Platform::bind(int file_descriptor, const struct sockaddr* address, socklen_t address_length) {
     int result = 0;
     do {
