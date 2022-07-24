@@ -15,7 +15,7 @@ public:
 TEST_CASE("io_uring reactor startup and shutdown", "[IOURingReactor]") {
     EventLoop event_loop{std::make_unique<IOURingReactor>()};
 
-    SECTION("cancel working") {
+    SECTION("nop") {
         TestResource resource;
         (void)resource.start_nop_operation(nullptr);
 

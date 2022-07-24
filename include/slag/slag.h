@@ -1,5 +1,6 @@
 #pragma once
 
+#include "event.h"
 #include "event_loop.h"
 #include "operation.h"
 #include "resource.h"

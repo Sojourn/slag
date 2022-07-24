@@ -1,6 +1,7 @@
 add_executable(unit_test
         catch.hpp
         unit_test.cpp
+        ut_event.cpp
         ut_operation_state_machine.cpp
         ut_io_uring_reactor.cpp
         )
