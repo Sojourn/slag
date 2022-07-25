@@ -11,6 +11,7 @@ set(SLAG_SOURCE_FILES
     io_uring_resource_context.cpp
     event.cpp
     event_loop.cpp
+    # task.cpp
     platform.cpp
     file_descriptor.cpp
     address.cpp
@@ -32,9 +33,12 @@ set(SLAG_HEADER_FILES
     ../include/slag/io_uring_resource_context.h
     ../include/slag/event.h
     ../include/slag/event_loop.h
+    # ../include/slag/task.h
     ../include/slag/platform.h
     ../include/slag/file_descriptor.h
     ../include/slag/address.h
+    ../include/slag/tagged_pointer.h
+    ../include/slag/tagged_pointer.hpp
     ../include/slag/pool_allocator.h
     ../include/slag/pool_allocator.hpp
     ../include/slag/logging.h

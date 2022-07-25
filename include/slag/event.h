@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include "slag/tagged_pointer.h"
 
 namespace slag {
 
@@ -31,9 +32,12 @@ namespace slag {
         [[nodiscard]] EventWaits::iterator find_wait(Event& event);
 
     private:
-         EventWaits event_waits_;
+         EventWaits event_waits_; // intrusive list?
     };
 
+    // TODO: Think about making an EventBase which can be waited on,
+    //       but doesn't expose Event::set/reset.
+    //
     class Event {
         friend class EventObserver;
 
