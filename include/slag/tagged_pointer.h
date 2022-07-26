@@ -29,8 +29,9 @@ namespace slag {
         [[nodiscard]] const T* operator->() const;
         [[nodiscard]] T& operator*();
         [[nodiscard]] const T& operator*() const;
+        [[nodiscard]] bool operator==(const T* rhs) const;
+        [[nodiscard]] bool operator!=(const T* rhs) const;
 
-        // NOTE: this only takes the pointer into account
         explicit operator bool() const {
             return static_cast<bool>(pointer());
         }

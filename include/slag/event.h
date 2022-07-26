@@ -55,9 +55,7 @@ namespace slag {
         void reset();
 
     private:
-        // TODO: encode this as a tagged pointer instead
-        EventObserver* observer_;
-        bool           is_set_;
+        tagged_pointer<EventObserver, 1> tagged_observer_pointer_;
     };
 
 }

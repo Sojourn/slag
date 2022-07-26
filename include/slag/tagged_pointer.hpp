@@ -68,3 +68,13 @@ inline const T& slag::tagged_pointer<T, tag_bits>::operator*() const {
     assert(*this);
     return *pointer();
 }
+
+template<typename T, size_t tag_bits>
+inline bool slag::tagged_pointer<T, tag_bits>::operator==(const T* rhs) const {
+    return pointer() == rhs;
+}
+
+template<typename T, size_t tag_bits>
+inline bool slag::tagged_pointer<T, tag_bits>::operator!=(const T* rhs) const {
+    return !operator==(rhs);
+}
