@@ -7,7 +7,12 @@
 namespace slag {
 
     template<typename T>
+    class Result;
+
+    template<typename T>
     class Result {
+        static_assert(!std::is_same_v<T, Error>);
+
     public:
         explicit Result(T&& value);
         explicit Result(const T& value);
@@ -32,17 +37,28 @@ namespace slag {
         void cleanup();
 
     private:
-        enum class Contents : uint8_t {
-            VALUE,
-            ERROR,
-        };
+        std::aligned_storage_t<sizeof(T), alignof(T)> value_storage_;
+        Error                                         error_;
+    };
 
-        std::aligned_storage_t<
-            std::max(sizeof(T), sizeof(Error)),
-            std::max(alignof(T), alignof(Error))
-        > storage_;
+    template<>
+    class Result<void> {
+    public:
+        Result();
+        explicit Result(Error error);
+        Result(const Result& other);
+        ~Result() = default;
 
-        Contents contents_;
+        Result& operator=(const Result& that);
+
+        [[nodiscard]] bool has_value() const;
+        [[nodiscard]] bool has_error() const;
+
+        [[nodiscard]] Error& error();
+        [[nodiscard]] const Error& error() const;
+
+    private:
+        Error error_;
     };
 
 }
