@@ -37,8 +37,8 @@ namespace slag {
     public:
         explicit Error(ErrorCode code = ErrorCode::SUCCESS);
 
-        [[nodiscard]] bool operator==(const Error& that) const;
-        [[nodiscard]] bool operator!=(const Error& that) const;
+        [[nodiscard]] bool operator==(Error that) const;
+        [[nodiscard]] bool operator!=(Error that) const;
 
         [[nodiscard]] ErrorCategory category() const;
         [[nodiscard]] ErrorCode code() const;
@@ -49,6 +49,6 @@ namespace slag {
 
     [[nodiscard]] const char* to_string(ErrorCategory error_category);
     [[nodiscard]] const char* to_string(ErrorCode error_code);
-    [[nodiscard]] const char* to_string(const Error& error);
+    [[nodiscard]] const char* to_string(Error error);
 
 }

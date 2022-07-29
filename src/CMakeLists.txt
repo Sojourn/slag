@@ -39,6 +39,8 @@ set(SLAG_HEADER_FILES
     ../include/slag/platform.h
     ../include/slag/file_descriptor.h
     ../include/slag/address.h
+    ../include/slag/result.h
+    ../include/slag/result.hpp
     ../include/slag/tagged_pointer.h
     ../include/slag/tagged_pointer.hpp
     ../include/slag/pool_allocator.h

@@ -6,11 +6,11 @@ slag::Error::Error(ErrorCode code)
 {
 }
 
-bool slag::Error::operator==(const Error& that) const {
+bool slag::Error::operator==(Error that) const {
     return code_ == that.code_;
 }
 
-bool slag::Error::operator!=(const Error& that) const {
+bool slag::Error::operator!=(Error that) const {
     return !operator==(that);
 }
 
@@ -44,6 +44,6 @@ const char* slag::to_string(ErrorCode error_code) {
     abort();
 }
 
-const char* slag::to_string(const Error& error) {
+const char* slag::to_string(Error error) {
     return to_string(error.code());
 }
