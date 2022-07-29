@@ -1,6 +1,4 @@
 #include <new>
-#include <cstdlib>
-#include <cassert>
 
 template<typename T>
 slag::Result<T>::Result(T&& value)
@@ -115,56 +113,4 @@ void slag::Result<T>::cleanup() {
     if (has_value()) {
         value().~T();
     }
-}
-
-template<>
-slag::Result<void>::Result()
-    : error_{ErrorCode::SUCCESS}
-{
-}
-
-template<>
-slag::Result<void>::Result(Error error)
-    : error_{error}
-{
-    if (!has_error()) {
-        abort();
-    }
-}
-
-template<>
-slag::Result<void>::Result(const Result& other)
-    : error_{other.error_}
-{
-}
-
-template<>
-slag::Result<void>& slag::Result<void>::operator=(const Result& that) {
-    if (this != &that) {
-        error_ = that.error_;
-    }
-
-    return *this;
-}
-
-template<>
-bool slag::Result<void>::has_value() const {
-    return error_.code() == ErrorCode::SUCCESS;
-}
-
-template<>
-bool slag::Result<void>::has_error() const {
-    return !has_value();
-}
-
-template<>
-slag::Error& slag::Result<void>::error() {
-    assert(has_error());
-    return error_;
-}
-
-template<>
-const slag::Error& slag::Result<void>::error() const {
-    assert(has_error());
-    return error_;
 }

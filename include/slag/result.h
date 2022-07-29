@@ -2,6 +2,8 @@
 
 #include <type_traits>
 #include <cstdint>
+#include <cstdlib>
+#include <cassert>
 #include "slag/error.h"
 
 namespace slag {
@@ -11,7 +13,7 @@ namespace slag {
 
     template<typename T>
     class Result {
-        static_assert(!std::is_same_v<T, Error>);
+        static_assert(!std::is_same_v<T, Error>, "Result cannot hold an error as a value");
 
     public:
         explicit Result(T&& value);
@@ -44,18 +46,40 @@ namespace slag {
     template<>
     class Result<void> {
     public:
-        Result();
-        explicit Result(Error error);
-        Result(const Result& other);
-        ~Result() = default;
+        Result()
+            : error_{ErrorCode::SUCCESS}
+        {
+        }
 
-        Result& operator=(const Result& that);
+        explicit Result(Error error)
+            : error_{error}
+        {
+            if (!has_error()) {
+                abort();
+            }
+        }
 
-        [[nodiscard]] bool has_value() const;
-        [[nodiscard]] bool has_error() const;
+        Result(const Result&) = default;
 
-        [[nodiscard]] Error& error();
-        [[nodiscard]] const Error& error() const;
+        Result& operator=(const Result&) = default;
+
+        [[nodiscard]] bool has_value() const {
+            return error_.code() == ErrorCode::SUCCESS;
+        }
+
+        [[nodiscard]] bool has_error() const {
+            return !has_value();
+        }
+
+        [[nodiscard]] Error& error() {
+            assert(has_error());
+            return error_;
+        }
+
+        [[nodiscard]] const Error& error() const {
+            assert(has_error());
+            return error_;
+        }
 
     private:
         Error error_;

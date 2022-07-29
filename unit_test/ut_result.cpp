@@ -33,7 +33,7 @@ TEST_CASE("result lifecycle", "[Result]") {
         value_result_copy = value_result;
         CHECK(value_result_copy.value() == value);
 
-        Result<int> error_result_copy{Error{}};
+        Result<int> error_result_copy{Error{ErrorCode::CANCELED}};
         error_result_copy = error_result;
         CHECK(error_result_copy.error() == error);
     }
@@ -43,7 +43,7 @@ TEST_CASE("result lifecycle", "[Result]") {
         value_result_copy = std::move(value_result);
         CHECK(value_result_copy.value() == value);
 
-        Result<int> error_result_copy{Error{}};
+        Result<int> error_result_copy{Error{ErrorCode::CANCELED}};
         error_result_copy = std::move(error_result);
         CHECK(error_result_copy.error() == error);
     }
