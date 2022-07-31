@@ -15,37 +15,96 @@ namespace slag {
     template<typename T>
     class FutureContext {
     public:
-        FutureContext(Promise<T>& promise);
+        FutureContext();
+        FutureContext(FutureContext&&) = delete;
+        FutureContext(const FutureContext&) = delete;
 
-        // solves needing a void specialization, but might cause extra moves/copies
-        void set_result(Result<T> result);
+        FutureContext& operator=(FutureContext&&) = delete;
+        FutureContext& operator=(const FutureContext&) = delete;
 
-        void attach(Promise<T>& promise);
-        void detach(Promise<T>& promise);
+        [[nodiscard]] Result<T>& result();
+        [[nodiscard]] const Result<T>& result() const;
 
-        void attach(Future<T>& future);
-        void detach(Future<T>& future);
+        void handle_promise_broken();
+        void handle_future_retrieved();
+        void handle_promise_satisfied();
+
+        void attach(Promise& promise);
+        void detach(Promise& promise);
+
+        void attach(Future& future);
+        void detach(Future& future);
+
+        [[nodiscard]] bool is_referenced() const;
 
     private:
-        Future<T>*  future_;
-        Promise<T>* promise_;
-        Event       future_event_;
-        Event       promise_event_;
-        Result<T>   result_;
-        bool        promise_broken_;
-        bool        promise_satisfied_;
-        bool        future_detached_;
-        bool        future_abandoned_;
-    };
-
-    template<typename T>
-    class Future {
-    public:
+        Event     event_;
+        bool      promise_attached_  : 1;
+        bool      future_attached_   : 1;
+        bool      promise_broken_    : 1;
+        bool      promise_satisfied_ : 1;
+        bool      future_retrieved_  : 1;
+        Result<T> result_;
     };
 
     template<typename T>
     class Promise {
     public:
+        Promise();
+        Promise(Promise&& other);
+        Promise(const Promise&) = delete;
+        ~Promise();
+
+        Promise& operator=(Promise&& that);
+        Promise& operator=(const Promise&) = delete;
+
+        [[nodiscard]] Event& event();
+        void set_value(T&& value);
+        void set_value(const T& value);
+
+        void reset();
+
+    private:
+        template<typename U>
+        friend class FutureContext;
+
+        template<typename U>
+        friend class Future;
+
+    private:
+        FutureContext<T>* context_;
+    };
+
+    template<typename T>
+    class Future {
+    public:
+        Future();
+        Future(Future&& other);
+        Future(const Future&) = delete;
+        ~Future();
+
+        Future& operator=(Future&& that);
+        Future& operator=(const Future&) = delete;
+
+        [[nodiscard]] Event& event();
+        [[nodiscard]] Result<T>& result();
+        [[nodiscard]] const Result<T>& result() const;
+
+        void reset();
+
+    private:
+        template<typename U>
+        friend class FutureContext;
+
+        template<typename U>
+        friend class Promise;
+
+        Future(FutureContext<T>& context);
+
+    private:
+        FutureContext<T>* context_;
     };
 
 }
+
+#include "future.hpp"

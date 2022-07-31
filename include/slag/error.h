@@ -9,11 +9,12 @@
     X(RUNTIME)
 
 #define SLAG_ERROR_CODES(X) \
-    X(SYSTEM,  SUCCESS,          0)          \
-    X(SYSTEM,  CANCELED,         ECANCELED)  \
-    X(SYSTEM,  TRY_AGAIN_LATER,  EAGAIN)     \
-    X(RUNTIME, PROMISE_BROKEN,   0)          \
-    X(RUNTIME, FUTURE_DISCARDED, 1)
+    X(SYSTEM,  SUCCESS,                   0)          \
+    X(SYSTEM,  CANCELED,                  ECANCELED)  \
+    X(SYSTEM,  TRY_AGAIN_LATER,           EAGAIN)     \
+    X(RUNTIME, PROMISE_BROKEN,            0)          \
+    X(RUNTIME, FUTURE_ALREADY_RETRIEVED,  1)          \
+    X(RUNTIME, PROMISE_ALREADY_SATISFIED, 2)
 
 namespace slag {
 
@@ -46,6 +47,9 @@ namespace slag {
     private:
         ErrorCode code_;
     };
+
+    [[nodiscard]] Error make_system_error();
+    [[nodiscard]] Error make_system_error(int error_code);
 
     [[nodiscard]] const char* to_string(ErrorCategory error_category);
     [[nodiscard]] const char* to_string(ErrorCode error_code);

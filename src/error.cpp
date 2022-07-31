@@ -1,5 +1,6 @@
 #include "slag/error.h"
 #include <cstdlib>
+#include <cassert>
 
 slag::Error::Error(ErrorCode code)
     : code_{code}
@@ -20,6 +21,16 @@ slag::ErrorCategory slag::Error::category() const {
 
 slag::ErrorCode slag::Error::code() const {
     return code_;
+}
+
+slag::Error slag::make_system_error() {
+    return make_system_error(errno);
+}
+
+slag::Error slag::make_system_error(int error_code) {
+    assert((static_cast<int>(ERROR_CATEGORY_RANGE) * static_cast<int>(ErrorCategory::SYSTEM)) <= error_code);
+    assert(error_code < ((static_cast<int>(ERROR_CATEGORY_RANGE) + 1) * static_cast<int>(ErrorCategory::SYSTEM)));
+    return Error{static_cast<ErrorCode>(error_code)};
 }
 
 const char* slag::to_string(ErrorCategory error_category) {
