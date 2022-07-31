@@ -35,7 +35,7 @@ const char* slag::to_string(ErrorCategory error_category) {
 const char* slag::to_string(ErrorCode error_code) {
     switch (error_code) {
 #define X(SLAG_ERROR_CATEGORY, SLAG_ERROR_CODE_NAME, SLAG_ERROR_CODE_VALUE) \
-        case ErrorCode::SLAG_ERROR_CODE_NAME: return #SLAG_ERROR_CATEGORY "." #SLAG_ERROR_CODE_NAME;
+        case ErrorCode::SLAG_ERROR_CODE_NAME: return #SLAG_ERROR_CATEGORY "/" #SLAG_ERROR_CODE_NAME;
 
         SLAG_ERROR_CODES(X)
 #undef X
