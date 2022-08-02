@@ -22,6 +22,9 @@ namespace slag {
         FutureContext& operator=(FutureContext&&) = delete;
         FutureContext& operator=(const FutureContext&) = delete;
 
+        [[nodiscard]] bool is_referenced() const;
+        [[nodiscard]] bool is_promise_satisfied() const;
+        [[nodiscard]] bool is_future_retrieved() const;
         [[nodiscard]] Result<T>& result();
         [[nodiscard]] const Result<T>& result() const;
 
@@ -29,13 +32,11 @@ namespace slag {
         void handle_future_retrieved();
         void handle_promise_satisfied();
 
-        void attach(Promise& promise);
-        void detach(Promise& promise);
+        void attach(Promise<T>& promise);
+        void detach(Promise<T>& promise);
 
-        void attach(Future& future);
-        void detach(Future& future);
-
-        [[nodiscard]] bool is_referenced() const;
+        void attach(Future<T>& future);
+        void detach(Future<T>& future);
 
     private:
         Event     event_;
@@ -58,9 +59,10 @@ namespace slag {
         Promise& operator=(Promise&& that);
         Promise& operator=(const Promise&) = delete;
 
+        [[nodiscard]] Future<T> get_future();
         [[nodiscard]] Event& event();
-        void set_value(T&& value);
-        void set_value(const T& value);
+        [[nodiscard]] void set_value(T&& value);
+        [[nodiscard]] void set_value(const T& value);
 
         void reset();
 
@@ -70,6 +72,8 @@ namespace slag {
 
         template<typename U>
         friend class Future;
+
+        [[nodiscard]] FutureContext<T>& get_context();
 
     private:
         FutureContext<T>* context_;
@@ -88,7 +92,6 @@ namespace slag {
 
         [[nodiscard]] Event& event();
         [[nodiscard]] Result<T>& result();
-        [[nodiscard]] const Result<T>& result() const;
 
         void reset();
 
@@ -100,6 +103,8 @@ namespace slag {
         friend class Promise;
 
         Future(FutureContext<T>& context);
+
+        [[nodiscard]] FutureContext<T>& get_context();
 
     private:
         FutureContext<T>* context_;

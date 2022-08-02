@@ -17,7 +17,9 @@
     X(SYSTEM,  INVALID_ARGUMENT,          EINVAL)     \
     X(RUNTIME, PROMISE_BROKEN,            0)          \
     X(RUNTIME, FUTURE_ALREADY_RETRIEVED,  1)          \
-    X(RUNTIME, PROMISE_ALREADY_SATISFIED, 2)
+    X(RUNTIME, PROMISE_ALREADY_SATISFIED, 2)          \
+    X(RUNTIME, FUTURE_NOT_READY,          3)          \
+    X(RUNTIME, FUTURE_DETACHED,           4)
 
 namespace slag {
 
@@ -48,6 +50,10 @@ namespace slag {
         [[nodiscard]] ErrorCode code() const;
 
         void raise(const char* message) const;
+
+        [[nodiscard]] explicit operator bool() const {
+            return code_ != ErrorCode::SUCCESS;
+        }
 
     private:
         ErrorCode code_;
