@@ -17,6 +17,7 @@ namespace slag {
     class Platform {
     public:
         static constexpr mode_t DEFAULT_OPEN_MODE = 0644;
+        static constexpr int DEFAULT_SOCKET_PROTOCOL = 0;
         static constexpr int DEFAULT_LISTEN_BACKLOG = 4096;
 
         using VoidResult           = Result<void>;
@@ -37,7 +38,7 @@ namespace slag {
         [[nodiscard]] virtual FileDescriptorResult open(const char* file_path, int flags, mode_t mode = DEFAULT_OPEN_MODE);
         [[nodiscard]] virtual VoidResult close(int file_descriptor);
         [[nodiscard]] virtual FileDescriptorResult duplicate(int file_descriptor);
-        [[nodiscard]] virtual FileDescriptorResult socket(int domain, int type, int protocol = 0);
+        [[nodiscard]] virtual FileDescriptorResult socket(int domain, int type, int protocol = DEFAULT_SOCKET_PROTOCOL);
         [[nodiscard]] virtual VoidResult socketpair(int domain, int type, int protocol, int (&file_descriptors)[2]);
         [[nodiscard]] virtual VoidResult bind(int file_descriptor, const struct sockaddr* address, socklen_t address_length);
         [[nodiscard]] virtual VoidResult listen(int file_descriptor, int backlog = DEFAULT_LISTEN_BACKLOG);
