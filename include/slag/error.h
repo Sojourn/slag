@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <cstdint>
 #include <cstddef>
 #include <cerrno>
@@ -8,10 +9,12 @@
     X(SYSTEM)                    \
     X(RUNTIME)
 
+// TODO: define more system error codes
 #define SLAG_ERROR_CODES(X) \
     X(SYSTEM,  SUCCESS,                   0)          \
     X(SYSTEM,  CANCELED,                  ECANCELED)  \
     X(SYSTEM,  TRY_AGAIN_LATER,           EAGAIN)     \
+    X(SYSTEM,  INVALID_ARGUMENT,          EINVAL)     \
     X(RUNTIME, PROMISE_BROKEN,            0)          \
     X(RUNTIME, FUTURE_ALREADY_RETRIEVED,  1)          \
     X(RUNTIME, PROMISE_ALREADY_SATISFIED, 2)
@@ -51,8 +54,10 @@ namespace slag {
     [[nodiscard]] Error make_system_error();
     [[nodiscard]] Error make_system_error(int error_code);
 
-    [[nodiscard]] const char* to_string(ErrorCategory error_category);
-    [[nodiscard]] const char* to_string(ErrorCode error_code);
-    [[nodiscard]] const char* to_string(Error error);
+    [[nodiscard]] ErrorCategory categorize(ErrorCode error_code);
+
+    [[nodiscard]] std::string to_string(ErrorCategory error_category);
+    [[nodiscard]] std::string to_string(ErrorCode error_code);
+    [[nodiscard]] std::string to_string(Error error);
 
 }

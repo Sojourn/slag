@@ -1,4 +1,8 @@
 #include "slag/error.h"
+#include <type_traits>
+#include <fmt/core.h>
+#include <fmt/format.h>
+#include <fmt/printf.h>
 #include <cstdlib>
 #include <cassert>
 
@@ -16,7 +20,7 @@ bool slag::Error::operator!=(Error that) const {
 }
 
 slag::ErrorCategory slag::Error::category() const {
-    return static_cast<ErrorCategory>(static_cast<uint32_t>(code_) / ERROR_CATEGORY_RANGE);
+    return categorize(code_);
 }
 
 slag::ErrorCode slag::Error::code() const {
@@ -28,22 +32,25 @@ slag::Error slag::make_system_error() {
 }
 
 slag::Error slag::make_system_error(int error_code) {
-    assert((static_cast<int>(ERROR_CATEGORY_RANGE) * static_cast<int>(ErrorCategory::SYSTEM)) <= error_code);
-    assert(error_code < ((static_cast<int>(ERROR_CATEGORY_RANGE) + 1) * static_cast<int>(ErrorCategory::SYSTEM)));
+    assert((0 <= error_code) && (error_code < static_cast<int>(ERROR_CATEGORY_RANGE)));
     return Error{static_cast<ErrorCode>(error_code)};
 }
 
-const char* slag::to_string(ErrorCategory error_category) {
+slag::ErrorCategory slag::categorize(ErrorCode error_code) {
+    return static_cast<ErrorCategory>(static_cast<uint32_t>(error_code) / ERROR_CATEGORY_RANGE);
+}
+
+std::string slag::to_string(ErrorCategory error_category) {
     switch (error_category) {
 #define X(SLAG_ERROR_CATEGORY) case ErrorCategory::SLAG_ERROR_CATEGORY: return #SLAG_ERROR_CATEGORY;
         SLAG_ERROR_CATEGORIES(X)
 #undef X
     }
 
-    abort();
+    return fmt::format("{}", static_cast<std::underlying_type_t<ErrorCategory>>(error_category));
 }
 
-const char* slag::to_string(ErrorCode error_code) {
+std::string slag::to_string(ErrorCode error_code) {
     switch (error_code) {
 #define X(SLAG_ERROR_CATEGORY, SLAG_ERROR_CODE_NAME, SLAG_ERROR_CODE_VALUE) \
         case ErrorCode::SLAG_ERROR_CODE_NAME: return #SLAG_ERROR_CATEGORY "/" #SLAG_ERROR_CODE_NAME;
@@ -52,9 +59,9 @@ const char* slag::to_string(ErrorCode error_code) {
 #undef X
     }
 
-    abort();
+    return fmt::format("{}/{}", to_string(categorize(error_code)), static_cast<std::underlying_type_t<ErrorCode>>(error_code));
 }
 
-const char* slag::to_string(Error error) {
+std::string slag::to_string(Error error) {
     return to_string(error.code());
 }
