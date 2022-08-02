@@ -170,6 +170,10 @@ template<typename T>
 inline void slag::Promise<T>::reset() {
     if (context_) {
         context_->detach(*this);
+        if (!context_->is_referenced()) {
+            delete context_;
+        }
+
         context_ = nullptr;
     }
 }
@@ -230,6 +234,10 @@ template<typename T>
 inline void slag::Future<T>::reset() {
     if (context_) {
         context_->detach(*this);
+        if (!context_->is_referenced()) {
+            delete context_;
+        }
+
         context_ = nullptr;
     }
 }
