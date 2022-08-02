@@ -45,8 +45,8 @@ bool slag::FileDescriptor::is_open() const {
 
 void slag::FileDescriptor::close() {
     if (is_open()) {
-        int result = local_event_loop().platform().close(release());
-        assert(result >= 0);
+        Result<void> result = local_event_loop().platform().close(release());
+        assert(!result.has_error());
     }
 }
 
@@ -67,10 +67,10 @@ slag::FileDescriptor slag::FileDescriptor::duplicate(int file_descriptor) {
         return FileDescriptor{};
     }
 
-    int new_file_descriptor = local_event_loop().platform().duplicate(file_descriptor);
-    if (new_file_descriptor < 0) {
-        raise_system_error("Failed to duplicate file descriptor");
+    Result<int> new_file_descriptor = local_event_loop().platform().duplicate(file_descriptor);
+    if (new_file_descriptor.has_error()) {
+        new_file_descriptor.error().raise("Failed to duplicate file descriptor");
     }
 
-    return FileDescriptor{new_file_descriptor};
+    return FileDescriptor{new_file_descriptor.value()};
 }

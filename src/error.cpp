@@ -28,8 +28,10 @@ slag::ErrorCode slag::Error::code() const {
     return code_;
 }
 
-void slag::Error::raise() const {
-    throw std::runtime_error(to_string(*this)); // TODO: make a custom exception type that wraps an ErrorCode
+void slag::Error::raise(const char* message) const {
+    throw std::runtime_error(
+        fmt::format("{}: {}", message, to_string(*this)) // TODO: make a custom exception type that wraps an ErrorCode
+    );
 }
 
 slag::Error slag::make_system_error() {

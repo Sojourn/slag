@@ -47,7 +47,7 @@ namespace slag {
         [[nodiscard]] ErrorCategory category() const;
         [[nodiscard]] ErrorCode code() const;
 
-        void raise() const;
+        void raise(const char* message) const;
 
     private:
         ErrorCode code_;

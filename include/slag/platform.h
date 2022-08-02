@@ -9,29 +9,38 @@
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <fcntl.h>
+#include "slag/error.h"
+#include "slag/result.h"
 
 namespace slag {
 
     class Platform {
     public:
+        static constexpr mode_t DEFAULT_OPEN_MODE = 0644;
+        static constexpr int DEFAULT_LISTEN_BACKLOG = 4096;
+
+        using VoidResult           = Result<void>;
+        using ProcessIdResult      = Result<pid_t>;
+        using FileDescriptorResult = Result<int>;
+
         Platform() = default;
         Platform(Platform&&) noexcept = delete;
         Platform(const Platform&) = delete;
-        ~Platform() = default;
+        virtual ~Platform() = default;
 
         Platform& operator=(Platform&&) noexcept = delete;
         Platform& operator=(const Platform&) = delete;
 
-        [[nodiscard]] int get_parent_process_id();
-        [[nodiscard]] int get_process_id();
-        [[nodiscard]] int get_thread_id();
-        [[nodiscard]] int open(const char* file_path, int flags, mode_t mode = 0644);
-        [[nodiscard]] int close(int file_descriptor);
-        [[nodiscard]] int duplicate(int file_descriptor);
-        [[nodiscard]] int socket(int domain, int type, int protocol = 0);
-        [[nodiscard]] int socketpair(int domain, int type, int protocol, int (&file_descriptors)[2]);
-        [[nodiscard]] int bind(int file_descriptor, const struct sockaddr* address, socklen_t address_length);
-        [[nodiscard]] int listen(int file_descriptor, int backlog = 4096);
+        [[nodiscard]] virtual ProcessIdResult get_parent_process_id();
+        [[nodiscard]] virtual ProcessIdResult get_process_id();
+        [[nodiscard]] virtual ProcessIdResult get_thread_id();
+        [[nodiscard]] virtual FileDescriptorResult open(const char* file_path, int flags, mode_t mode = DEFAULT_OPEN_MODE);
+        [[nodiscard]] virtual VoidResult close(int file_descriptor);
+        [[nodiscard]] virtual FileDescriptorResult duplicate(int file_descriptor);
+        [[nodiscard]] virtual FileDescriptorResult socket(int domain, int type, int protocol = 0);
+        [[nodiscard]] virtual VoidResult socketpair(int domain, int type, int protocol, int (&file_descriptors)[2]);
+        [[nodiscard]] virtual VoidResult bind(int file_descriptor, const struct sockaddr* address, socklen_t address_length);
+        [[nodiscard]] virtual VoidResult listen(int file_descriptor, int backlog = DEFAULT_LISTEN_BACKLOG);
     };
 
 }
