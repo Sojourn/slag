@@ -1,4 +1,5 @@
 #include "slag/error.h"
+#include <stdexcept>
 #include <type_traits>
 #include <fmt/core.h>
 #include <fmt/format.h>
@@ -25,6 +26,10 @@ slag::ErrorCategory slag::Error::category() const {
 
 slag::ErrorCode slag::Error::code() const {
     return code_;
+}
+
+void slag::Error::raise() const {
+    throw std::runtime_error(to_string(*this)); // TODO: make a custom exception type that wraps an ErrorCode
 }
 
 slag::Error slag::make_system_error() {
