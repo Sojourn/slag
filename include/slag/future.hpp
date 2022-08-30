@@ -89,6 +89,9 @@ inline void slag::FutureContext<T>::detach(Promise<T>& promise) {
 
 template<typename T>
 inline void slag::FutureContext<T>::attach(Future<T>& future) {
+    if (future_retrieved_) {
+        Error{ErrorCode::FUTURE_ALREADY_RETRIEVED}.raise("Failed attach future");
+    }
     assert(!future_attached_);
     assert(!future_retrieved_);
 
