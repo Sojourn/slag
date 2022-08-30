@@ -63,6 +63,7 @@ namespace slag {
         [[nodiscard]] Event& event();
         [[nodiscard]] void set_value(T&& value);
         [[nodiscard]] void set_value(const T& value);
+        [[nodiscard]] void set_error(Error error);
 
         void reset();
 

@@ -1,27 +1,29 @@
 #include <iostream>
+#include <any>
+#include <span>
+#include <memory>
+#include <vector>
 #include "slag/slag.h"
 
 using namespace slag;
-
-class TestResource : public Resource {
-public:
-    using Resource::start_nop_operation;
-
-    void handle_operation_complete(Operation& operation) override {
-        (void)operation;
-        info("Operation complete");
-        local_event_loop().stop();
-    }
-};
-
 int main(int argc, char** argv) {
     (void)argc;
     (void)argv;
 
-    EventLoop event_loop{std::make_unique<IOURingReactor>()};
+    Future<int> future;
+    Promise<int> promise;
 
-    TestResource test_resource;
-    test_resource.start_nop_operation(nullptr);
-    event_loop.run();
+    future = promise.get_future();
+
+    try {
+        future.result().error().raise("foo");
+    } catch (const std::exception& ex) {
+        std::cout << ex.what() << std::endl;
+    }
+
+    promise.set_value(3);
+
+    std::cout << future.result().value() << std::endl;
+
     return 0;
 }

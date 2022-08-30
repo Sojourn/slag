@@ -8,6 +8,7 @@ inline slag::FutureContext<T>::FutureContext()
     , promise_broken_{false}
     , promise_satisfied_{false}
     , future_retrieved_{false}
+    , result_{Error{ErrorCode::FUTURE_NOT_READY}}
 {
 }
 
@@ -43,7 +44,7 @@ inline void slag::FutureContext<T>::handle_promise_broken() {
     assert(!promise_broken_);
 
     promise_broken_ = true;
-    result_.set_error(Error{ErrorCode::PROMISE_BROKEN});
+    result_ = Result<T>{Error{ErrorCode::PROMISE_BROKEN}};
     event_.set();
 }
 
@@ -167,6 +168,17 @@ inline void slag::Promise<T>::set_value(const T& value) {
 }
 
 template<typename T>
+inline void slag::Promise<T>::set_error(Error error) {
+    FutureContext<T>& context = get_context();
+    if (context.is_promise_satisfied()) {
+        Error{ErrorCode::PROMISE_ALREADY_SATISFIED}.raise("Failed to set future error");
+    }
+
+    context.result() = Result<T>{error};
+    context.handle_promise_satisfied();
+}
+
+template<typename T>
 inline void slag::Promise<T>::reset() {
     if (context_) {
         context_->detach(*this);
@@ -223,10 +235,6 @@ inline slag::Event& slag::Future<T>::event() {
 template<typename T>
 inline slag::Result<T>& slag::Future<T>::result() {
     FutureContext<T>& context = get_context();
-    if (!context.is_promise_satisfied()) {
-        return slag::Result<T>{ErrorCode::FUTURE_NOT_READY};
-    }
-
     return context.result();
 }
 
@@ -244,7 +252,7 @@ inline void slag::Future<T>::reset() {
 
 template<typename T>
 inline slag::Future<T>::Future(FutureContext<T>& context)
-    : context_{context}
+    : context_{&context}
 {
     context_->attach(*this);
 }
