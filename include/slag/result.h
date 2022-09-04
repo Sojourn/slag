@@ -26,6 +26,10 @@ namespace slag {
         Result& operator=(Result&& that);
         Result& operator=(const Result& that);
 
+        [[nodiscard]] explicit operator bool() const {
+            return has_value();
+        }
+
         [[nodiscard]] bool has_value() const;
         [[nodiscard]] bool has_error() const;
 
@@ -39,8 +43,8 @@ namespace slag {
         void cleanup();
 
     private:
-        std::aligned_storage_t<sizeof(T), alignof(T)> value_storage_;
-        Error                                         error_;
+        alignas(alignof(T)) std::byte value_storage_[sizeof(T)];
+        Error                         error_;
     };
 
     template<>
@@ -62,6 +66,10 @@ namespace slag {
         Result(const Result&) = default;
 
         Result& operator=(const Result&) = default;
+
+        [[nodiscard]] explicit operator bool() const {
+            return has_value();
+        }
 
         [[nodiscard]] bool has_value() const {
             return error_.code() == ErrorCode::SUCCESS;

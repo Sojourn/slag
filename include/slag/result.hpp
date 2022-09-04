@@ -4,14 +4,14 @@ template<typename T>
 slag::Result<T>::Result(T&& value)
     : error_{ErrorCode::SUCCESS}
 {
-    new(&value_storage_) T{std::move(value)};
+    new(&value_storage_[0]) T{std::move(value)};
 }
 
 template<typename T>
 slag::Result<T>::Result(const T& value)
     : error_{ErrorCode::SUCCESS}
 {
-    new(&value_storage_) T{value};
+    new(&value_storage_[0]) T{value};
 }
 
 template<typename T>
@@ -28,7 +28,7 @@ slag::Result<T>::Result(Result&& other)
     : error_{other.error_}
 {
     if (has_value()) {
-        new(&value_storage_) T{std::move(other.value())};
+        new(&value_storage_[0]) T{std::move(other.value())};
     }
 }
 
@@ -37,7 +37,7 @@ slag::Result<T>::Result(const Result& other)
     : error_{other.error_}
 {
     if (has_value()) {
-        new(&value_storage_) T{std::move(other.value())};
+        new(&value_storage_[0]) T{std::move(other.value())};
     }
 }
 
@@ -53,7 +53,7 @@ slag::Result<T>& slag::Result<T>::operator=(Result&& that) {
 
         error_ = that.error_;
         if (has_value()) {
-            new(&value_storage_) T{std::move(that.value())};
+            new(&value_storage_[0]) T{std::move(that.value())};
         }
     }
 
@@ -67,7 +67,7 @@ slag::Result<T>& slag::Result<T>::operator=(const Result& that) {
 
         error_ = that.error_;
         if (has_value()) {
-            new(&value_storage_) T{that.value()};
+            new(&value_storage_[0]) T{that.value()};
         }
     }
 
@@ -87,13 +87,13 @@ bool slag::Result<T>::has_error() const {
 template<typename T>
 T& slag::Result<T>::value() {
     assert(has_value());
-    return *reinterpret_cast<T*>(&value_storage_);
+    return *reinterpret_cast<T*>(&value_storage_[0]);
 }
 
 template<typename T>
 const T& slag::Result<T>::value() const {
     assert(has_value());
-    return *reinterpret_cast<const T*>(&value_storage_);
+    return *reinterpret_cast<const T*>(&value_storage_[0]);
 }
 
 template<typename T>

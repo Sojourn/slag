@@ -28,3 +28,29 @@ TEST_CASE("future errors", "[Future]") {
         }
     }
 }
+
+TEST_CASE("future behavior", "[Future]") {
+    SECTION("set and retrieve value") {
+        Promise<int> promise;
+        Future<int> future = promise.get_future();
+        promise.set_value(13);
+        if (auto&& result = future.result(); result) {
+            CHECK(result.value() == 13);
+        }
+        else {
+            CHECK(false);
+        }
+    }
+
+    SECTION("set and retrieve error") {
+        Promise<int> promise;
+        Future<int> future = promise.get_future();
+        promise.set_error(ErrorCode::INVALID_ARGUMENT);
+        if (auto&& result = future.result(); result) {
+            CHECK(false);
+        }
+        else {
+            CHECK(result.error() == ErrorCode::INVALID_ARGUMENT);
+        }
+    }
+}

@@ -41,7 +41,7 @@ namespace slag {
 
     class Error {
     public:
-        explicit Error(ErrorCode code);
+        Error(ErrorCode code);
 
         [[nodiscard]] bool operator==(Error that) const;
         [[nodiscard]] bool operator!=(Error that) const;
