@@ -198,6 +198,7 @@ void slag::Reactor::garbage_collect(std::vector<Operation*>& operations) {
         }
     }
 
+    // remove tomestoned operations (which have been set to nullptr)
     auto beg = operations.begin();
     auto end = operations.end();
     auto pos = std::remove_if(

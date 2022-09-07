@@ -8,5 +8,6 @@
 #include "operation.h"
 #include "resource.h"
 #include "reactor.h"
+#include "task.h"
 #include "io_uring_reactor.h"
 #include "logging.h"

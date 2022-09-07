@@ -12,7 +12,7 @@ set(SLAG_SOURCE_FILES
     error.cpp
     event.cpp
     event_loop.cpp
-    # task.cpp
+    task.cpp
     platform.cpp
     file_descriptor.cpp
     address.cpp

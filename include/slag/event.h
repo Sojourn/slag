@@ -26,7 +26,7 @@ namespace slag {
         virtual void handle_event_destroyed(void* user_data) = 0;
 
     private:
-        using EventWait = std::pair<Event*, void*>;
+        using EventWait  = std::pair<Event*, void*>;
         using EventWaits = std::vector<EventWait>;
 
         [[nodiscard]] EventWaits::iterator find_wait(Event& event);

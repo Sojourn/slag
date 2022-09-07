@@ -3,11 +3,10 @@
 #include <type_traits>
 #include <cstddef>
 #include <cstdint>
-#include <slag/event.h>
+#include "slag/event.h"
+#include "slag/error.h"
 
 namespace slag {
-
-    class TaskGroup;
 
     enum class TaskState {
         WAITING,
@@ -16,23 +15,9 @@ namespace slag {
         COMPLETE,
     };
 
-    class CoroutineWrapper {
-    public:
-        CoroutineWrapper() = default;
-        CoroutineWrapper(CoroutineWrapper&&) noexcept = delete;
-        CoroutineWrapper(const CoroutineWrapper&) = delete;
-        virtual ~CoroutineWrapper() = default;
-
-        CoroutineWrapper& operator=(CoroutineWrapper&&) noexcept = delete;
-        CoroutineWrapper& operator=(const CoroutineWrapper&) = delete;
-
-        virtual void run(Task& task);
-    };
-
     class Task : public EventObserver {
     public:
-        template<typename Coroutine>
-        Task(TaskGroup& group, Coroutine&& coroutine);
+        Task() = default;
         Task(Task&&) noexcept = delete;
         Task(const Task&) = delete;
         virtual ~Task();
@@ -40,28 +25,22 @@ namespace slag {
         Task& operator=(Task&&) noexcept = delete;
         Task& operator=(const Task&) = delete;
 
-        [[nodiscard]] TaskGroup& group();
-        [[nodiscard]] const TaskGroup& group() const;
         [[nodiscard]] TaskState state() const;
-        [[nodiscard]] Event& on_state_transition();
-        [[nodiscard]] const Event& on_state_transition() const;
+        [[nodiscard]] Error error() const;
+        [[nodiscard]] TaskState run();
 
-    private:
+    // private:
         void set_state(TaskState state);
+        virtual void set_error(Error error);
+
+        void handle_event_set(Event& event, void* user_data) override;
+        void handle_event_destroyed(void* user_data) override;
+
+        virtual void run_impl() = 0;
 
     private:
-        static constexpr size_t COROUTINE_STORAGE_SIZE = 128;
-
-        class CoroutineWrapper;
-        using CoroutineStorage = std::aligned_storage_t<
-            COROUTINE_STORAGE_SIZE,
-            alignof(std::max_align_t)
-        >;
-
-        TaskGroup&       group_;
-        TaskState        state_;
-        CoroutineStorage storage_;
-        Event            on_state_transition_;
+        TaskState state_;
+        Error     error_;
     };
 
 }
