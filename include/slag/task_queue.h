@@ -18,6 +18,7 @@ namespace slag {
 
         [[nodiscard]] bool is_empty() const;
         [[nodiscard]] size_t size() const;
+        [[nodiscard]] size_t capacity() const;
         void push_front(Task& task);
         void push_back(Task& task);
         [[nodiscard]] Task* pop_front();

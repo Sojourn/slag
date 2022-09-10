@@ -28,6 +28,10 @@ size_t slag::TaskQueue::size() const {
     return tail_ - head_;
 }
 
+size_t slag::TaskQueue::capacity() const {
+    return capacity_;
+}
+
 void slag::TaskQueue::push_front(Task& task) {
     if ((head_ - tail_) == capacity_) {
         reserve(capacity_ * 2);

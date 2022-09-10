@@ -36,7 +36,7 @@ set(SLAG_HEADER_FILES
     ../include/slag/error.h
     ../include/slag/event.h
     ../include/slag/event_loop.h
-    # ../include/slag/task.h
+    ../include/slag/task.h
     ../include/slag/platform.h
     ../include/slag/file_descriptor.h
     ../include/slag/address.h

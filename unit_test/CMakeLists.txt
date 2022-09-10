@@ -4,6 +4,7 @@ add_executable(unit_test
         ut_event.cpp
         ut_result.cpp
         ut_future.cpp
+        ut_task_queue.cpp
         ut_operation_state_machine.cpp
         ut_io_uring_reactor.cpp
         )
