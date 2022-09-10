@@ -17,6 +17,7 @@ set(SLAG_SOURCE_FILES
     file_descriptor.cpp
     address.cpp
     util.cpp
+    task_queue.cpp
 )
 
 set(SLAG_HEADER_FILES
@@ -47,6 +48,7 @@ set(SLAG_HEADER_FILES
     ../include/slag/pool_allocator.hpp
     ../include/slag/logging.h
     ../include/slag/util.h
+    ../include/slag/task_queue.h
 )
 
 add_library(slag ${SLAG_SOURCE_FILES} ${SLAG_HEADER_FILES})
