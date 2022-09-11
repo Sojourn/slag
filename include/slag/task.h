@@ -1,43 +1,38 @@
 #pragma once
 
-#include <type_traits>
+#include <optional>
 #include <cstddef>
-#include <cstdint>
 #include "slag/error.h"
 #include "slag/result.h"
+#include "slag/executor.h"
 
 namespace slag {
 
-    enum class TaskState {
-        RUNNING,
-        SUCCESS,
-        FAILURE,
-    };
+    class Executor;
 
     class Task {
     public:
-        Task();
+        Task(Executor& executor);
         Task(Task&&) noexcept = delete;
         Task(const Task&) = delete;
-        virtual ~Task() = default;
+        virtual ~Task();
 
         Task& operator=(Task&&) noexcept = delete;
         Task& operator=(const Task&) = delete;
 
-        [[nodiscard]] TaskState state() const;
-        [[nodiscard]] Error error() const;
-        [[nodiscard]] Result<TaskState> run();
+        [[nodiscard]] bool is_scheduled() const;
+        void schedule(TaskPriority priority=TaskPriority::NORMAL);
+
+        virtual void run() = 0;
 
     private:
         friend class Executor;
 
-        [[nodiscard]] bool scheduled() const;
-        void set_scheduled(bool value);
+        // ???
 
     private:
-        TaskState state_;
-        Error     error_;
-        bool      scheduled_;
+        Executor&                                   executor_;
+        std::optional<Executor::ScheduledTaskEntry> scheduled_task_entry_;
     };
 
 }

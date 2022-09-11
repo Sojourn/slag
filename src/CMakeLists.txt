@@ -18,6 +18,7 @@ set(SLAG_SOURCE_FILES
     address.cpp
     util.cpp
     task_queue.cpp
+    executor.cpp
 )
 
 set(SLAG_HEADER_FILES
