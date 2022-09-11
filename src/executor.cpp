@@ -18,6 +18,11 @@ void slag::Executor::run(size_t task_limit) {
             continue; // tombstone, skip
         }
 
+        // prefetch the next task
+        // if (Task* next_task = scheduled_tasks_.peek_front(1)) {
+        //     _mm_prefetch(reinterpret_cast<char*>(next_task), _MM_HINT_T0);
+        // }
+
         assert(task->is_scheduled());
         task->scheduled_task_entry_.reset();
         task->run();
