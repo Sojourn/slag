@@ -38,6 +38,9 @@ namespace slag {
         void handle_task_destroyed(Task& task);
 
     private:
+        void garbage_collect();
+
+    private:
         TaskQueue scheduled_tasks_;
     };
 

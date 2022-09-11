@@ -24,6 +24,8 @@ void slag::Executor::run(size_t task_limit) {
 
         task_limit -= 1;
     }
+
+    garbage_collect();
 }
 
 void slag::Executor::schedule(Task& task, TaskPriority priority) {
@@ -66,4 +68,8 @@ void slag::Executor::cancel(Task& task) {
 
     scheduled_tasks_.erase(task.scheduled_task_entry_->sequence);
     task.scheduled_task_entry_.reset();
+}
+
+void slag::Executor::garbage_collect() {
+    // TODO: compact the scheduled_tasks_ queue if there are too many tombstones
 }
