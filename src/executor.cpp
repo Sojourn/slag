@@ -29,8 +29,6 @@ void slag::Executor::run(size_t task_limit) {
 
         task_limit -= 1;
     }
-
-    garbage_collect();
 }
 
 void slag::Executor::schedule(Task& task, TaskPriority priority) {
@@ -73,8 +71,25 @@ void slag::Executor::cancel(Task& task) {
 
     scheduled_tasks_.erase(task.scheduled_task_entry_->sequence);
     task.scheduled_task_entry_.reset();
+
+    // compact the scheduled tasks queue if there are a lot of tombstones, and they
+    // make up a significant fraction (25%+) of the in-use queue slots.
+    bool do_garbage_collection = true;
+    do_garbage_collection &= scheduled_tasks_.tombstones() > 128;
+    do_garbage_collection &= (scheduled_tasks_.size() / 4) <= scheduled_tasks_.tombstones();
+    if (do_garbage_collection) {
+        garbage_collect();
+    }
 }
 
 void slag::Executor::garbage_collect() {
-    // TODO: compact the scheduled_tasks_ queue if there are too many tombstones
+    size_t size = scheduled_tasks_.size();
+    for (size_t i = 0; i < size; ++i) {
+        if (Task* task = scheduled_tasks_.pop_front()) {
+            task->scheduled_task_entry_->sequence = scheduled_tasks_.push_back(*task);
+        }
+    }
+
+    assert(scheduled_tasks_.size() <= size);
+    assert(scheduled_tasks_.tombstones() == 0);
 }

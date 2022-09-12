@@ -28,7 +28,7 @@ namespace slag {
         [[nodiscard]] Task* pop_back();
         [[nodiscard]] Task* peek_front(size_t relative_offset=0);
         [[nodiscard]] Task* peek_back(size_t relative_offset=0);
-        void erase(Sequence sequence);
+        void erase(Sequence sequence); // replaces Task w/ a tombstone
         void clear();
         void reserve(size_t minimum_capacity);
 

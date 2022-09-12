@@ -22,6 +22,7 @@ namespace slag {
 
         [[nodiscard]] bool is_scheduled() const;
         void schedule(TaskPriority priority=TaskPriority::NORMAL);
+        void cancel();
 
         virtual void run() = 0;
 

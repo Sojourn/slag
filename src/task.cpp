@@ -19,3 +19,8 @@ void slag::Task::schedule(TaskPriority priority) {
     executor_.schedule(*this, priority);
     assert(is_scheduled());
 }
+
+void slag::Task::cancel() {
+    executor_.cancel(*this);
+    assert(!is_scheduled());
+}

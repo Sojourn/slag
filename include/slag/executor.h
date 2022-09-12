@@ -22,7 +22,7 @@ namespace slag {
         Executor& operator=(const Executor&) = delete;
 
         [[nodiscard]] bool is_idle() const;
-        [[nodiscard]] void run(size_t task_limit=1);
+        [[nodiscard]] void run(size_t task_limit=1); // TODO: predicate?
 
         void schedule(Task& task, TaskPriority priority=TaskPriority::NORMAL);
         void cancel(Task& task);
