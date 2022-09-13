@@ -2,6 +2,7 @@
 
 #include <memory>
 #include "slag/platform.h"
+#include "slag/executor.h"
 #include "slag/reactor.h"
 
 namespace slag {
@@ -20,10 +21,14 @@ namespace slag {
         void stop();
 
         [[nodiscard]] Platform& platform();
+        [[nodiscard]] Executor& executor();
         [[nodiscard]] Reactor& reactor();
 
     private:
+        static constexpr size_t EXECUTOR_REACTOR_RATIO_ = 128;
+
         std::unique_ptr<Platform> platform_;
+        std::unique_ptr<Executor> executor_;
         std::unique_ptr<Reactor>  reactor_;
         bool                      running_;
     };

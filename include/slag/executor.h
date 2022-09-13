@@ -44,4 +44,6 @@ namespace slag {
         TaskQueue scheduled_tasks_;
     };
 
+    [[nodiscard]] Executor& local_executor();
+
 }

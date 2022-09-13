@@ -44,6 +44,7 @@ namespace slag {
     private:
         friend class EventLoop;
 
+        // JSR: Why are these here? The Event loop isn't using them...
         void garbage_collect();
         void garbage_collect(ResourceContext& resource_context);
         void garbage_collect(std::vector<Operation*>& operations);

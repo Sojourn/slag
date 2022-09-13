@@ -8,6 +8,7 @@ namespace slag {
 
 slag::EventLoop::EventLoop(std::unique_ptr<Reactor> reactor)
     : platform_{std::make_unique<Platform>()}
+    , executor_{std::make_unique<Executor>()}
     , reactor_{std::move(reactor)}
     , running_{false}
 {
@@ -31,6 +32,9 @@ void slag::EventLoop::run() {
 
     running_ = true;
     while (running_) {
+        executor_->run(EXECUTOR_REACTOR_RATIO_);
+
+        // TODO: don't block the reactor if the executor is not idle
         reactor_->step();
     }
 }
@@ -41,6 +45,10 @@ void slag::EventLoop::stop() {
 
 slag::Platform& slag::EventLoop::platform() {
     return *platform_;
+}
+
+slag::Executor& slag::EventLoop::executor() {
+    return *executor_;
 }
 
 slag::Reactor& slag::EventLoop::reactor() {

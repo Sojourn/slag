@@ -12,7 +12,7 @@ namespace slag {
 
     class Task {
     public:
-        Task(Executor& executor);
+        Task(Executor& executor=local_executor());
         Task(Task&&) noexcept = delete;
         Task(const Task&) = delete;
         virtual ~Task();

@@ -1,9 +1,11 @@
 #include "slag/executor.h"
 #include "slag/task.h"
+#include "slag/event_loop.h"
 #include <stdexcept>
 #include <cassert>
 
 slag::Executor::~Executor() {
+    garbage_collect();
     assert(is_idle());
 }
 
@@ -92,4 +94,8 @@ void slag::Executor::garbage_collect() {
 
     assert(scheduled_tasks_.size() <= size);
     assert(scheduled_tasks_.tombstones() == 0);
+}
+
+slag::Executor& slag::local_executor() {
+    return local_event_loop().executor();
 }
