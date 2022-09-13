@@ -22,6 +22,9 @@ namespace slag {
 
         [[nodiscard]] bool is_scheduled() const;
         void schedule(TaskPriority priority=TaskPriority::NORMAL);
+
+        // TODO: think about renaming this (to match EventObserver::cancel_wait)
+        // pause/resume (instead of schedule/cancel?)
         void cancel();
 
         virtual void run() = 0;
