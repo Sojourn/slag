@@ -33,6 +33,7 @@ namespace slag {
         bool                      running_;
     };
 
+    [[nodiscard]] std::unique_ptr<EventLoop> make_default_event_loop();
     [[nodiscard]] EventLoop& local_event_loop();
 
 }

@@ -1,4 +1,5 @@
 #include "slag/platform.h"
+#include "slag/event_loop.h"
 #include <cerrno>
 #include <cassert>
 #include <sys/types.h>
@@ -128,4 +129,8 @@ auto slag::Platform::listen(int file_descriptor, int backlog) -> VoidResult {
     }
 
     return VoidResult{};
+}
+
+slag::Platform& slag::local_platform() {
+    return local_event_loop().platform();
 }

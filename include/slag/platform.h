@@ -44,4 +44,6 @@ namespace slag {
         [[nodiscard]] virtual VoidResult listen(int file_descriptor, int backlog = DEFAULT_LISTEN_BACKLOG);
     };
 
+    [[nodiscard]] Platform& local_platform();
+
 }

@@ -1,4 +1,5 @@
 #include "slag/event_loop.h"
+#include "slag/io_uring_reactor.h"
 #include <stdexcept>
 #include <cassert>
 
@@ -53,6 +54,12 @@ slag::Executor& slag::EventLoop::executor() {
 
 slag::Reactor& slag::EventLoop::reactor() {
     return *reactor_;
+}
+
+std::unique_ptr<slag::EventLoop> slag::make_default_event_loop() {
+    return std::make_unique<EventLoop>(
+        std::make_unique<IOURingReactor>()
+    );
 }
 
 slag::EventLoop& slag::local_event_loop() {

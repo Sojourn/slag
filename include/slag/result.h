@@ -18,7 +18,7 @@ namespace slag {
     public:
         explicit Result(T&& value);
         explicit Result(const T& value);
-        explicit Result(Error error);
+        Result(Error error);
         Result(Result&& other);
         Result(const Result& other);
         ~Result();

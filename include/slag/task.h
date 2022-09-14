@@ -10,6 +10,7 @@ namespace slag {
 
     class Executor;
 
+    // TODO: support moving
     class Task {
     public:
         Task(Executor& executor=local_executor());
