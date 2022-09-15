@@ -5,64 +5,131 @@
 #include <memory>
 #include <vector>
 #include <functional>
+#include <coroutine>
+#include <variant>
+#include <type_traits>
+#include <stdexcept>
 #include "slag/slag.h"
 
 using namespace slag;
 
-struct PrintTask : Task {
-    size_t activations = 0;
-    Event  event;
-
-    void run() override {
-        std::cout << (activations++) << std::endl;
-
-        if (activations >= 10) {
-            event.set();
-        }
-        else {
-            schedule();
-        }
-    }
-};
-
-class StopperTask
-    : public EventObserver
-    , public Task
-{
+template<typename T>
+class Coroutine {
 public:
-    StopperTask(Event& event, Executor& executor=local_executor())
-        : Task{executor}
+    class promise_type {
+    public:
+        Coroutine<T> get_return_object() noexcept {
+            return Coroutine<T>{*this};
+        }
+
+        std::suspend_always initial_suspend() const noexcept {
+            return {};
+        }
+
+        std::suspend_always final_suspend() const noexcept {
+            return {};
+        }
+
+        std::suspend_always yield_value(const T& value) noexcept(std::is_nothrow_copy_constructible_v<T>) {
+            abort(); // not supported
+        }
+
+        void return_value(T&& value) noexcept(std::is_nothrow_move_constructible_v<T>) {
+            result_ = std::move(value);
+        }
+
+        void return_value(const T& value) noexcept(std::is_nothrow_copy_constructible_v<T>) {
+            result_ = value;
+        }
+
+        void unhandled_exception() noexcept(std::is_nothrow_copy_constructible_v<std::exception_ptr>) {
+            result_ = std::current_exception();
+        }
+
+        [[nodiscard]] bool is_done() const noexcept {
+            return result_.index() > 0; // TODO: look if there is a cleaner way to do this
+        }
+
+        [[nodiscard]] T& get_value() {
+            if (std::holds_alternative<std::exception_ptr>(result_)) {
+                std::rethrow_exception(std::get<std::exception_ptr>(result_));
+            }
+
+            return std::get<T>(result_);
+        }
+
+    private:
+        std::variant<std::monostate, T, std::exception_ptr> result_;
+    };
+
+private:
+    explicit Coroutine(promise_type& promise) noexcept
+        : handle_{std::coroutine_handle<promise_type>::from_promise(promise)}
     {
-        wait(event, nullptr);
     }
 
-    void run() override {
-        std::cout << "Stopping event loop!" << std::endl;
-        local_event_loop().stop();
+public:
+    ~Coroutine() {
+        if (handle_) {
+            handle_.destroy();
+        }
+    }
+
+    Coroutine(Coroutine&& other) noexcept
+        : handle_{std::exchange(other.handle_, nullptr)}
+    {
+    }
+
+    Coroutine& operator=(Coroutine&& that) noexcept {
+        if (this != &that) {
+            if (handle_) {
+                handle_.destroy();
+            }
+
+            handle_ = std::exchange(that.handle_, nullptr);
+        }
+
+        return *this;
+    }
+
+    void resume() {
+        handle_();
+    }
+
+    [[nodiscard]] explicit operator bool() const {
+        return static_cast<bool>(handle_);
+    }
+
+    [[nodiscard]] bool is_done() const noexcept {
+        return handle_.promise().is_done();
+    }
+
+    [[nodiscard]] T& get_value() noexcept {
+        return handle_.promise().get_value();
     }
 
 private:
-    void handle_event_set(Event&, void*) override {
-        schedule();
-    }
-
-    void handle_event_destroyed(void*) override {
-        abort();
-    }
+    std::coroutine_handle<promise_type> handle_;
 };
+
+Coroutine<int> do_stuff() {
+    co_return 14;
+}
 
 int main(int argc, char** argv) {
     (void)argc;
     (void)argv;
 
-    EventLoop event_loop{std::make_unique<IOURingReactor>()};
+    Coroutine<int> foo = do_stuff();
+    assert(foo);
 
-    PrintTask print_task;
-    print_task.schedule();
+    std::cout << foo.is_done() << std::endl;
+    foo.resume();
+    std::cout << foo.is_done() << std::endl;
+    std::cout << foo.get_value() << std::endl;
 
-    StopperTask stopper_task{print_task.event};
-
-    event_loop.run();
+    // EventLoop event_loop{std::make_unique<IOURingReactor>()};
+    // event_loop.run();
 
     return 0;
 }
