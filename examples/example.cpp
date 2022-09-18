@@ -112,8 +112,32 @@ private:
     std::coroutine_handle<promise_type> handle_;
 };
 
+// class Event : public Awaitable {
+// };
+
+// template<typename T>
+// class Future : public Awaitable {
+// };
+
+// template<typename T>
+// class Stream : public Awaitable {
+// };
+
+// class Fiber : public Awaitable, public Task {
+// public:
+// };
+
+// class Awaitable {
+// public:
+//     void subscribe(Awaiter& awaiter);
+//     void unsubscribe(Awaiter& awaiter);
+
+//     [[nodiscard]] AwaitableState state() const;
+//     void set_state();
+// };
+
 Coroutine<int> do_stuff() {
-    co_return 14;
+    co_return 15;
 }
 
 int main(int argc, char** argv) {

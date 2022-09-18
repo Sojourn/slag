@@ -21,7 +21,7 @@ namespace slag {
             Cursor& operator=(Cursor&& rhs) noexcept;
             Cursor& operator=(const Cursor&) = delete;
 
-            [[noexcept]] ResourceContext* next();
+            [[nodiscard]] ResourceContext* next();
 
             void reset();
 
@@ -37,7 +37,7 @@ namespace slag {
         ResourceContextIndex& operator=(ResourceContextIndex&&) noexcept = delete;
         ResourceContextIndex& operator=(const ResourceContextIndex&) = delete;
 
-        [[noexcept]] Cursor select();
+        [[nodiscard]] Cursor select();
         void insert(ResourceContext& resource_context);
         void vacuum();
         void truncate();
