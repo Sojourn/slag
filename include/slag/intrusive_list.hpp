@@ -64,7 +64,21 @@ inline void slag::IntrusiveListNode::unlink() {
     next_ = this;
 }
 
-inline void slag::IntrusiveListNode::link_before(IntrusiveListNode& other) {
+template<typename T, slag::IntrusiveListNode T::*node_>
+inline T& slag::IntrusiveListNode::from_node(IntrusiveListNode& node) noexcept {
+    static const ptrdiff_t node_offset = reinterpret_cast<ptrdiff_t>(
+        &to_node<T, node_>(*reinterpret_cast<T*>(NULL))
+    );
+
+    return *reinterpret_cast<T*>(reinterpret_cast<std::byte*>(&node) - node_offset);
+}
+
+template<typename T, slag::IntrusiveListNode T::*node_>
+inline slag::IntrusiveListNode& slag::IntrusiveListNode::to_node(T& element) noexcept {
+    return element.*node_;
+}
+
+inline void slag::IntrusiveListNode::link_before(IntrusiveListNode& other) noexcept {
     if (is_linked()) {
         abort();
     }
@@ -81,6 +95,64 @@ inline void slag::IntrusiveListNode::link_before(IntrusiveListNode& other) {
     assert(prev->is_linked());
     assert(is_linked());
     assert(next->is_linked());
+}
+
+template<typename T, slag::IntrusiveListNode T::*node_>
+inline slag::IntrusiveListIterator<T, node_>::IntrusiveListIterator()
+    : current_node_{nullptr}
+{
+}
+
+template<typename T, slag::IntrusiveListNode T::*node_>
+inline slag::IntrusiveListIterator<T, node_>::IntrusiveListIterator(IntrusiveListNode& node)
+    : current_node_{&node}
+{
+}
+
+template<typename T, slag::IntrusiveListNode T::*node_>
+inline auto slag::IntrusiveListIterator<T, node_>::operator*() -> reference {
+    return IntrusiveListNode::from_node<T, node_>(*current_node_);
+}
+
+template<typename T, slag::IntrusiveListNode T::*node_>
+inline auto slag::IntrusiveListIterator<T, node_>::operator->() -> pointer {
+    return &operator*();
+}
+
+template<typename T, slag::IntrusiveListNode T::*node_>
+inline slag::IntrusiveListIterator<T, node_>& slag::IntrusiveListIterator<T, node_>::operator++() {
+    current_node_ = current_node_->next_;
+    return *this;
+}
+
+template<typename T, slag::IntrusiveListNode T::*node_>
+inline slag::IntrusiveListIterator<T, node_>& slag::IntrusiveListIterator<T, node_>::operator--() {
+    current_node_ = current_node_->prev_;
+    return *this;
+}
+
+template<typename T, slag::IntrusiveListNode T::*node_>
+inline slag::IntrusiveListIterator<T, node_> slag::IntrusiveListIterator<T, node_>::operator++(int) {
+    IntrusiveListIterator result = *this;
+    current_node_ = current_node_->next_;
+    return result;
+}
+
+template<typename T, slag::IntrusiveListNode T::*node_>
+inline slag::IntrusiveListIterator<T, node_> slag::IntrusiveListIterator<T, node_>::operator--(int) {
+    IntrusiveListIterator result = *this;
+    current_node_ = current_node_->prev_;
+    return result;
+}
+
+template<typename T, slag::IntrusiveListNode T::*node_>
+inline bool slag::IntrusiveListIterator<T, node_>::operator==(const IntrusiveListIterator& that) const {
+    return current_node_ == that.current_node_;
+}
+
+template<typename T, slag::IntrusiveListNode T::*node_>
+inline bool slag::IntrusiveListIterator<T, node_>::operator!=(const IntrusiveListIterator& that) const {
+    return !operator==(that);
 }
 
 template<typename T, slag::IntrusiveListNode T::*node_>
@@ -113,12 +185,22 @@ inline bool slag::IntrusiveList<T, node_>::is_empty() const {
 }
 
 template<typename T, slag::IntrusiveListNode T::*node_>
+inline auto slag::IntrusiveList<T, node_>::begin() -> iterator {
+    return iterator{*root_.next_};
+}
+
+template<typename T, slag::IntrusiveListNode T::*node_>
+inline auto slag::IntrusiveList<T, node_>::end() -> iterator {
+    return iterator{root_};
+}
+
+template<typename T, slag::IntrusiveListNode T::*node_>
 inline T& slag::IntrusiveList<T, node_>::front() {
     if (is_empty()) {
         abort();
     }
 
-    return from_node(*root_.next_);
+    return IntrusiveListNode::from_node<T, node_>(*root_.next_);
 }
 
 template<typename T, slag::IntrusiveListNode T::*node_>
@@ -127,19 +209,19 @@ inline T& slag::IntrusiveList<T, node_>::back() {
         abort();
     }
 
-    return from_node(*root_.prev_);
+    return IntrusiveListNode::from_node<T, node_>(*root_.prev_);
 }
 
 template<typename T, slag::IntrusiveListNode T::*node_>
 inline void slag::IntrusiveList<T, node_>::push_front(T& element) {
-    IntrusiveListNode& node = to_node(element);
+    IntrusiveListNode& node = IntrusiveListNode::to_node<T, node_>(element);
     assert(!node.is_linked());
     node.link_before(*root_.next_);
 }
 
 template<typename T, slag::IntrusiveListNode T::*node_>
 inline void slag::IntrusiveList<T, node_>::push_back(T& element) {
-    IntrusiveListNode& node = to_node(element);
+    IntrusiveListNode& node = IntrusiveListNode::to_node<T, node_>(element);
     assert(!node.is_linked());
     node.link_before(root_);
 }
@@ -160,9 +242,21 @@ inline T& slag::IntrusiveList<T, node_>::pop_back() {
 
 template<typename T, slag::IntrusiveListNode T::*node_>
 inline void slag::IntrusiveList<T, node_>::erase(T& element) {
-    IntrusiveListNode& node = to_node(element);
+    IntrusiveListNode& node = IntrusiveListNode::to_node<T, node_>(element);
     assert(node.is_linked());
     node.unlink();
+}
+
+template<typename T, slag::IntrusiveListNode T::*node_>
+inline auto slag::IntrusiveList<T, node_>::erase(iterator it) -> iterator {
+    if (it == end()) {
+        return it;
+    }
+
+    T& element = *it;
+    ++it;
+    erase(element);
+    return it;
 }
 
 template<typename T, slag::IntrusiveListNode T::*node_>
@@ -170,18 +264,4 @@ inline void slag::IntrusiveList<T, node_>::clear() {
     while (!is_empty()) {
         erase(front());
     }
-}
-
-template<typename T, slag::IntrusiveListNode T::*node_>
-inline T& slag::IntrusiveList<T, node_>::from_node(IntrusiveListNode& node) noexcept {
-    static const ptrdiff_t node_offset = reinterpret_cast<ptrdiff_t>(
-        &to_node(*reinterpret_cast<T*>(NULL))
-    );
-
-    return *reinterpret_cast<T*>(reinterpret_cast<std::byte*>(&node) - node_offset);
-}
-
-template<typename T, slag::IntrusiveListNode T::*node_>
-inline slag::IntrusiveListNode& slag::IntrusiveList<T, node_>::to_node(T& element) noexcept {
-    return element.*node_;
 }
