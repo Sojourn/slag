@@ -6,9 +6,6 @@
 
 namespace slag {
 
-    // A basic intrusive list implementation until I bite the
-    // bullet and do a proper one.
-
     class IntrusiveListNode {
     public:
         IntrusiveListNode();
@@ -42,6 +39,7 @@ namespace slag {
         IntrusiveListNode* next_;
     };
 
+    // TODO: const_iterator support
     template<typename T, IntrusiveListNode T::*node_>
     class IntrusiveListIterator {
     public:
@@ -69,7 +67,7 @@ namespace slag {
         [[nodiscard]] bool operator!=(const IntrusiveListIterator& that) const;
 
     private:
-        IntrusiveListNode* current_node_;
+        IntrusiveListNode* current_node_; // because node_ shadows the template parameter
     };
 
     template<typename T, IntrusiveListNode T::*node_>
@@ -97,11 +95,6 @@ namespace slag {
         void erase(T& element);
         iterator erase(iterator it);
         void clear();
-
-    private:
-        // TODO: move these into IntrusiveListNode
-        [[nodiscard]] static T& from_node(IntrusiveListNode& node) noexcept;
-        [[nodiscard]] static IntrusiveListNode& to_node(T& element) noexcept;
 
     private:
         IntrusiveListNode root_;

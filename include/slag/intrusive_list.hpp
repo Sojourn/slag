@@ -49,7 +49,7 @@ inline slag::IntrusiveListNode& slag::IntrusiveListNode::operator=(IntrusiveList
 }
 
 inline bool slag::IntrusiveListNode::is_linked() const {
-    return prev_ != this;
+    return prev_ != this; // not self linked
 }
 
 inline void slag::IntrusiveListNode::unlink() {
@@ -80,7 +80,7 @@ inline slag::IntrusiveListNode& slag::IntrusiveListNode::to_node(T& element) noe
 
 inline void slag::IntrusiveListNode::link_before(IntrusiveListNode& other) noexcept {
     if (is_linked()) {
-        abort();
+        abort(); // throw instead?
     }
 
     IntrusiveListNode* prev = other.prev_;
@@ -197,7 +197,7 @@ inline auto slag::IntrusiveList<T, node_>::end() -> iterator {
 template<typename T, slag::IntrusiveListNode T::*node_>
 inline T& slag::IntrusiveList<T, node_>::front() {
     if (is_empty()) {
-        abort();
+        abort(); // throw instead?
     }
 
     return IntrusiveListNode::from_node<T, node_>(*root_.next_);
@@ -206,7 +206,7 @@ inline T& slag::IntrusiveList<T, node_>::front() {
 template<typename T, slag::IntrusiveListNode T::*node_>
 inline T& slag::IntrusiveList<T, node_>::back() {
     if (is_empty()) {
-        abort();
+        abort(); // throw instead?
     }
 
     return IntrusiveListNode::from_node<T, node_>(*root_.prev_);
@@ -255,7 +255,9 @@ inline auto slag::IntrusiveList<T, node_>::erase(iterator it) -> iterator {
 
     T& element = *it;
     ++it;
+
     erase(element);
+
     return it;
 }
 
