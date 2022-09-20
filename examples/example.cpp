@@ -112,32 +112,23 @@ private:
     std::coroutine_handle<promise_type> handle_;
 };
 
-// class Event : public Awaitable {
-// };
-
-// template<typename T>
-// class Future : public Awaitable {
-// };
-
-// template<typename T>
-// class Stream : public Awaitable {
-// };
-
-// class Fiber : public Awaitable, public Task {
-// public:
-// };
-
-// class Awaitable {
-// public:
-//     void subscribe(Awaiter& awaiter);
-//     void unsubscribe(Awaiter& awaiter);
-
-//     [[nodiscard]] AwaitableState state() const;
-//     void set_state();
-// };
+template<typename T>
+struct Box : std::suspend_always {
+    void await_suspend(std::coroutine_handle<T> handle) {
+        std::cout << "Awaitable::await_suspend" << std::endl;
+        handle();
+    }
+};
 
 Coroutine<int> do_stuff() {
+    // int foo = co_await Awaitable<int>{};
+
     co_return 15;
+}
+
+std::generator<int> do_other_stuff() {
+    co_yield 3;
+    co_yield 4;
 }
 
 int main(int argc, char** argv) {
@@ -147,9 +138,7 @@ int main(int argc, char** argv) {
     Coroutine<int> foo = do_stuff();
     assert(foo);
 
-    std::cout << foo.is_done() << std::endl;
     foo.resume();
-    std::cout << foo.is_done() << std::endl;
     std::cout << foo.get_value() << std::endl;
 
     // EventLoop event_loop{std::make_unique<IOURingReactor>()};
