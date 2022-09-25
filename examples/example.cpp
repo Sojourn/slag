@@ -1,4 +1,3 @@
-
 #include <iostream>
 #include <any>
 #include <span>
@@ -58,6 +57,14 @@ public:
             return std::get<T>(result_);
         }
 
+#if 0
+        [[nodiscard]] std::suspend_always await_transform(int expr) {
+            (void)expr;
+            std::cout << expr << std::endl;
+            return {};
+        }
+#endif
+
     private:
         std::variant<std::monostate, T, std::exception_ptr> result_;
     };
@@ -108,27 +115,35 @@ public:
         return handle_.promise().get_value();
     }
 
+    T operator()() {
+        return std::move(handle_.promise().get_value());
+    }
+
+    [[nodiscard]] bool await_ready() {
+        return !is_done();
+    }
+
+    void await_suspend(std::coroutine_handle<> h) {
+        h.resume();
+    }
+
+    void await_resume() {
+        handle_.resume();
+    }
+
 private:
     std::coroutine_handle<promise_type> handle_;
 };
 
-template<typename T>
-struct Box : std::suspend_always {
-    void await_suspend(std::coroutine_handle<T> handle) {
-        std::cout << "Awaitable::await_suspend" << std::endl;
-        handle();
-    }
-};
-
-Coroutine<int> do_stuff() {
-    // int foo = co_await Awaitable<int>{};
-
-    co_return 15;
+Coroutine<int> do_foo() {
+    co_return 3;
 }
 
-std::generator<int> do_other_stuff() {
-    co_yield 3;
-    co_yield 4;
+Coroutine<int> do_stuff() {
+    auto coro = do_foo();
+    co_await coro;
+
+    co_return 15 + coro();
 }
 
 int main(int argc, char** argv) {
@@ -138,7 +153,10 @@ int main(int argc, char** argv) {
     Coroutine<int> foo = do_stuff();
     assert(foo);
 
-    foo.resume();
+    while (!foo.is_done()) {
+        foo.resume();
+    }
+
     std::cout << foo.get_value() << std::endl;
 
     // EventLoop event_loop{std::make_unique<IOURingReactor>()};

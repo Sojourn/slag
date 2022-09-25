@@ -19,6 +19,7 @@ set(SLAG_SOURCE_FILES
     util.cpp
     task_queue.cpp
     executor.cpp
+    fiber.cpp
 )
 
 set(SLAG_HEADER_FILES
@@ -50,6 +51,7 @@ set(SLAG_HEADER_FILES
     ../include/slag/logging.h
     ../include/slag/util.h
     ../include/slag/task_queue.h
+    ../include/slag/fiber.h
 )
 
 add_library(slag ${SLAG_SOURCE_FILES} ${SLAG_HEADER_FILES})
