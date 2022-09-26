@@ -20,6 +20,8 @@ namespace slag {
         void handle_event_destroyed(void* user_data) override;
 
     private:
+        // TODO: stack of type-erased coroutine handles
+        // TODO: linear allocator for coroutine states
     };
 
 }

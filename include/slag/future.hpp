@@ -28,6 +28,16 @@ inline bool slag::FutureContext<T>::is_future_retrieved() const {
 }
 
 template<typename T>
+inline slag::Event& slag::FutureContext<T>::event() {
+    return event_;
+}
+
+template<typename T>
+inline const slag::Event& slag::FutureContext<T>::event() const {
+    return event_;
+}
+
+template<typename T>
 inline slag::Result<T>& slag::FutureContext<T>::result() {
     return result_;
 }

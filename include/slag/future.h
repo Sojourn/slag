@@ -25,6 +25,8 @@ namespace slag {
         [[nodiscard]] bool is_referenced() const;
         [[nodiscard]] bool is_promise_satisfied() const;
         [[nodiscard]] bool is_future_retrieved() const;
+        [[nodiscard]] Event& event();
+        [[nodiscard]] const Event& event() const;
         [[nodiscard]] Result<T>& result();
         [[nodiscard]] const Result<T>& result() const;
 

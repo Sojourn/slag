@@ -12,9 +12,59 @@
 
 using namespace slag;
 
-template<typename T>
-class Coroutine {
+template<typename T, typename Promise>
+class AwaitableFuture
+    : private Task
+    , private EventObserver
+{
 public:
+    AwaitableFuture(Future<T>& future)
+        : future_{future}
+    {
+    }
+
+    [[nodiscard]] bool await_ready() {
+        return future_.event().is_set();
+    }
+
+    void await_suspend(std::coroutine_handle<Promise> handle) {
+        handle_ = handle;
+        EventObserver::wait(future_.event(), nullptr);
+    }
+
+    [[nodiscard]] T await_resume() {
+        if (future_.result().has_error()) {
+            future_.result().error().raise("FutureError");
+        }
+
+        return std::move(future_.result().value());
+    }
+
+private:
+    void run() override {
+        handle_.resume();
+    }
+
+    void handle_event_set(Event& event, void* user_data) override {
+        (void)event;
+        (void)user_data;
+
+        Task::schedule();
+    }
+
+    void handle_event_destroyed(void* user_data) override {
+        (void)user_data;
+
+        Task::schedule();
+    }
+
+private:
+    Future<T>&                     future_;
+    std::coroutine_handle<Promise> handle_;
+};
+
+template<typename T>
+class Coroutine {public:
     class promise_type {
     public:
         Coroutine<T> get_return_object() noexcept {
@@ -57,13 +107,10 @@ public:
             return std::get<T>(result_);
         }
 
-#if 0
-        [[nodiscard]] std::suspend_always await_transform(int expr) {
-            (void)expr;
-            std::cout << expr << std::endl;
-            return {};
+        template<typename U>
+        [[nodiscard]] AwaitableFuture<U, promise_type> await_transform(Future<U>& future) {
+            return AwaitableFuture<U, promise_type>{future};
         }
-#endif
 
     private:
         std::variant<std::monostate, T, std::exception_ptr> result_;
@@ -119,39 +166,30 @@ public:
         return std::move(handle_.promise().get_value());
     }
 
-    [[nodiscard]] bool await_ready() {
-        return !is_done();
-    }
-
-    void await_suspend(std::coroutine_handle<> h) {
-        h.resume();
-    }
-
-    void await_resume() {
-        handle_.resume();
-    }
-
 private:
     std::coroutine_handle<promise_type> handle_;
 };
 
-Coroutine<int> do_foo() {
-    co_return 3;
+Future<int> make_future(int value) {
+    Promise<int> promise;
+    promise.set_value(value);
+    return promise.get_future();
 }
 
 Coroutine<int> do_stuff() {
-    auto coro = do_foo();
-    co_await coro;
+    Future<int> future = make_future(13);
+    int value = co_await future;
 
-    co_return 15 + coro();
+    co_return 15 + value;
 }
 
 int main(int argc, char** argv) {
     (void)argc;
     (void)argv;
 
+    EventLoop event_loop{std::make_unique<IOURingReactor>()};
+
     Coroutine<int> foo = do_stuff();
-    assert(foo);
 
     while (!foo.is_done()) {
         foo.resume();
@@ -159,7 +197,6 @@ int main(int argc, char** argv) {
 
     std::cout << foo.get_value() << std::endl;
 
-    // EventLoop event_loop{std::make_unique<IOURingReactor>()};
     // event_loop.run();
 
     return 0;
