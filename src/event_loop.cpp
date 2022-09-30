@@ -11,6 +11,7 @@ slag::EventLoop::EventLoop(std::unique_ptr<Reactor> reactor)
     : platform_{std::make_unique<Platform>()}
     , executor_{std::make_unique<Executor>()}
     , reactor_{std::move(reactor)}
+    , active_fiber_{nullptr}
     , running_{false}
 {
     if (local_event_loop_) {
@@ -54,6 +55,14 @@ slag::Executor& slag::EventLoop::executor() {
 
 slag::Reactor& slag::EventLoop::reactor() {
     return *reactor_;
+}
+
+slag::FiberBase* slag::EventLoop::active_fiber() {
+    return active_fiber_;
+}
+
+slag::FiberBase* slag::EventLoop::exchange_active_fiber(FiberBase* fiber) {
+    return std::exchange(active_fiber_, fiber);
 }
 
 std::unique_ptr<slag::EventLoop> slag::make_default_event_loop() {

@@ -7,6 +7,8 @@
 
 namespace slag {
 
+    class FiberBase;
+
     class EventLoop {
     public:
         EventLoop(std::unique_ptr<Reactor> reactor);
@@ -23,6 +25,12 @@ namespace slag {
         [[nodiscard]] Platform& platform();
         [[nodiscard]] Executor& executor();
         [[nodiscard]] Reactor& reactor();
+        [[nodiscard]] FiberBase* active_fiber();
+
+    private:
+        friend class FiberBase;
+
+        [[nodiscard]] FiberBase* exchange_active_fiber(FiberBase* fiber);
 
     private:
         static constexpr size_t EXECUTOR_REACTOR_RATIO_ = 128;
@@ -30,6 +38,7 @@ namespace slag {
         std::unique_ptr<Platform> platform_;
         std::unique_ptr<Executor> executor_;
         std::unique_ptr<Reactor>  reactor_;
+        FiberBase*                active_fiber_;
         bool                      running_;
     };
 

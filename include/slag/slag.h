@@ -10,6 +10,7 @@
 #include "reactor.h"
 #include "task.h"
 #include "task_queue.h"
+#include "fiber.h"
 #include "io_uring_reactor.h"
 #include "logging.h"
 #include "intrusive_list.h"
