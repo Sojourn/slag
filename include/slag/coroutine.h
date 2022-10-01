@@ -24,8 +24,8 @@ namespace slag {
             void unhandled_exception() noexcept(std::is_nothrow_copy_constructible_v<std::exception_ptr>);
 
             [[nodiscard]] bool is_done() const noexcept;
-            [[nodiscard]] T& get_value();
-            [[nodiscard]] const T& get_value() const;
+            [[nodiscard]] T& value();
+            [[nodiscard]] const T& value() const;
 
         private:
             std::variant<std::monostate, T, std::exception_ptr> result_;
@@ -45,7 +45,7 @@ namespace slag {
         Coroutine& operator=(Coroutine&& that) noexcept;
         Coroutine& operator=(const Coroutine&) = delete;
 
-        [[nodiscard]] bool is_empty() const noexcept;
+        [[nodiscard]] bool is_done() const noexcept;
         [[nodiscard]] T& value() noexcept;
         [[nodiscard]] const T& value() const noexcept;
         [[nodiscard]] std::coroutine_handle<> handle() noexcept;

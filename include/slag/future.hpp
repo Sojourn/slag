@@ -246,7 +246,18 @@ inline slag::Event& slag::Future<T>::event() {
 }
 
 template<typename T>
+inline const slag::Event& slag::Future<T>::event() const {
+    return get_context().event();
+}
+
+template<typename T>
 inline slag::Result<T>& slag::Future<T>::result() {
+    FutureContext<T>& context = get_context();
+    return context.result();
+}
+
+template<typename T>
+inline const slag::Result<T>& slag::Future<T>::result() const {
     FutureContext<T>& context = get_context();
     return context.result();
 }
@@ -272,6 +283,15 @@ inline slag::Future<T>::Future(FutureContext<T>& context)
 
 template<typename T>
 inline slag::FutureContext<T>& slag::Future<T>::get_context() {
+    if (!context_) {
+        Error{ErrorCode::FUTURE_DETACHED}.raise("Failed to get the future context");
+    }
+
+    return *context_;
+}
+
+template<typename T>
+inline const slag::FutureContext<T>& slag::Future<T>::get_context() const {
     if (!context_) {
         Error{ErrorCode::FUTURE_DETACHED}.raise("Failed to get the future context");
     }

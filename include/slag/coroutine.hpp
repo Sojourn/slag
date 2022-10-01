@@ -16,7 +16,7 @@ std::suspend_always slag::Coroutine<T>::Promise::final_suspend() const noexcept 
 }
 
 template<typename T>
-std::suspend_always slag::Coroutine<T>::Promise::yield_value() const noexcept {
+std::suspend_always slag::Coroutine<T>::Promise::yield_value() const {
     throw std::runtime_error("Coroutines cannot yield");
 }
 
@@ -36,7 +36,7 @@ bool slag::Coroutine<T>::Promise::is_done() const noexcept {
 }
 
 template<typename T>
-T& slag::Coroutine<T>::Promise::get_value() {
+T& slag::Coroutine<T>::Promise::value() {
     if (std::holds_alternative<std::exception_ptr>(result_)) {
         std::rethrow_exception(
             std::get<std::exception_ptr>(result_)
@@ -47,7 +47,7 @@ T& slag::Coroutine<T>::Promise::get_value() {
 }
 
 template<typename T>
-const T& slag::Coroutine<T>::Promise::get_value() const {
+const T& slag::Coroutine<T>::Promise::value() const {
     if (std::holds_alternative<std::exception_ptr>(result_)) {
         std::rethrow_exception(
             std::get<std::exception_ptr>(result_)
@@ -97,13 +97,13 @@ bool slag::Coroutine<T>::is_done() const noexcept {
 template<typename T>
 T& slag::Coroutine<T>::value() noexcept {
     assert(is_done());
-    return handle_.promise().get_value();
+    return handle_.promise().value();
 }
 
 template<typename T>
 const T& slag::Coroutine<T>::value() const noexcept {
     assert(is_done());
-    return handle_.promise().get_value();
+    return handle_.promise().value();
 }
 
 template<typename T>

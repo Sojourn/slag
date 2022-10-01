@@ -94,7 +94,9 @@ namespace slag {
         Future& operator=(const Future&) = delete;
 
         [[nodiscard]] Event& event();
+        [[nodiscard]] const Event& event() const;
         [[nodiscard]] Result<T>& result();
+        [[nodiscard]] const Result<T>& result() const;
 
         void reset();
 
@@ -108,6 +110,7 @@ namespace slag {
         Future(FutureContext<T>& context);
 
         [[nodiscard]] FutureContext<T>& get_context();
+        [[nodiscard]] const FutureContext<T>& get_context() const;
 
     private:
         FutureContext<T>* context_;

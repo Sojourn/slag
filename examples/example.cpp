@@ -13,10 +13,22 @@
 using namespace slag;
 
 Coroutine<int> foo(Future<int> x) {
-    info("awaiting");
+    info("awaiting future");
     co_await x;
-    info("await complete");
+    info("await future complete");
     co_return 3;
+}
+
+Coroutine<int> bar() {
+    co_return 7;
+}
+
+Coroutine<int> baz(Fiber<int>& fiber) {
+    info("awaiting fiber");
+    int fiber_result = co_await fiber;
+    info("await fiber complete");
+
+    co_return 1 + fiber_result;
 }
 
 struct Stopper : public EventObserver {
@@ -45,11 +57,13 @@ int main(int argc, char** argv) {
     Promise<int> promise;
     promise.set_value(14);
 
-    Fiber<int> fiber{foo, promise.get_future()};
-    Future<int> fiber_future = fiber.get_future();
+    Fiber<int> fiber1{foo, promise.get_future()};
+    Fiber<int> fiber2{bar};
+    Fiber<int> fiber3{baz, fiber2};
 
     Stopper stopper;
-    stopper.wait(fiber_future.event(), nullptr);
+    Future<int> stop_future = fiber3.get_future();
+    stopper.wait(stop_future.event(), nullptr);
 
     event_loop.run();
 

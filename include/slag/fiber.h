@@ -13,24 +13,6 @@ namespace slag {
 
     class FiberBase;
 
-    // Resumes the currently running fiber when the future is ready
-    template<typename T, typename Promise>
-    class FutureAwaitable : private EventObserver {
-    public:
-        FutureAwaitable(Future<T>& future);
-
-        [[nodiscard]] bool await_ready() const noexcept;
-        void await_suspend(std::coroutine_handle<Promise> handle);
-        [[nodiscard]] T await_resume();
-
-    private:
-        void handle_event_set(Event& event, void* user_data) override;
-        void handle_event_destroyed(void* user_data) override;
-
-    private:
-        Future<T>& future_;
-    };
-
     class FiberBase : public Task {
     public:
         void set_pending_coroutine(std::coroutine_handle<> handle) {
@@ -72,6 +54,52 @@ namespace slag {
         Promise<T>   promise_;
         Coroutine<T> main_coroutine_;
     };
+
+    // TEMP TEMP TEMP
+    template<typename T>
+    class FutureAwaitable : private EventObserver {
+    public:
+        FutureAwaitable(Future<T>& future);
+
+        [[nodiscard]] bool await_ready() const noexcept;
+        void await_suspend(std::coroutine_handle<> handle);
+        [[nodiscard]] T await_resume();
+
+    private:
+        void handle_event_set(Event& event, void* user_data) override;
+        void handle_event_destroyed(void* user_data) override;
+
+    private:
+        Future<T>& future_;
+    };
+
+    template<typename T>
+    class FiberAwaitable : private EventObserver {
+    public:
+        FiberAwaitable(Fiber<T>& fiber);
+
+        [[nodiscard]] bool await_ready() const noexcept;
+        void await_suspend(std::coroutine_handle<> handle);
+        [[nodiscard]] T await_resume();
+
+    private:
+        void handle_event_set(Event& event, void* user_data) override;
+        void handle_event_destroyed(void* user_data) override;
+
+    private:
+        Fiber<T>& fiber_;
+        Future<T> future_;
+    };
+
+    template<typename T>
+    inline FutureAwaitable<T> operator co_await(Future<T>& future) {
+        return FutureAwaitable<T>{future};
+    }
+
+    template<typename T>
+    inline FiberAwaitable<T> operator co_await(Fiber<T>& fiber) {
+        return FiberAwaitable<T>{fiber};
+    }
 
 }
 
