@@ -53,6 +53,8 @@ set(SLAG_HEADER_FILES
     ../include/slag/task_queue.h
     ../include/slag/fiber.h
     ../include/slag/fiber.hpp
+    ../include/slag/coroutine.h
+    ../include/slag/coroutine.hpp
 )
 
 add_library(slag ${SLAG_SOURCE_FILES} ${SLAG_HEADER_FILES})
