@@ -55,7 +55,7 @@ namespace slag {
         {
         }
 
-        explicit Result(Error error)
+        Result(Error error)
             : error_{error}
         {
             if (!has_error()) {

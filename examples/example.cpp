@@ -12,23 +12,40 @@
 
 using namespace slag;
 
-Coroutine<int> foo(Future<int> x) {
-    info("awaiting future");
-    co_await x;
-    info("await future complete");
-    co_return 3;
+Coroutine<int> run_server(const Address& address) {
+    (void)address;
+
+    Socket socket;
+
+    // initialize the socket
+    {
+        Result<void> result;
+
+        result = co_await socket.open(address.family(), SOCK_STREAM, 0);
+        assert(result.has_value());
+
+        // result = co_await socket.bind(address);
+        // assert(result.has_value());
+
+        // result = co_await socket.listen();
+        // assert(result.has_value());
+    }
+
+    // while (Result<Socket> connection_result = co_await socket.accept()) {
+    //     if (connection_result.has_value()) {
+    //         // TODO: create a new fiber to handle this connection
+    //         (void)std::move(connection_result.value());
+    //     }
+    //     else {
+    //         break;
+    //     }
+    // }
+
+    co_return 0;
 }
 
-Coroutine<int> bar() {
-    co_return 7;
-}
-
-Coroutine<int> baz(Fiber<int>& fiber) {
-    info("awaiting fiber");
-    int fiber_result = co_await fiber;
-    info("await fiber complete");
-
-    co_return 1 + fiber_result;
+Coroutine<int> foo() {
+    co_return co_await run_server(Address{});
 }
 
 struct Stopper : public EventObserver {
@@ -57,12 +74,10 @@ int main(int argc, char** argv) {
     Promise<int> promise;
     promise.set_value(14);
 
-    Fiber<int> fiber1{foo, promise.get_future()};
-    Fiber<int> fiber2{bar};
-    Fiber<int> fiber3{baz, fiber2};
+    Fiber<int> server_fiber{run_server, Address{}};
 
     Stopper stopper;
-    Future<int> stop_future = fiber3.get_future();
+    Future<int> stop_future = server_fiber.get_future();
     stopper.wait(stop_future.event(), nullptr);
 
     event_loop.run();

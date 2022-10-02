@@ -50,6 +50,13 @@ namespace slag {
         [[nodiscard]] const T& value() const noexcept;
         [[nodiscard]] std::coroutine_handle<> handle() noexcept;
 
+        [[nodiscard]] Future<T> get_future() { return {}; }
+
+        template<typename U>
+        [[nodiscard]] Future<T> await_transform(Coroutine<U>& other) {
+            return {};
+        }
+
         void resume();
 
     private:

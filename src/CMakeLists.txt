@@ -20,6 +20,7 @@ set(SLAG_SOURCE_FILES
     task_queue.cpp
     executor.cpp
     fiber.cpp
+    socket.cpp
 )
 
 set(SLAG_HEADER_FILES
@@ -55,6 +56,7 @@ set(SLAG_HEADER_FILES
     ../include/slag/fiber.hpp
     ../include/slag/coroutine.h
     ../include/slag/coroutine.hpp
+    ../include/slag/socket.h
 )
 
 add_library(slag ${SLAG_SOURCE_FILES} ${SLAG_HEADER_FILES})

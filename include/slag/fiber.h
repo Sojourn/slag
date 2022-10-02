@@ -74,6 +74,24 @@ namespace slag {
     };
 
     template<typename T>
+    class CoroutineAwaitable : private EventObserver {
+    public:
+        CoroutineAwaitable(Coroutine<T> coroutine);
+
+        [[nodiscard]] bool await_ready() const noexcept;
+        void await_suspend(std::coroutine_handle<> handle);
+        [[nodiscard]] T await_resume();
+
+    private:
+        void handle_event_set(Event& event, void* user_data) override;
+        void handle_event_destroyed(void* user_data) override;
+
+    private:
+        Coroutine<T> coroutine_;
+        Future<T>    future_;
+    };
+
+    template<typename T>
     class FiberAwaitable : private EventObserver {
     public:
         FiberAwaitable(Fiber<T>& fiber);
@@ -87,13 +105,17 @@ namespace slag {
         void handle_event_destroyed(void* user_data) override;
 
     private:
-        Fiber<T>& fiber_;
         Future<T> future_;
     };
 
     template<typename T>
     inline FutureAwaitable<T> operator co_await(Future<T>& future) {
         return FutureAwaitable<T>{future};
+    }
+
+    template<typename T>
+    inline CoroutineAwaitable<T> operator co_await(Coroutine<T> coroutine) {
+        return CoroutineAwaitable<T>{std::move(coroutine)};
     }
 
     template<typename T>
