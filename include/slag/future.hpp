@@ -1,6 +1,4 @@
 #include <new>
-#include <utility>
-#include <cassert>
 
 template<typename T>
 inline slag::FutureContext<T>::FutureContext()

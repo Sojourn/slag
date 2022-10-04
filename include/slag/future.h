@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+#include <cassert>
 #include "slag/error.h"
 #include "slag/result.h"
 #include "slag/event.h"
@@ -114,6 +116,95 @@ namespace slag {
 
     private:
         FutureContext<T>* context_;
+    };
+
+    template<>
+    class Promise<void> {
+    public:
+        Promise()
+            : context_{nullptr}
+        {
+        }
+
+        Promise(Promise&& other)
+            : context_{std::exchange(other.context_, nullptr)}
+        {
+        }
+
+        Promise(const Promise&) = delete;
+
+        ~Promise() {
+            reset();
+        }
+
+        Promise& operator=(Promise&& that) {
+            if (this != &that) {
+                reset();
+                context_ = std::exchange(that.context_, nullptr);
+            }
+
+            return *this;
+        }
+
+        Promise& operator=(const Promise&) = delete;
+
+        [[nodiscard]] Future<void> get_future() {
+            return Future<void>{get_context()};
+        }
+
+        [[nodiscard]] Event& event() {
+            return get_context().event();
+        }
+
+        [[nodiscard]] void set_value() {
+            FutureContext<void>& context = get_context();
+            if (context.is_promise_satisfied()) {
+                Error{ErrorCode::PROMISE_ALREADY_SATISFIED}.raise("Failed to set future value");
+            }
+
+            context.result() = Result<void>{};
+            context.handle_promise_satisfied();
+        }
+
+        [[nodiscard]] void set_error(Error error) {
+            FutureContext<void>& context = get_context();
+            if (context.is_promise_satisfied()) {
+                Error{ErrorCode::PROMISE_ALREADY_SATISFIED}.raise("Failed to set future error");
+            }
+
+            context.result() = Result<void>{error};
+            context.handle_promise_satisfied();
+        }
+
+        void reset() {
+            if (context_) {
+                context_->detach(*this);
+                if (!context_->is_referenced()) {
+                    delete context_;
+                }
+
+                context_ = nullptr;
+            }
+        }
+
+    private:
+        template<typename U>
+        friend class FutureContext;
+
+        template<typename U>
+        friend class Future;
+
+        [[nodiscard]] FutureContext<void>& get_context() {
+            if (!context_) {
+                context_ = new FutureContext<void>; // TODO: use custom allocator(s)
+                context_->attach(*this);
+            }
+
+            return *context_;
+        }
+
+    private:
+        FutureContext<void>* context_;
     };
 
 }

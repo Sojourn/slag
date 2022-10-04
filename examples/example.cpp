@@ -69,6 +69,14 @@ int main(int argc, char** argv) {
     (void)argc;
     (void)argv;
 
+    {
+        Promise<void> promise;
+        Future<void> future = promise.get_future();
+
+        promise.set_value();
+        assert(future.result().has_value());
+    }
+
     EventLoop event_loop{std::make_unique<IOURingReactor>()};
 
     Promise<int> promise;
