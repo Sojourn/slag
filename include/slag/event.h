@@ -22,6 +22,7 @@ namespace slag {
         void wait(Event& event, void* user_data);
         void cancel_wait(Event& event);
 
+        // TODO: remove the event parameter
         virtual void handle_event_set(Event& event, void* user_data) = 0;
         virtual void handle_event_destroyed(void* user_data) = 0;
 

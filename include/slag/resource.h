@@ -1,5 +1,7 @@
 #pragma once
 
+#include "slag/file_descriptor.h"
+
 namespace slag {
 
     class ResourceContext;
@@ -17,6 +19,7 @@ namespace slag {
 
     protected:
         Operation& start_nop_operation(void* user_data);
+        Operation& start_assign_operation(void* user_data, FileDescriptor file_descriptor);
         void cancel_operation(Operation& operation);
 
         virtual void handle_operation_complete(Operation& operation) = 0;

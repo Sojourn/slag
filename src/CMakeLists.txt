@@ -19,7 +19,8 @@ set(SLAG_SOURCE_FILES
     util.cpp
     task_queue.cpp
     executor.cpp
-    fiber.cpp
+    fiber_base.cpp
+    awaitable_base.cpp
     socket.cpp
 )
 
@@ -52,6 +53,7 @@ set(SLAG_HEADER_FILES
     ../include/slag/logging.h
     ../include/slag/util.h
     ../include/slag/task_queue.h
+    ../include/slag/fiber_base.h
     ../include/slag/fiber.h
     ../include/slag/fiber.hpp
     ../include/slag/coroutine.h

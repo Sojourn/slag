@@ -1,4 +1,5 @@
 #include "slag/task.h"
+#include "slag/logging.h"
 
 slag::Task::Task(Executor& executor)
     : executor_{executor}
@@ -16,6 +17,7 @@ bool slag::Task::is_scheduled() const {
 }
 
 void slag::Task::schedule(TaskPriority priority) {
+    trace("Task:{} scheduled", static_cast<void*>(this));
     executor_.schedule(*this, priority);
     assert(is_scheduled());
 }

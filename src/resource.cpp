@@ -45,6 +45,19 @@ slag::Operation& slag::Resource::start_nop_operation(void* user_data) {
     );
 }
 
+slag::Operation& slag::Resource::start_assign_operation(void* user_data, FileDescriptor file_descriptor) {
+    return local_reactor().start_operation<OperationType::ASSIGN>(
+        resource_context(),
+        user_data,
+        OperationParameters<OperationType::ASSIGN> {
+            .arguments = {
+                .file_descriptor = std::move(file_descriptor),
+            },
+            .result = {},
+        }
+    );
+}
+
 void slag::Resource::cancel_operation(Operation& operation) {
     local_reactor().cancel_operation(operation);
 }

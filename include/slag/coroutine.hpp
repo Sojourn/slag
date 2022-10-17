@@ -1,4 +1,18 @@
 #include <cassert>
+#include "slag/fiber.h"
+
+inline bool slag::InitialSuspend::await_ready() const noexcept {
+    // Cooperates with Fiber to make the main Coroutine lazy, and other
+    // Coroutines on the Fiber eager.
+    //
+    return static_cast<bool>(local_active_fiber());
+}
+
+inline void slag::InitialSuspend::await_suspend(std::coroutine_handle<>) const noexcept {
+}
+
+inline void slag::InitialSuspend::await_resume() const noexcept {
+}
 
 template<typename T>
 slag::Coroutine<T> slag::Coroutine<T>::Promise::get_return_object() noexcept {
@@ -6,7 +20,7 @@ slag::Coroutine<T> slag::Coroutine<T>::Promise::get_return_object() noexcept {
 }
 
 template<typename T>
-std::suspend_always slag::Coroutine<T>::Promise::initial_suspend() const noexcept {
+slag::InitialSuspend slag::Coroutine<T>::Promise::initial_suspend() const noexcept {
     return {};
 }
 
@@ -23,16 +37,30 @@ std::suspend_always slag::Coroutine<T>::Promise::yield_value() const {
 template<typename T>
 void slag::Coroutine<T>::Promise::return_value(T value) noexcept(std::is_nothrow_move_constructible_v<T>) {
     result_ = std::move(value);
+    completion_.set();
 }
 
 template<typename T>
 void slag::Coroutine<T>::Promise::unhandled_exception() noexcept(std::is_nothrow_copy_constructible_v<std::exception_ptr>) {
+    asm("int $3");
+
     result_ = std::current_exception();
+    completion_.set();
 }
 
 template<typename T>
 bool slag::Coroutine<T>::Promise::is_done() const noexcept {
     return result_.index() > 0;
+}
+
+template<typename T>
+slag::Event& slag::Coroutine<T>::Promise::completion() noexcept {
+    return completion_;
+}
+
+template<typename T>
+const slag::Event& slag::Coroutine<T>::Promise::completion() const noexcept {
+    return completion_;
 }
 
 template<typename T>
@@ -92,6 +120,16 @@ slag::Coroutine<T>& slag::Coroutine<T>::operator=(Coroutine&& that) noexcept {
 template<typename T>
 bool slag::Coroutine<T>::is_done() const noexcept {
     return handle_.promise().is_done();
+}
+
+template<typename T>
+slag::Event& slag::Coroutine<T>::completion() noexcept {
+    return handle_.promise().completion();
+}
+
+template<typename T>
+const slag::Event& slag::Coroutine<T>::completion() const noexcept {
+    return handle_.promise().completion();
 }
 
 template<typename T>

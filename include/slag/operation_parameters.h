@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include "slag/future.h"
 #include "slag/platform.h"
 #include "slag/operation_types.h"
 #include "slag/file_descriptor.h"
@@ -27,7 +28,11 @@ namespace slag {
 
     template<>
     struct OperationParameters<OperationType::ASSIGN> {
-        FileDescriptor file_descriptor;
+        struct {
+            FileDescriptor file_descriptor;
+        } arguments;
+
+        Promise<void> result;
     };
 
     template<>

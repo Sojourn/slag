@@ -13,15 +13,15 @@
 using namespace slag;
 
 Coroutine<int> run_server(const Address& address) {
-    (void)address;
+    info("run-server enter");
 
     Socket socket;
 
     // initialize the socket
     {
-        Result<void> result;
-
-        result = co_await socket.open(address.family(), SOCK_STREAM, 0);
+        info("pre-result");
+        auto result = co_await socket.open(AF_INET, SOCK_STREAM, 0);
+        info("post-result");
         assert(result.has_value());
 
         // result = co_await socket.bind(address);
@@ -41,11 +41,10 @@ Coroutine<int> run_server(const Address& address) {
     //     }
     // }
 
-    co_return 0;
-}
+    (void)address;
 
-Coroutine<int> foo() {
-    co_return co_await run_server(Address{});
+    info("run-server exit");
+    co_return 0;
 }
 
 struct Stopper : public EventObserver {
@@ -69,24 +68,12 @@ int main(int argc, char** argv) {
     (void)argc;
     (void)argv;
 
-    {
-        Promise<void> promise;
-        Future<void> future = promise.get_future();
-
-        promise.set_value();
-        assert(future.result().has_value());
-    }
-
     EventLoop event_loop{std::make_unique<IOURingReactor>()};
-
-    Promise<int> promise;
-    promise.set_value(14);
 
     Fiber<int> server_fiber{run_server, Address{}};
 
     Stopper stopper;
-    Future<int> stop_future = server_fiber.get_future();
-    stopper.wait(stop_future.event(), nullptr);
+    stopper.wait(server_fiber.completion(), nullptr);
 
     event_loop.run();
 

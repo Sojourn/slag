@@ -143,22 +143,10 @@ bool slag::IOURingReactor::prepare_submission<slag::OperationType::ASSIGN>(Subje
         return false;
     }
 
-    FileDescriptor& source_file_descriptor = subject.operation_parameters.file_descriptor;
-    FileDescriptor& target_file_descriptor = subject.resource_context.file_descriptor();
-
-    int64_t result = 0;
-    if (!source_file_descriptor.is_open()) {
-        result = -EINVAL;
-    }
-    else if (target_file_descriptor.is_open()) {
-        result = -EINVAL;
-    }
-    else {
-        target_file_descriptor = std::move(source_file_descriptor);
-    }
+    io_uring_prep_nop(sqe);
+    io_uring_sqe_set_data(sqe, &subject.operation);
 
     handle_operation_event(subject.operation, OperationEvent::SUBMISSION);
-    process_completion(subject, result);
     return true;
 }
 
@@ -297,17 +285,42 @@ void slag::IOURingReactor::process_completions() {
     notify();
 }
 
-template<slag::OperationType operation_type>
-void slag::IOURingReactor::process_completion(Subject<operation_type>& subject, int64_t result) {
+void slag::IOURingReactor::process_completion(Subject<OperationType::ASSIGN>& subject, int64_t result) {
+    FileDescriptor& source_file_descriptor = subject.operation_parameters.arguments.file_descriptor;
+    FileDescriptor& target_file_descriptor = subject.resource_context.file_descriptor();
+
+    assert(result == 0);
+    if (!source_file_descriptor.is_open()) {
+        result = -EINVAL;
+    }
+    else if (target_file_descriptor.is_open()) {
+        result = -EINVAL;
+    }
+    else {
+        target_file_descriptor = std::move(source_file_descriptor);
+    }
+
+    if (result >= 0) {
+        subject.operation_parameters.result.set_value();
+        result = 0;
+    }
+    else {
+        subject.operation_parameters.result.set_error(make_system_error(-result));
+    }
+
     complete_operation(subject.operation, result);
 }
 
-template<>
-void slag::IOURingReactor::process_completion<slag::OperationType::ACCEPT>(Subject<OperationType::ACCEPT>& subject, int64_t result) {
+void slag::IOURingReactor::process_completion(Subject<OperationType::ACCEPT>& subject, int64_t result) {
     if (result >= 0) {
         subject.operation_parameters.file_descriptor = FileDescriptor{static_cast<int>(result)};
         result = 0;
     }
 
+    complete_operation(subject.operation, result);
+}
+
+template<slag::OperationType operation_type>
+void slag::IOURingReactor::process_completion(Subject<operation_type>& subject, int64_t result) {
     complete_operation(subject.operation, result);
 }

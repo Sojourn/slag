@@ -9,7 +9,12 @@
 
 namespace slag {
     template<typename... Args>
-    void info(const char* format, Args&&... args) {
+    inline void info(const char* format, Args&&... args) {
+        std::cout << fmt::format(fmt::runtime(format), std::forward<Args>(args)...) << std::endl;
+    }
+
+    template<typename... Args>
+    inline void trace(const char* format, Args&&... args) {
         std::cout << fmt::format(fmt::runtime(format), std::forward<Args>(args)...) << std::endl;
     }
 }
