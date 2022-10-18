@@ -25,8 +25,9 @@ slag::Reactor::~Reactor() {
 
 void slag::Reactor::complete_operation(Operation& operation, int64_t result) {
     info(
-        "Reactor/{} complete_operation Operation/{} result/{}"
+        "Reactor/{} complete_operation Operation[{}]/{} result/{}"
         , (const void*)this
+        , to_string(operation.type())
         , (const void*)&operation
         , result
     );
@@ -40,7 +41,8 @@ void slag::Reactor::handle_operation_event(Operation& operation, OperationEvent 
     operation.state_machine().handle_event(operation_event);
 
     info(
-        "Operation/{} {} + {} -> {}"
+        "Operation[{}]/{} {} + {} -> {}"
+        , to_string(operation.type())
         , (const void*)&operation
         , to_string(original_state)
         , to_string(operation_event)
@@ -159,10 +161,24 @@ void slag::Reactor::shutdown() {
 
 void slag::Reactor::cleanup_resource_context(ResourceContext& resource_context) {
     for (Operation* operation: resource_context.operations()) {
+        if (operation->test_flag(OperationFlag::CANCELING)) {
+            continue;
+        }
+
         cancel_operation(*operation);
     }
 
-    // TODO: close file descriptor
+    // wait for all previous operations to complete / cancel, and then attempt to close
+    // the resource (which can bomb out before we issue a sqe).
+    //
+    {
+        Operation& operation = start_operation(resource_context, nullptr, OperationParameters<OperationType::CLOSE> {
+        });
+        operation.set_flags({
+            OperationFlag::INTERNAL,
+            OperationFlag::BARRIER,
+        });
+    }
 }
 
 void slag::Reactor::garbage_collect() {

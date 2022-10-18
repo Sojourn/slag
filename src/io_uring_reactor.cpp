@@ -79,6 +79,9 @@ void slag::IOURingReactor::process_submissions() {
                     .operation_parameters = operation_parameters,
                 };
 
+                // TODO: return something more complex in case we completed an operation
+                // without submitting anything (userspace error).
+                //
                 ok = prepare_submission(subject);
             });
             if (!ok) {
@@ -153,6 +156,11 @@ bool slag::IOURingReactor::prepare_submission<slag::OperationType::ASSIGN>(Subje
 template<>
 bool slag::IOURingReactor::prepare_submission<slag::OperationType::CLOSE>(Subject<OperationType::CLOSE>& subject) {
     FileDescriptor& file_descriptor = subject.resource_context.file_descriptor();
+    if (!file_descriptor) {
+        handle_operation_event(subject.operation, OperationEvent::SUBMISSION);
+        process_completion(subject, -EBADFD);
+        return true;
+    }
 
     struct io_uring_sqe* sqe = io_uring_get_sqe(&ring_);
     if (!sqe) {
