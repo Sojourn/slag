@@ -12,6 +12,7 @@ namespace slag {
     class Socket : public Resource {
     public:
         Coroutine<Result<void>> open(sa_family_t family, int type, int protocol=0);
+        Coroutine<Result<void>> bind(const Address& address);
 
     private:
         void handle_operation_complete(Operation& operation) override;

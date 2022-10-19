@@ -50,7 +50,8 @@ void slag::IOURingReactor::deallocate_resource_context(ResourceContext& resource
 }
 
 void slag::IOURingReactor::handle_internal_operation_complete(Operation& operation) {
-    assert(operation.success());
+    (void)operation;
+    // ...
 }
 
 void slag::IOURingReactor::process_submissions() {
@@ -141,6 +142,20 @@ bool slag::IOURingReactor::prepare_cancel_submission(Subject<operation_type>& su
 
 template<>
 bool slag::IOURingReactor::prepare_submission<slag::OperationType::ASSIGN>(Subject<OperationType::ASSIGN>& subject) {
+    struct io_uring_sqe* sqe = io_uring_get_sqe(&ring_);
+    if (!sqe) {
+        return false;
+    }
+
+    io_uring_prep_nop(sqe);
+    io_uring_sqe_set_data(sqe, &subject.operation);
+
+    handle_operation_event(subject.operation, OperationEvent::SUBMISSION);
+    return true;
+}
+
+template<>
+bool slag::IOURingReactor::prepare_submission<slag::OperationType::BIND>(Subject<OperationType::BIND>& subject) {
     struct io_uring_sqe* sqe = io_uring_get_sqe(&ring_);
     if (!sqe) {
         return false;
@@ -311,6 +326,35 @@ void slag::IOURingReactor::process_completion(Subject<OperationType::ASSIGN>& su
     if (result >= 0) {
         subject.operation_parameters.result.set_value();
         result = 0;
+    }
+    else {
+        subject.operation_parameters.result.set_error(make_system_error(-result));
+    }
+
+    complete_operation(subject.operation, result);
+}
+
+void slag::IOURingReactor::process_completion(Subject<OperationType::BIND>& subject, int64_t result) {
+    auto&& file_descriptor = subject.resource_context.file_descriptor();
+    auto&& address         = subject.operation_parameters.arguments.address;
+
+    // validate arguments
+    if (result >= 0 && !file_descriptor.is_open()) {
+        result = -EBADFD;
+    }
+
+    // enumate the operation
+    if (result >= 0) {
+        Result<void> bind_result = local_platform().bind(file_descriptor.borrow(), &address.addr(), address.size());
+        if (bind_result.has_error()) {
+            assert(bind_result.error().category() == ErrorCategory::SYSTEM);
+            result = -static_cast<int64_t>(bind_result.error().code());
+        }
+    }
+
+    // assign the result
+    if (result >= 0) {
+        subject.operation_parameters.result.set_value();
     }
     else {
         subject.operation_parameters.result.set_error(make_system_error(-result));

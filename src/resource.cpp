@@ -58,6 +58,19 @@ slag::Operation& slag::Resource::start_assign_operation(void* user_data, FileDes
     );
 }
 
+slag::Operation& slag::Resource::start_bind_operation(void* user_data, const Address& address) {
+    return local_reactor().start_operation<OperationType::BIND>(
+        resource_context(),
+        user_data,
+        OperationParameters<OperationType::BIND> {
+            .arguments = {
+                .address = address,
+            },
+            .result = {},
+        }
+    );
+}
+
 void slag::Resource::cancel_operation(Operation& operation) {
     local_reactor().cancel_operation(operation);
 }

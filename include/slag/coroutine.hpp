@@ -42,8 +42,6 @@ void slag::Coroutine<T>::Promise::return_value(T value) noexcept(std::is_nothrow
 
 template<typename T>
 void slag::Coroutine<T>::Promise::unhandled_exception() noexcept(std::is_nothrow_copy_constructible_v<std::exception_ptr>) {
-    asm("int $3");
-
     result_ = std::current_exception();
     completion_.set();
 }

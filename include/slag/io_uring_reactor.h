@@ -44,6 +44,7 @@ namespace slag {
     private:
         void process_completions();
         void process_completion(Subject<OperationType::ASSIGN>& subject, int64_t result);
+        void process_completion(Subject<OperationType::BIND>& subject, int64_t result);
         void process_completion(Subject<OperationType::ACCEPT>& subject, int64_t result);
 
         template<OperationType operation_type>

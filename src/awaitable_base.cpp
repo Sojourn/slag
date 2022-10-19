@@ -24,6 +24,8 @@ void slag::AwaitableBase::handle_event_set(Event& event, void* user_data) {
 }
 
 void slag::AwaitableBase::handle_event_destroyed(void* user_data) {
-    FiberBase* fiber = reinterpret_cast<FiberBase*>(user_data);
-    fiber->resume(handle_);
+    if (!event_.is_set()) {
+        FiberBase* fiber = reinterpret_cast<FiberBase*>(user_data);
+        fiber->resume(handle_);
+    }
 }

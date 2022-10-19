@@ -8,6 +8,7 @@
     X(CANCEL)                   \
     X(ASSIGN)                   \
     X(CLOSE)                    \
+    X(BIND)                     \
     X(CONNECT)                  \
     X(ACCEPT)                   \
     X(SEND)                     \

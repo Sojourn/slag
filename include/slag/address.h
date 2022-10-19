@@ -1,5 +1,8 @@
 #pragma once
 
+#include <variant>
+#include <string>
+#include <vector>
 #include "slag/platform.h"
 
 namespace slag {
@@ -27,5 +30,20 @@ namespace slag {
     private:
         struct sockaddr_storage storage_;
     };
+
+    struct AddressQuery {
+        using ServiceName = std::string;
+        using ServicePort = int;
+        using Service     = std::variant<std::monostate, ServiceName, ServicePort>;
+
+        std::string host_name;
+        Service     service;
+        int         family   = AF_UNSPEC;
+        int         type     = 0;
+        int         protocol = 0;
+        bool        passive  = false;
+    };
+
+    std::vector<Address> execute(const AddressQuery& query);
 
 }

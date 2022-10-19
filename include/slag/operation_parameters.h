@@ -40,6 +40,15 @@ namespace slag {
     };
 
     template<>
+    struct OperationParameters<OperationType::BIND> {
+        struct {
+            Address address;
+        } arguments;
+
+        Promise<void> result;
+    };
+
+    template<>
     struct OperationParameters<OperationType::CONNECT> {
         Address address;
     };

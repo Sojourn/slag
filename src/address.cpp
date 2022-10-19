@@ -1,7 +1,13 @@
 #include "slag/address.h"
+#include <fmt/core.h>
+#include <fmt/format.h>
+#include <fmt/printf.h>
 #include <cstdlib>
 #include <cstring>
 #include <cassert>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
 
 slag::Address::Address() {
     memset(this, 0, sizeof(*this));
@@ -80,4 +86,57 @@ struct sockaddr_in6& slag::Address::addr_in6() {
 const struct sockaddr_in6& slag::Address::addr_in6() const {
     assert(family() == AF_INET6);
     return reinterpret_cast<const struct sockaddr_in6&>(storage_);
+}
+
+std::vector<slag::Address> slag::execute(const AddressQuery& query) {
+    const char* node = query.host_name.c_str();
+    const char* service = nullptr;
+
+    std::string service_storage;
+    if (auto service_name = std::get_if<AddressQuery::ServiceName>(&query.service)) {
+        service = service_name->c_str();
+    }
+    else if (auto service_port = std::get_if<AddressQuery::ServicePort>(&query.service)) {
+        service_storage = fmt::format("{}", *service_port);
+        service = service_storage.c_str();
+    }
+
+    struct addrinfo hints;
+    memset(&hints, 0, sizeof(hints));
+
+    hints.ai_flags |= (AI_V4MAPPED | AI_ADDRCONFIG);
+    if (query.passive) {
+        hints.ai_flags |= AI_PASSIVE;
+    }
+    if (std::holds_alternative<AddressQuery::ServicePort>(query.service)) {
+        hints.ai_flags |= AI_NUMERICSERV;
+    }
+
+    hints.ai_family   = query.family;
+    hints.ai_socktype = query.type;
+    hints.ai_protocol = query.protocol;
+
+    struct addrinfo* records = nullptr;
+    int error_code = 0;
+    do {
+        error_code = ::getaddrinfo(node, service, &hints, &records);
+        if (error_code && error_code != EAI_SYSTEM) {
+            throw std::runtime_error(gai_strerror(error_code));
+        }
+    } while (error_code && (errno == EAGAIN));
+
+    if (error_code) {
+        assert(error_code == EAI_SYSTEM);
+        throw std::runtime_error(strerror(errno));
+    }
+
+    std::vector<Address> result;
+    for (struct addrinfo* record = records; record; record = record->ai_next) {
+        result.emplace_back(*record->ai_addr, record->ai_addrlen);
+    }
+
+    // FIXME: do this w/ RAII
+    freeaddrinfo(records);
+
+    return result;
 }

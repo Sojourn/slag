@@ -19,13 +19,15 @@ Coroutine<int> run_server(const Address& address) {
 
     // initialize the socket
     {
-        info("pre-result");
-        auto result = co_await socket.open(AF_INET, SOCK_STREAM, 0);
-        info("post-result");
-        assert(result.has_value());
+        {
+            auto result = co_await socket.open(address.family(), SOCK_STREAM, 0);
+            assert(result.has_value());
+        }
 
-        // result = co_await socket.bind(address);
-        // assert(result.has_value());
+        {
+            auto result = co_await socket.bind(address);
+            assert(result.has_value());
+        }
 
         // result = co_await socket.listen();
         // assert(result.has_value());
@@ -70,7 +72,36 @@ int main(int argc, char** argv) {
 
     EventLoop event_loop{std::make_unique<IOURingReactor>()};
 
-    Fiber<int> server_fiber{run_server, Address{}};
+    std::cout << strerror(99) << std::endl;
+
+    AddressQuery address_query;
+    address_query.host_name = "localhost";
+    address_query.family    = AF_INET;
+    address_query.type      = SOCK_STREAM;
+    address_query.passive   = true;
+
+    Address address;
+#if 0
+    try {
+        std::vector<Address> addresses = execute(address_query);
+        assert(!addresses.empty());
+        address = addresses.front();
+    }
+    catch (const std::exception& ex) {
+        std::cerr << ex.what() << std::endl;
+        return EXIT_FAILURE;
+    }
+#else
+    struct sockaddr_in addr_in;
+    memset(&addr_in, 0, sizeof(addr_in));
+    addr_in.sin_family      = AF_INET;
+    addr_in.sin_port        = htons(10334);
+    addr_in.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+
+    address = Address{addr_in};
+#endif
+
+    Fiber<int> server_fiber{run_server, address};
 
     Stopper stopper;
     stopper.wait(server_fiber.completion(), nullptr);
