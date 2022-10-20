@@ -31,6 +31,16 @@ slag::Coroutine<slag::Result<void>> slag::Socket::bind(const Address& address) {
     co_return result;
 }
 
+slag::Coroutine<slag::Result<void>> slag::Socket::listen(int backlog) {
+    Operation& operation = start_listen_operation(nullptr, backlog);
+
+    Future<void> future = operation.parameters<OperationType::LISTEN>().result.get_future();
+    co_await future;
+
+    Result<void> result = future.result();
+    co_return result;
+}
+
 void slag::Socket::handle_operation_complete(Operation& operation) {
     (void)operation;
 }

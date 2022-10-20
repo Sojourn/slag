@@ -49,6 +49,15 @@ namespace slag {
     };
 
     template<>
+    struct OperationParameters<OperationType::LISTEN> {
+        struct {
+            int backlog = 0;
+        } arguments;
+
+        Promise<void> result;
+    };
+
+    template<>
     struct OperationParameters<OperationType::CONNECT> {
         Address address;
     };

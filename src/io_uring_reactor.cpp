@@ -169,6 +169,20 @@ bool slag::IOURingReactor::prepare_submission<slag::OperationType::BIND>(Subject
 }
 
 template<>
+bool slag::IOURingReactor::prepare_submission<slag::OperationType::LISTEN>(Subject<OperationType::LISTEN>& subject) {
+    struct io_uring_sqe* sqe = io_uring_get_sqe(&ring_);
+    if (!sqe) {
+        return false;
+    }
+
+    io_uring_prep_nop(sqe);
+    io_uring_sqe_set_data(sqe, &subject.operation);
+
+    handle_operation_event(subject.operation, OperationEvent::SUBMISSION);
+    return true;
+}
+
+template<>
 bool slag::IOURingReactor::prepare_submission<slag::OperationType::CLOSE>(Subject<OperationType::CLOSE>& subject) {
     FileDescriptor& file_descriptor = subject.resource_context.file_descriptor();
     if (!file_descriptor) {
@@ -349,6 +363,35 @@ void slag::IOURingReactor::process_completion(Subject<OperationType::BIND>& subj
         if (bind_result.has_error()) {
             assert(bind_result.error().category() == ErrorCategory::SYSTEM);
             result = -static_cast<int64_t>(bind_result.error().code());
+        }
+    }
+
+    // assign the result
+    if (result >= 0) {
+        subject.operation_parameters.result.set_value();
+    }
+    else {
+        subject.operation_parameters.result.set_error(make_system_error(-result));
+    }
+
+    complete_operation(subject.operation, result);
+}
+
+void slag::IOURingReactor::process_completion(Subject<OperationType::LISTEN>& subject, int64_t result) {
+    auto&& file_descriptor = subject.resource_context.file_descriptor();
+    auto&& backlog         = subject.operation_parameters.arguments.backlog;
+
+    // validate arguments
+    if (result >= 0 && !file_descriptor.is_open()) {
+        result = -EBADFD;
+    }
+
+    // enumate the operation
+    if (result >= 0) {
+        Result<void> listen_result = local_platform().listen(file_descriptor.borrow(), backlog);
+        if (listen_result.has_error()) {
+            assert(listen_result.error().category() == ErrorCategory::SYSTEM);
+            result = -static_cast<int64_t>(listen_result.error().code());
         }
     }
 

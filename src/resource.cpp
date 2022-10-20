@@ -71,6 +71,19 @@ slag::Operation& slag::Resource::start_bind_operation(void* user_data, const Add
     );
 }
 
+slag::Operation& slag::Resource::start_listen_operation(void* user_data, int backlog) {
+    return local_reactor().start_operation<OperationType::LISTEN>(
+        resource_context(),
+        user_data,
+        OperationParameters<OperationType::LISTEN> {
+            .arguments = {
+                .backlog = backlog,
+            },
+            .result = {},
+        }
+    );
+}
+
 void slag::Resource::cancel_operation(Operation& operation) {
     local_reactor().cancel_operation(operation);
 }

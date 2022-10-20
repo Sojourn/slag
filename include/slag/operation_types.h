@@ -9,8 +9,9 @@
     X(ASSIGN)                   \
     X(CLOSE)                    \
     X(BIND)                     \
-    X(CONNECT)                  \
+    X(LISTEN)                   \
     X(ACCEPT)                   \
+    X(CONNECT)                  \
     X(SEND)                     \
     X(RECEIVE)
 

@@ -17,7 +17,7 @@ Coroutine<int> run_server(const Address& address) {
 
     Socket socket;
 
-    // initialize the socket
+    // initialize the listening socket
     {
         {
             auto result = co_await socket.open(address.family(), SOCK_STREAM, 0);
@@ -29,8 +29,10 @@ Coroutine<int> run_server(const Address& address) {
             assert(result.has_value());
         }
 
-        // result = co_await socket.listen();
-        // assert(result.has_value());
+        {
+            auto result = co_await socket.listen();
+            assert(result.has_value());
+        }
     }
 
     // while (Result<Socket> connection_result = co_await socket.accept()) {
