@@ -16,9 +16,7 @@ slag::Coroutine<slag::Result<void>> slag::Socket::open(sa_family_t family, int t
     Operation& operation = start_assign_operation(nullptr, std::move(file_descriptor));
     Future<void> future = operation.parameters<OperationType::ASSIGN>().result.get_future();
     co_await future;
-
-    Result<void> result = future.result();
-    co_return result;
+    co_return {};
 }
 
 slag::Coroutine<slag::Result<void>> slag::Socket::bind(const Address& address) {
@@ -26,9 +24,7 @@ slag::Coroutine<slag::Result<void>> slag::Socket::bind(const Address& address) {
 
     Future<void> future = operation.parameters<OperationType::BIND>().result.get_future();
     co_await future;
-
-    Result<void> result = future.result();
-    co_return result;
+    co_return {};
 }
 
 slag::Coroutine<slag::Result<void>> slag::Socket::listen(int backlog) {
@@ -36,9 +32,7 @@ slag::Coroutine<slag::Result<void>> slag::Socket::listen(int backlog) {
 
     Future<void> future = operation.parameters<OperationType::LISTEN>().result.get_future();
     co_await future;
-
-    Result<void> result = future.result();
-    co_return result;
+    co_return {};
 }
 
 void slag::Socket::handle_operation_complete(Operation& operation) {

@@ -6,13 +6,13 @@ using namespace slag;
 TEST_CASE("future errors", "[Future]") {
     SECTION("detached future") {
         Future<int> future;
-        REQUIRE_THROWS_AS(future.result(), std::runtime_error);
+        REQUIRE_THROWS_AS(future.get(), std::runtime_error);
     }
 
     SECTION("future not ready") {
         Promise<int> promise;
         Future<int> future{promise.get_future()};
-        CHECK(future.result().error() == Error{ErrorCode::FUTURE_NOT_READY});
+        REQUIRE_THROWS_AS(future.get(), std::runtime_error);
     }
 
     SECTION("future already retrieved") {
@@ -34,23 +34,13 @@ TEST_CASE("future behavior", "[Future]") {
         Promise<int> promise;
         Future<int> future = promise.get_future();
         promise.set_value(13);
-        if (auto&& result = future.result(); result) {
-            CHECK(result.value() == 13);
-        }
-        else {
-            CHECK(false);
-        }
+        CHECK(future.get() == 13);
     }
 
     SECTION("set and retrieve error") {
         Promise<int> promise;
         Future<int> future = promise.get_future();
-        promise.set_error(ErrorCode::INVALID_ARGUMENT);
-        if (auto&& result = future.result(); result) {
-            CHECK(false);
-        }
-        else {
-            CHECK(result.error() == ErrorCode::INVALID_ARGUMENT);
-        }
+        promise.set_error(Error{ErrorCode::INVALID_ARGUMENT}, "");
+        REQUIRE_THROWS_AS(future.get(), std::runtime_error);
     }
 }

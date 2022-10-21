@@ -41,13 +41,11 @@ slag::FutureAwaitable<T>::FutureAwaitable(Future<T>& future)
 
 template<typename T>
 T slag::FutureAwaitable<T>::await_resume() {
-    auto&& result = future_.result();
-    if (result.has_error()) {
-        result.error().raise("FutureError");
+    if constexpr (std::is_same_v<T, void>) {
+        future_.get();
     }
-
-    if constexpr (!std::is_same_v<T, void>) {
-        return std::move(result.value());
+    else {
+        return std::move(future_.get());
     }
 }
 

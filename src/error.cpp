@@ -28,7 +28,7 @@ slag::ErrorCode slag::Error::code() const {
     return code_;
 }
 
-void slag::Error::raise(const char* message) const {
+void slag::Error::raise(std::string_view message) const {
     throw std::runtime_error(
         fmt::format("{}: {}", message, to_string(*this)) // TODO: make a custom exception type that wraps an ErrorCode
     );

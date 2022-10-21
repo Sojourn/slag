@@ -7,7 +7,7 @@ inline slag::FutureContext<T>::FutureContext()
     , promise_broken_{false}
     , promise_satisfied_{false}
     , future_retrieved_{false}
-    , result_{Error{ErrorCode::FUTURE_NOT_READY}}
+    , result_{}
 {
 }
 
@@ -37,12 +37,12 @@ inline const slag::Event& slag::FutureContext<T>::event() const {
 }
 
 template<typename T>
-inline slag::Result<T>& slag::FutureContext<T>::result() {
+inline auto slag::FutureContext<T>::result() -> Result& {
     return result_;
 }
 
 template<typename T>
-inline const slag::Result<T>& slag::FutureContext<T>::result() const {
+inline auto slag::FutureContext<T>::result() const -> const Result& {
     return result_;
 }
 
@@ -52,8 +52,14 @@ inline void slag::FutureContext<T>::handle_promise_broken() {
     assert(!promise_satisfied_);
     assert(!promise_broken_);
 
+    try {
+        Error{ErrorCode::PROMISE_BROKEN}.raise("");
+    }
+    catch (const std::exception&) {
+        result_ = std::current_exception();
+    }
+
     promise_broken_ = true;
-    result_ = Result<T>{Error{ErrorCode::PROMISE_BROKEN}};
     event_.set();
 }
 
@@ -164,7 +170,7 @@ inline void slag::Promise<T>::set_value(T&& value) {
         Error{ErrorCode::PROMISE_ALREADY_SATISFIED}.raise("Failed to set future value");
     }
 
-    context.result() = Result<T>{std::move(value)};
+    context.result() = std::move(value);
     context.handle_promise_satisfied();
 }
 
@@ -175,19 +181,34 @@ inline void slag::Promise<T>::set_value(const T& value) {
         Error{ErrorCode::PROMISE_ALREADY_SATISFIED}.raise("Failed to set future value");
     }
 
-    context.result() = Result<T>{value};
+    context.result() = value;
     context.handle_promise_satisfied();
 }
 
 template<typename T>
-inline void slag::Promise<T>::set_error(Error error) {
+inline void slag::Promise<T>::set_error(Error error, std::string_view message) {
+    try {
+        error.raise(message);
+    }
+    catch (const std::exception&) {
+        set_current_exception();
+    }
+}
+
+template<typename T>
+inline void slag::Promise<T>::set_exception(std::exception_ptr ex) {
     FutureContext<T>& context = get_context();
     if (context.is_promise_satisfied()) {
         Error{ErrorCode::PROMISE_ALREADY_SATISFIED}.raise("Failed to set future error");
     }
 
-    context.result() = Result<T>{error};
+    context.result() = std::move(ex);
     context.handle_promise_satisfied();
+}
+
+template<typename T>
+inline void slag::Promise<T>::set_current_exception() {
+    set_exception(std::current_exception());
 }
 
 template<typename T>
@@ -240,6 +261,11 @@ inline slag::Future<T>& slag::Future<T>::operator=(Future&& that) {
 }
 
 template<typename T>
+inline bool slag::Future<T>::is_ready() const {
+    return get_context().is_promise_satisfied();
+}
+
+template<typename T>
 inline slag::Event& slag::Future<T>::event() {
     return get_context().event();
 }
@@ -250,15 +276,33 @@ inline const slag::Event& slag::Future<T>::event() const {
 }
 
 template<typename T>
-inline slag::Result<T>& slag::Future<T>::result() {
-    FutureContext<T>& context = get_context();
-    return context.result();
+inline T& slag::Future<T>::get() {
+    auto&& context = get_context();
+    if (!context.is_promise_satisfied()) {
+        Error{ErrorCode::FUTURE_NOT_READY}.raise("Failed to get result");
+    }
+
+    auto&& result = context.result();
+    if (auto ex = std::get_if<std::exception_ptr>(&result)) {
+        std::rethrow_exception(*ex);
+    }
+
+    return std::get<T>(result);
 }
 
 template<typename T>
-inline const slag::Result<T>& slag::Future<T>::result() const {
-    FutureContext<T>& context = get_context();
-    return context.result();
+inline const T& slag::Future<T>::get() const {
+    auto&& context = get_context();
+    if (!context.is_promise_satisfied()) {
+        Error{ErrorCode::FUTURE_NOT_READY}.raise("Failed to get result");
+    }
+
+    auto&& result = context.result();
+    if (auto ex = std::get_if<std::exception_ptr>(&result)) {
+        std::rethrow_exception(*ex);
+    }
+
+    return std::get<T>(result);
 }
 
 template<typename T>

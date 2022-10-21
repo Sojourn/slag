@@ -342,7 +342,7 @@ void slag::IOURingReactor::process_completion(Subject<OperationType::ASSIGN>& su
         result = 0;
     }
     else {
-        subject.operation_parameters.result.set_error(make_system_error(-result));
+        subject.operation_parameters.result.set_error(make_system_error(-result), "Assign operation failed");
     }
 
     complete_operation(subject.operation, result);
@@ -371,7 +371,7 @@ void slag::IOURingReactor::process_completion(Subject<OperationType::BIND>& subj
         subject.operation_parameters.result.set_value();
     }
     else {
-        subject.operation_parameters.result.set_error(make_system_error(-result));
+        subject.operation_parameters.result.set_error(make_system_error(-result), "Bind operation failed");
     }
 
     complete_operation(subject.operation, result);
@@ -400,7 +400,7 @@ void slag::IOURingReactor::process_completion(Subject<OperationType::LISTEN>& su
         subject.operation_parameters.result.set_value();
     }
     else {
-        subject.operation_parameters.result.set_error(make_system_error(-result));
+        subject.operation_parameters.result.set_error(make_system_error(-result), "Listen operation failed");
     }
 
     complete_operation(subject.operation, result);

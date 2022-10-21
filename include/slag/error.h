@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 #include <cstdint>
 #include <cstddef>
 #include <cerrno>
@@ -49,7 +50,7 @@ namespace slag {
         [[nodiscard]] ErrorCategory category() const;
         [[nodiscard]] ErrorCode code() const;
 
-        void raise(const char* message) const;
+        void raise(std::string_view message) const;
 
         [[nodiscard]] explicit operator bool() const {
             return code_ != ErrorCode::SUCCESS;
