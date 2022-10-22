@@ -84,6 +84,16 @@ slag::Operation& slag::Resource::start_listen_operation(void* user_data, int bac
     );
 }
 
+slag::Operation& slag::Resource::start_accept_operation(void* user_data) {
+    return local_reactor().start_operation<OperationType::ACCEPT>(
+        resource_context(),
+        user_data,
+        OperationParameters<OperationType::ACCEPT> {
+            // pass
+        }
+    );
+}
+
 void slag::Resource::cancel_operation(Operation& operation) {
     local_reactor().cancel_operation(operation);
 }

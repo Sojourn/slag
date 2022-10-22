@@ -227,11 +227,9 @@ template<>
 bool slag::IOURingReactor::prepare_submission<slag::OperationType::ACCEPT>(Subject<OperationType::ACCEPT>& subject) {
     FileDescriptor& file_descriptor = subject.resource_context.file_descriptor();
 
-    auto&& [
-        _,
-        address_storage,
-        address_length
-    ] = subject.operation_parameters;
+    Address& address = subject.operation_parameters.address;
+    socklen_t& address_length = subject.operation_parameters.address_length;
+    address_length = address.size();
 
     struct io_uring_sqe* sqe = io_uring_get_sqe(&ring_);
     if (!sqe) {
@@ -241,7 +239,7 @@ bool slag::IOURingReactor::prepare_submission<slag::OperationType::ACCEPT>(Subje
     io_uring_prep_accept(
         sqe,
         file_descriptor.borrow(),
-        reinterpret_cast<struct sockaddr*>(&address_storage),
+        &address.addr(),
         &address_length,
         SOCK_CLOEXEC
     );
@@ -408,7 +406,20 @@ void slag::IOURingReactor::process_completion(Subject<OperationType::LISTEN>& su
 
 void slag::IOURingReactor::process_completion(Subject<OperationType::ACCEPT>& subject, int64_t result) {
     if (result >= 0) {
-        subject.operation_parameters.file_descriptor = FileDescriptor{static_cast<int>(result)};
+        FileDescriptor file_descriptor{static_cast<int>(result)};
+
+        if (sizeof(subject.operation_parameters.address) < subject.operation_parameters.address_length) {
+            // address was truncated--throw?
+            assert(false);
+        }
+
+        subject.operation_parameters.result.set_value(
+            std::make_pair(
+                std::move(file_descriptor),
+                subject.operation_parameters.address
+            )
+        );
+
         result = 0;
     }
 

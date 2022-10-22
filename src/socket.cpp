@@ -35,6 +35,20 @@ slag::Coroutine<slag::Result<void>> slag::Socket::listen(int backlog) {
     co_return {};
 }
 
+slag::Coroutine<std::pair<slag::Socket, slag::Address>> slag::Socket::accept() {
+    Operation& accept_operation = start_accept_operation(nullptr);
+
+    auto&& accept_future = accept_operation.parameters<OperationType::ACCEPT>().result.get_future();
+    auto&& [file_descriptor, address] = co_await accept_future;
+
+    slag::Socket socket;
+    Operation& assign_operation = socket.start_assign_operation(nullptr, std::move(file_descriptor));
+    Future<void> assign_future = assign_operation.parameters<OperationType::ASSIGN>().result.get_future();
+    co_await assign_future;
+
+    co_return std::make_pair(std::move(socket), address);
+}
+
 void slag::Socket::handle_operation_complete(Operation& operation) {
     (void)operation;
 }

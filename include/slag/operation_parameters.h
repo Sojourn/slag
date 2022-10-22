@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <utility>
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
@@ -23,6 +24,7 @@ namespace slag {
 
     template<>
     struct OperationParameters<OperationType::CANCEL> {
+        // TODO: verify that these operations have a nurse-patient relationship
         Operation* target_operation; // the operation we are trying to cancel
     };
 
@@ -64,9 +66,10 @@ namespace slag {
 
     template<>
     struct OperationParameters<OperationType::ACCEPT> {
-        FileDescriptor          file_descriptor; // out
-        struct sockaddr_storage address_storage; // out
-        socklen_t               address_length;  // out
+        Promise<std::pair<FileDescriptor, Address>> result;
+
+        Address   address;
+        socklen_t address_length = 0;
     };
 
     template<>

@@ -59,12 +59,10 @@ socklen_t slag::Address::size() const {
 }
 
 struct sockaddr& slag::Address::addr() {
-    assert(family());
     return reinterpret_cast<struct sockaddr&>(storage_);
 }
 
 const struct sockaddr& slag::Address::addr() const {
-    assert(family());
     return reinterpret_cast<const struct sockaddr&>(storage_);
 }
 

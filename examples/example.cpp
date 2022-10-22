@@ -9,6 +9,7 @@
 #include <type_traits>
 #include <stdexcept>
 #include "slag/slag.h"
+#include "slag/trace.h"
 
 using namespace slag;
 
@@ -33,6 +34,12 @@ Coroutine<int> run_server(const Address& address) {
             auto result = co_await socket.listen();
             assert(result.has_value());
         }
+
+        {
+            auto&& [connection, address] = co_await socket.accept();
+        }
+
+        magic_trace_stop_indicator();
     }
 
     // while (Result<Socket> connection_result = co_await socket.accept()) {

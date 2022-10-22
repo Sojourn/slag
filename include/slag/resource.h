@@ -23,6 +23,7 @@ namespace slag {
         Operation& start_assign_operation(void* user_data, FileDescriptor file_descriptor);
         Operation& start_bind_operation(void* user_data, const Address& address);
         Operation& start_listen_operation(void* user_data, int backlog);
+        Operation& start_accept_operation(void* user_data);
         void cancel_operation(Operation& operation);
 
         virtual void handle_operation_complete(Operation& operation) = 0;
