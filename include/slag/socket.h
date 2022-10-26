@@ -7,6 +7,7 @@
 #include "slag/coroutine.h"
 #include "slag/operation.h"
 #include "slag/file_descriptor.h"
+#include "slag/byte_stream.h"
 
 namespace slag {
 

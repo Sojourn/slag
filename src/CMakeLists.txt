@@ -22,6 +22,7 @@ set(SLAG_SOURCE_FILES
     fiber_base.cpp
     awaitable_base.cpp
     socket.cpp
+    byte_stream.cpp
     trace.cpp
 )
 
@@ -60,6 +61,7 @@ set(SLAG_HEADER_FILES
     ../include/slag/coroutine.h
     ../include/slag/coroutine.hpp
     ../include/slag/socket.h
+    ../include/slag/byte_stream.h
     ../include/slag/trace.h
 )
 
