@@ -4,6 +4,7 @@
 #include <vector>
 #include <cstdint>
 #include <cstddef>
+#include <cassert>
 #include "slag/handle.h"
 
 namespace slag {
@@ -82,6 +83,22 @@ namespace slag {
             }
 
             return count - remainder;
+        }
+
+        [[nodiscard]] std::pair<std::span<const std::byte>, Handle<Buffer>> peek_stable(size_t count) {
+            auto result = read_stable(count);
+            if (!result.first.empty()) {
+                size_t bytes_unread = unread(result.first.size_bytes());
+                assert(bytes_unread == result.first.size_bytes());
+            }
+
+            return result;
+        }
+
+        [[nodiscard]] std::span<const std::byte> peek(size_t count) {
+            auto&& [result, buffer] = peek_stable(count);
+            (void)buffer;
+            return result;
         }
 
         void write(std::span<const std::byte> data, Handle<Buffer> buffer = {}) {

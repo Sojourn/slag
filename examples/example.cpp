@@ -38,6 +38,11 @@ Coroutine<int> run_server(const Address& address) {
 
         {
             auto&& [connection, address] = co_await socket.accept();
+
+            std::string message = "hello, world!\n";
+            std::span<const std::byte> data = std::as_bytes(std::span{message.c_str(), message.size()});
+            auto result = co_await connection.send(data);
+            (void)result;
         }
 
         magic_trace_stop_indicator();

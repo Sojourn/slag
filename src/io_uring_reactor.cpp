@@ -254,15 +254,25 @@ bool slag::IOURingReactor::prepare_submission<slag::OperationType::SEND>(Subject
     FileDescriptor& file_descriptor = subject.resource_context.file_descriptor();
 
     auto&& [
+        data,
         buffer
-    ] = subject.operation_parameters;
+    ] = subject.operation_parameters.arguments;
+
+    (void)buffer;
 
     struct io_uring_sqe* sqe = io_uring_get_sqe(&ring_);
     if (!sqe) {
         return false;
     }
 
-    io_uring_prep_send(sqe, file_descriptor.release(), buffer.data(), buffer.size(), 0);
+    io_uring_prep_send(
+        sqe,
+        file_descriptor.borrow(),
+        data.data(),
+        data.size_bytes(),
+        MSG_NOSIGNAL // is this needed?
+    );
+
     io_uring_sqe_set_data(sqe, &subject.operation);
 
     handle_operation_event(subject.operation, OperationEvent::SUBMISSION);

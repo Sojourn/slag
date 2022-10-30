@@ -49,6 +49,25 @@ slag::Coroutine<std::pair<slag::Socket, slag::Address>> slag::Socket::accept() {
     co_return std::make_pair(std::move(socket), address);
 }
 
+slag::Coroutine<slag::Result<void>> slag::Socket::send(std::span<const std::byte> data) {
+    if (data.empty()) {
+        co_return {};
+    }
+
+    tx_stream_.write(data);
+    while (size_t remainder = tx_stream_.readable_byte_count()) {
+        auto&& [tx_data, tx_buffer] = tx_stream_.peek_stable(remainder);
+
+        Operation& operation = start_send_operation(nullptr, tx_data, tx_buffer);
+        auto&& future = operation.parameters<OperationType::SEND>().result.get_future();
+        size_t count = co_await future;
+
+        (void)tx_stream_.read(count);
+    }
+
+    co_return {};
+}
+
 void slag::Socket::handle_operation_complete(Operation& operation) {
     (void)operation;
 }
