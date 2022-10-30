@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include "slag/slag.h"
 #include "slag/trace.h"
+#include "slag/handle.h"
 
 using namespace slag;
 
@@ -109,6 +110,8 @@ int main(int argc, char** argv) {
 
     address = Address{addr_in};
 #endif
+
+    auto foo = make_handle<int>(3);
 
     Fiber<int> server_fiber{run_server, address};
 

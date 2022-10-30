@@ -15,5 +15,5 @@
 #include "io_uring_reactor.h"
 #include "logging.h"
 #include "intrusive_list.h"
-
+#include "byte_stream.h"
 #include "socket.h"
