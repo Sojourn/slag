@@ -10,6 +10,7 @@ add_executable(unit_test
         ut_operation_state_machine.cpp
         ut_io_uring_reactor.cpp
         ut_byte_stream.cpp
+        ut_lru16.cpp
         )
 
 target_link_libraries(unit_test PUBLIC slag)
