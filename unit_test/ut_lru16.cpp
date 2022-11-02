@@ -12,9 +12,13 @@ public:
         memset(ranking_, -1, sizeof(ranking_));
     }
 
-    [[nodiscard]] Slot allocate() {
+    [[nodiscard]] std::pair<Slot, bool> allocate() {
+        bool evicted = false;
+
         uint16_t slots = free_slots();
         if (!slots) {
+            evicted = true;
+
             // decrement all rankings and recalculate the set of free slots
             __m128i old_ranking = _mm_load_si128(reinterpret_cast<const __m128i*>(ranking_));
             __m128i new_ranking = _mm_add_epi8(old_ranking, _mm_set1_epi8(static_cast<char>(-1)));
@@ -26,7 +30,7 @@ public:
 
         Slot slot = static_cast<Slot>(__builtin_ctz(static_cast<unsigned int>(slots)));
         touch(slot);
-        return slot;
+        return std::make_pair(slot, evicted);
     }
 
     void deallocate(Slot slot) {
@@ -102,7 +106,15 @@ TEST_CASE("tdd", "[Lru16]") {
 
     SECTION("allocation ordering") {
         for (size_t i = 0; i < 16; ++i) {
-            CHECK(lru.allocate() == static_cast<Lru16::Slot>(i));
+            CHECK(lru.allocate().first == static_cast<Lru16::Slot>(i));
+        }
+        for (size_t i = 0; i < 16; ++i) {
+            CHECK(lru.allocate().first == static_cast<Lru16::Slot>(i));
+        }
+
+        lru.touch(0);
+        for (size_t i = 0; i < 16; ++i) {
+            CHECK(lru.allocate().first == static_cast<Lru16::Slot>((i + 1) % 16));
         }
     }
 }
