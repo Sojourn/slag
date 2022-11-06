@@ -1,5 +1,6 @@
 #include "slag/io_uring_reactor.h"
 #include "slag/resource.h"
+#include "slag/error.h"
 #include <liburing/io_uring.h>
 #include <stdexcept>
 
@@ -428,6 +429,18 @@ void slag::IOURingReactor::process_completion(Subject<OperationType::ACCEPT>& su
         );
 
         result = 0;
+    }
+
+    complete_operation(subject.operation, result);
+}
+
+void slag::IOURingReactor::process_completion(Subject<OperationType::SEND>& subject, int64_t result) {
+    if (result >= 0) {
+        subject.operation_parameters.result.set_value(static_cast<size_t>(result));
+        result = 0; // TODO: figure out if we need to do this
+    }
+    else {
+        subject.operation_parameters.result.set_error(make_system_error(), "send failed");
     }
 
     complete_operation(subject.operation, result);
