@@ -11,7 +11,8 @@
 #include "slag/coroutine.h"
 #include "slag/operation.h"
 #include "slag/file_descriptor.h"
-#include "slag/byte_stream.h"
+#include "slag/buffer.h"
+#include "slag/buffer_slice.h"
 
 namespace slag {
 
@@ -21,15 +22,10 @@ namespace slag {
         Coroutine<Result<void>> bind(const Address& address);
         Coroutine<Result<void>> listen(int backlog=Platform::DEFAULT_LISTEN_BACKLOG);
         Coroutine<std::pair<Socket, Address>> accept();
-        Coroutine<Result<void>> send(std::span<const std::byte> data);
+        Coroutine<size_t> send(BufferSlice buffer_slice);
 
     private:
         void handle_operation_complete(Operation& operation) override;
-
-    private:
-        ByteStream             tx_stream_;
-        ByteStream             rx_stream_;
-        std::vector<std::byte> rx_buffer_;
     };
 
 }

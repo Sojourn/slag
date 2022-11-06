@@ -22,6 +22,8 @@ set(SLAG_SOURCE_FILES
     fiber_base.cpp
     awaitable_base.cpp
     socket.cpp
+    buffer.cpp
+    buffer_slice.cpp
     byte_stream.cpp
     trace.cpp
 )

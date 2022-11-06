@@ -6,6 +6,7 @@
 
 using namespace slag;
 
+#if 0
 TEST_CASE("reading_and_writing", "[ByteStream]") {
     ByteStream stream;
 
@@ -75,3 +76,4 @@ TEST_CASE("reading_and_writing", "[ByteStream]") {
         // CHECK(stream.unread(19) == 0);
     }
 }
+#endif

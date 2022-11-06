@@ -13,6 +13,25 @@ slag::Coroutine<slag::Result<void>> slag::Socket::open(sa_family_t family, int t
     FileDescriptor file_descriptor{file_descriptor_result.value()};
     assert(file_descriptor);
 
+    // FIXME: think more about how to set socket options
+    static constexpr bool REUSE_ADDRESS = true;
+    static constexpr bool REUSE_PORT = false; // allows multiple bindings
+
+    if (REUSE_ADDRESS) {
+        int value = 1;
+        socklen_t value_length = sizeof(value);
+        if (::setsockopt(file_descriptor.borrow(), SOL_SOCKET, SO_REUSEADDR, &value, value_length) < 0) {
+            make_system_error().raise("Failed to set SO_REUSEADDR socket option");
+        }
+    }
+    if (REUSE_PORT) {
+        int value = 1;
+        socklen_t value_length = sizeof(value);
+        if (::setsockopt(file_descriptor.borrow(), SOL_SOCKET, SO_REUSEPORT, &value, value_length) < 0) {
+            make_system_error().raise("Failed to set SO_REUSEPORT socket option");
+        }
+    }
+
     Operation& operation = start_assign_operation(nullptr, std::move(file_descriptor));
     Future<void> future = operation.parameters<OperationType::ASSIGN>().result.get_future();
     co_await future;
@@ -49,23 +68,10 @@ slag::Coroutine<std::pair<slag::Socket, slag::Address>> slag::Socket::accept() {
     co_return std::make_pair(std::move(socket), address);
 }
 
-slag::Coroutine<slag::Result<void>> slag::Socket::send(std::span<const std::byte> data) {
-    if (data.empty()) {
-        co_return {};
-    }
-
-    tx_stream_.write(data);
-    while (size_t remainder = tx_stream_.readable_byte_count()) {
-        auto&& [tx_data, tx_buffer] = tx_stream_.peek_stable(remainder);
-
-        Operation& operation = start_send_operation(nullptr, tx_data, tx_buffer);
-        auto&& future = operation.parameters<OperationType::SEND>().result.get_future();
-        size_t count = co_await future;
-
-        (void)tx_stream_.read(count);
-    }
-
-    co_return {};
+slag::Coroutine<size_t> slag::Socket::send(BufferSlice buffer_slice) {
+    Operation& operation = start_send_operation(nullptr, std::move(buffer_slice));
+    auto&& future = operation.parameters<OperationType::SEND>().result.get_future();
+    co_return (co_await future);
 }
 
 void slag::Socket::handle_operation_complete(Operation& operation) {

@@ -10,7 +10,7 @@
 #include "slag/operation_types.h"
 #include "slag/file_descriptor.h"
 #include "slag/address.h"
-#include "slag/byte_stream.h"
+#include "slag/buffer_slice.h"
 
 namespace slag {
 
@@ -76,9 +76,7 @@ namespace slag {
     template<>
     struct OperationParameters<OperationType::SEND> {
         struct {
-            // TODO: fuse these with a helper class
-            std::span<const std::byte> data;
-            Handle<Buffer>             buffer;
+            BufferSlice buffer_slice;
         } arguments;
 
         Promise<size_t> result;

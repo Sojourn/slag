@@ -5,8 +5,9 @@
 #include <cstdint>
 #include <cstddef>
 #include "slag/file_descriptor.h"
-#include "slag/byte_stream.h"
 #include "slag/handle.h"
+#include "slag/buffer.h"
+#include "slag/buffer_slice.h"
 #include "slag/address.h"
 
 namespace slag {
@@ -30,7 +31,7 @@ namespace slag {
         Operation& start_bind_operation(void* user_data, const Address& address);
         Operation& start_listen_operation(void* user_data, int backlog);
         Operation& start_accept_operation(void* user_data);
-        Operation& start_send_operation(void* user_data, std::span<const std::byte> data, Handle<Buffer> buffer);
+        Operation& start_send_operation(void* user_data, BufferSlice buffer_slice);
         Operation& start_receive_operation(void* user_data, std::optional<size_t> count = {});
         void cancel_operation(Operation& operation);
 

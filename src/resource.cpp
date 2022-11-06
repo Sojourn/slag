@@ -94,14 +94,13 @@ slag::Operation& slag::Resource::start_accept_operation(void* user_data) {
     );
 }
 
-slag::Operation& slag::Resource::start_send_operation(void* user_data, std::span<const std::byte> data, Handle<Buffer> buffer) {
+slag::Operation& slag::Resource::start_send_operation(void* user_data, BufferSlice buffer_slice) {
     return local_reactor().start_operation<OperationType::SEND>(
         resource_context(),
         user_data,
         OperationParameters<OperationType::SEND> {
             .arguments = {
-                .data   = data,
-                .buffer = buffer,
+                std::move(buffer_slice),
             },
             .result = {}
         }

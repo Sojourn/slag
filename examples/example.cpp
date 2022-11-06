@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string_view>
 #include <any>
 #include <span>
 #include <memory>
@@ -13,6 +14,16 @@
 #include "slag/handle.h"
 
 using namespace slag;
+
+BufferSlice make_buffer_slice(std::string_view string) {
+    return {
+        make_handle<Buffer>(
+            std::as_bytes(
+                std::span{string.data(), string.size()}
+            )
+        )
+    };
+}
 
 Coroutine<int> run_server(const Address& address) {
     info("run-server enter");
@@ -39,10 +50,8 @@ Coroutine<int> run_server(const Address& address) {
         {
             auto&& [connection, address] = co_await socket.accept();
 
-            std::string message = "hello, world!\n";
-            std::span<const std::byte> data = std::as_bytes(std::span{message.c_str(), message.size()});
-            auto result = co_await connection.send(data);
-            (void)result;
+            size_t result = co_await connection.send(make_buffer_slice("Hello, World!"));
+            info("sent {} bytes", result);
         }
 
         magic_trace_stop_indicator();

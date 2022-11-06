@@ -254,11 +254,8 @@ bool slag::IOURingReactor::prepare_submission<slag::OperationType::SEND>(Subject
     FileDescriptor& file_descriptor = subject.resource_context.file_descriptor();
 
     auto&& [
-        data,
-        buffer
+        buffer_slice
     ] = subject.operation_parameters.arguments;
-
-    (void)buffer;
 
     struct io_uring_sqe* sqe = io_uring_get_sqe(&ring_);
     if (!sqe) {
@@ -268,8 +265,8 @@ bool slag::IOURingReactor::prepare_submission<slag::OperationType::SEND>(Subject
     io_uring_prep_send(
         sqe,
         file_descriptor.borrow(),
-        data.data(),
-        data.size_bytes(),
+        buffer_slice.data().data(),
+        buffer_slice.data().size_bytes(),
         MSG_NOSIGNAL // is this needed?
     );
 
