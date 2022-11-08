@@ -43,16 +43,13 @@ Coroutine<int> run_server(const Address& address) {
     while (true) {
         auto&& [connection, address] = co_await listener.accept();
 
-        co_await connection.send(make_buffer_slice("Hello!\n"));
+        info("Accepted connection from {}", address.to_pretty_string());
 
         // echo loop
         while (true) {
             BufferSlice buffer_slice = co_await connection.receive(4096);
-            if (buffer_slice.is_empty()) {
-                break; // posix way of signaling a disconnect
-            }
 
-            if (is_equal(buffer_slice, "close\n")) {
+            if (buffer_slice.is_empty() || is_equal(buffer_slice, "close\n")) {
                 break;
             }
             if (is_equal(buffer_slice, "exit\n")) {
