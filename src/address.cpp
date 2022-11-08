@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <arpa/inet.h>
 
 slag::Address::Address() {
     memset(this, 0, sizeof(*this));
@@ -84,6 +85,35 @@ struct sockaddr_in6& slag::Address::addr_in6() {
 const struct sockaddr_in6& slag::Address::addr_in6() const {
     assert(family() == AF_INET6);
     return reinterpret_cast<const struct sockaddr_in6&>(storage_);
+}
+
+std::string slag::Address::to_pretty_string() const {
+    static constexpr size_t buffer_length = std::max(INET_ADDRSTRLEN, INET6_ADDRSTRLEN);
+    char buffer[buffer_length];
+    uint16_t port = 0;
+
+    switch (family()) {
+        case AF_INET: {
+            if (!inet_ntop(AF_INET, &addr_in().sin_addr, buffer, static_cast<socklen_t>(buffer_length))) {
+                make_system_error().raise("Failed to convert address to pretty string");
+            }
+            port = ntohs(addr_in().sin_port);
+            break;
+        }
+        case AF_INET6: {
+            if (!inet_ntop(AF_INET6, &addr_in6().sin6_addr, buffer, static_cast<socklen_t>(buffer_length))) {
+                make_system_error().raise("Failed to convert address to pretty string");
+            }
+            port = ntohs(addr_in6().sin6_port);
+            break;
+        }
+        case AF_UNSPEC: {
+            make_system_error(-EAFNOSUPPORT).raise("Failed to convert address to pretty string");
+            break;
+        }
+    }
+
+    return fmt::format("{}*{}", buffer, port);
 }
 
 std::vector<slag::Address> slag::execute(const AddressQuery& query) {

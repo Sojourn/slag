@@ -27,6 +27,8 @@ namespace slag {
         [[nodiscard]] struct sockaddr_in6& addr_in6();
         [[nodiscard]] const struct sockaddr_in6& addr_in6() const;
 
+        [[nodiscard]] std::string to_pretty_string() const;
+
     private:
         struct sockaddr_storage storage_;
     };
