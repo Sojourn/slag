@@ -10,6 +10,8 @@
 #include "slag/operation_types.h"
 #include "slag/file_descriptor.h"
 #include "slag/address.h"
+#include "slag/handle.h"
+#include "slag/buffer.h"
 #include "slag/buffer_slice.h"
 
 namespace slag {
@@ -84,7 +86,12 @@ namespace slag {
 
     template<>
     struct OperationParameters<OperationType::RECEIVE> {
-        std::vector<std::byte> buffer; // TEMP TEMP TEMP
+        struct {
+            size_t count = 0;
+        } arguments;
+
+        Handle<Buffer>       buffer;
+        Promise<BufferSlice> result;
     };
 
     constexpr size_t max_operation_parameters_size() {

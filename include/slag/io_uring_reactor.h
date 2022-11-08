@@ -48,6 +48,7 @@ namespace slag {
         void process_completion(Subject<OperationType::LISTEN>& subject, int64_t result);
         void process_completion(Subject<OperationType::ACCEPT>& subject, int64_t result);
         void process_completion(Subject<OperationType::SEND>& subject, int64_t result);
+        void process_completion(Subject<OperationType::RECEIVE>& subject, int64_t result);
 
         template<OperationType operation_type>
         void process_completion(Subject<operation_type>& subject, int64_t result);

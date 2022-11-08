@@ -23,6 +23,7 @@ namespace slag {
         Coroutine<Result<void>> listen(int backlog=Platform::DEFAULT_LISTEN_BACKLOG);
         Coroutine<std::pair<Socket, Address>> accept();
         Coroutine<size_t> send(BufferSlice buffer_slice);
+        Coroutine<BufferSlice> receive(size_t count);
 
     private:
         void handle_operation_complete(Operation& operation) override;

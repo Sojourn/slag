@@ -37,19 +37,23 @@ slag::Resource& slag::Resource::operator=(Resource&& rhs) noexcept {
 }
 
 slag::Operation& slag::Resource::start_nop_operation(void* user_data) {
-    return local_reactor().start_operation<OperationType::NOP>(
+    static constexpr OperationType operation_type = OperationType::NOP;
+
+    return local_reactor().start_operation<operation_type>(
         resource_context(),
         user_data,
-        OperationParameters<OperationType::NOP> {
+        OperationParameters<operation_type> {
         }
     );
 }
 
 slag::Operation& slag::Resource::start_assign_operation(void* user_data, FileDescriptor file_descriptor) {
-    return local_reactor().start_operation<OperationType::ASSIGN>(
+    static constexpr OperationType operation_type = OperationType::ASSIGN;
+
+    return local_reactor().start_operation<operation_type>(
         resource_context(),
         user_data,
-        OperationParameters<OperationType::ASSIGN> {
+        OperationParameters<operation_type> {
             .arguments = {
                 .file_descriptor = std::move(file_descriptor),
             },
@@ -59,10 +63,12 @@ slag::Operation& slag::Resource::start_assign_operation(void* user_data, FileDes
 }
 
 slag::Operation& slag::Resource::start_bind_operation(void* user_data, const Address& address) {
-    return local_reactor().start_operation<OperationType::BIND>(
+    static constexpr OperationType operation_type = OperationType::BIND;
+
+    return local_reactor().start_operation<operation_type>(
         resource_context(),
         user_data,
-        OperationParameters<OperationType::BIND> {
+        OperationParameters<operation_type> {
             .arguments = {
                 .address = address,
             },
@@ -72,10 +78,12 @@ slag::Operation& slag::Resource::start_bind_operation(void* user_data, const Add
 }
 
 slag::Operation& slag::Resource::start_listen_operation(void* user_data, int backlog) {
-    return local_reactor().start_operation<OperationType::LISTEN>(
+    static constexpr OperationType operation_type = OperationType::LISTEN;
+
+    return local_reactor().start_operation<operation_type>(
         resource_context(),
         user_data,
-        OperationParameters<OperationType::LISTEN> {
+        OperationParameters<operation_type> {
             .arguments = {
                 .backlog = backlog,
             },
@@ -85,23 +93,43 @@ slag::Operation& slag::Resource::start_listen_operation(void* user_data, int bac
 }
 
 slag::Operation& slag::Resource::start_accept_operation(void* user_data) {
-    return local_reactor().start_operation<OperationType::ACCEPT>(
+    static constexpr OperationType operation_type = OperationType::ACCEPT;
+
+    return local_reactor().start_operation<operation_type>(
         resource_context(),
         user_data,
-        OperationParameters<OperationType::ACCEPT> {
+        OperationParameters<operation_type> {
             // pass
         }
     );
 }
 
 slag::Operation& slag::Resource::start_send_operation(void* user_data, BufferSlice buffer_slice) {
-    return local_reactor().start_operation<OperationType::SEND>(
+    static constexpr OperationType operation_type = OperationType::SEND;
+
+    return local_reactor().start_operation<operation_type>(
         resource_context(),
         user_data,
-        OperationParameters<OperationType::SEND> {
+        OperationParameters<operation_type> {
             .arguments = {
                 std::move(buffer_slice),
             },
+            .result = {}
+        }
+    );
+}
+
+slag::Operation& slag::Resource::start_receive_operation(void* user_data, size_t count) {
+    static constexpr OperationType operation_type = OperationType::RECEIVE;
+
+    return local_reactor().start_operation<operation_type>(
+        resource_context(),
+        user_data,
+        OperationParameters<operation_type> {
+            .arguments = {
+                .count = count,
+            },
+            .buffer = make_handle<Buffer>(std::max(count, size_t{1})),
             .result = {}
         }
     );

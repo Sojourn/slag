@@ -32,7 +32,7 @@ namespace slag {
         Operation& start_listen_operation(void* user_data, int backlog);
         Operation& start_accept_operation(void* user_data);
         Operation& start_send_operation(void* user_data, BufferSlice buffer_slice);
-        Operation& start_receive_operation(void* user_data, std::optional<size_t> count = {});
+        Operation& start_receive_operation(void* user_data, size_t count);
         void cancel_operation(Operation& operation);
 
         virtual void handle_operation_complete(Operation& operation) = 0;

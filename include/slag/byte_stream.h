@@ -11,6 +11,7 @@
 
 namespace slag {
 
+    // TODO: expose readable/writable events
     class ByteStream {
     public:
         // lifetime of the result lasts until the returned buffer handle is discarded.

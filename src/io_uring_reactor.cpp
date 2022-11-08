@@ -282,15 +282,24 @@ bool slag::IOURingReactor::prepare_submission<slag::OperationType::RECEIVE>(Subj
     FileDescriptor& file_descriptor = subject.resource_context.file_descriptor();
 
     auto&& [
-        buffer
-    ] = subject.operation_parameters;
+        count
+    ] = subject.operation_parameters.arguments;
+
+    auto&& buffer = subject.operation_parameters.buffer;
 
     struct io_uring_sqe* sqe = io_uring_get_sqe(&ring_);
     if (!sqe) {
         return false;
     }
 
-    io_uring_prep_recv(sqe, file_descriptor.release(), buffer.data(), buffer.size(), 0);
+    io_uring_prep_recv(
+        sqe,
+        file_descriptor.borrow(),
+        buffer->data().data(),
+        count,
+        0 // TODO: support passing flags
+    );
+
     io_uring_sqe_set_data(sqe, &subject.operation);
 
     handle_operation_event(subject.operation, OperationEvent::SUBMISSION);
@@ -441,6 +450,25 @@ void slag::IOURingReactor::process_completion(Subject<OperationType::SEND>& subj
     }
     else {
         subject.operation_parameters.result.set_error(make_system_error(), "send failed");
+    }
+
+    complete_operation(subject.operation, result);
+}
+
+void slag::IOURingReactor::process_completion(Subject<OperationType::RECEIVE>& subject, int64_t result) {
+    if (result >= 0) {
+        auto&& buffer = subject.operation_parameters.buffer;
+        auto&& data   = buffer->data().first(static_cast<size_t>(result));
+
+        subject.operation_parameters.result.set_value(BufferSlice {
+            std::move(buffer),
+            data
+        });
+
+        result = 0; // TODO: figure out if we need to do this
+    }
+    else {
+        subject.operation_parameters.result.set_error(make_system_error(), "receive failed");
     }
 
     complete_operation(subject.operation, result);

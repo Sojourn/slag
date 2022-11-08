@@ -74,6 +74,12 @@ slag::Coroutine<size_t> slag::Socket::send(BufferSlice buffer_slice) {
     co_return (co_await future);
 }
 
+slag::Coroutine<slag::BufferSlice> slag::Socket::receive(size_t count) {
+    Operation& operation = start_receive_operation(nullptr, count);
+    auto&& future = operation.parameters<OperationType::RECEIVE>().result.get_future();
+    co_return (co_await future);
+}
+
 void slag::Socket::handle_operation_complete(Operation& operation) {
     (void)operation;
 }
