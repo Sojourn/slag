@@ -93,7 +93,7 @@ void slag::ByteStream::write(std::span<const std::byte> data) {
 }
 
 void slag::ByteStream::write(BufferSlice buffer_slice) {
-    if (!buffer_slice || buffer_slice.is_empty()) {
+    if (buffer_slice.is_empty()) {
         return;
     }
 

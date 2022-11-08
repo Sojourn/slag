@@ -2,17 +2,6 @@
 #include <utility>
 #include <cassert>
 
-inline bool contains(std::span<const std::byte> parent, std::span<const std::byte> child) {
-    if (child.begin() < parent.begin()) {
-        return false;
-    }
-    if (parent.end() < child.end()) {
-        return false;
-    }
-
-    return true;
-}
-
 slag::BufferSlice::BufferSlice(Handle<Buffer> buffer)
     : buffer_{std::move(buffer)}
     , data_{buffer_ ? buffer_->data() : std::span<const std::byte>{}}
@@ -23,7 +12,6 @@ slag::BufferSlice::BufferSlice(Handle<Buffer> buffer, std::span<const std::byte>
     : buffer_{std::move(buffer)}
     , data_{data}
 {
-    assert(!buffer_ || contains(buffer_->data(), data_));
 }
 
 const slag::Handle<slag::Buffer>& slag::BufferSlice::buffer() const {

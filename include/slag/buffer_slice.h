@@ -6,22 +6,17 @@
 
 namespace slag {
 
-    // Holds a reference to a buffer, and holds a selection to part of it.
+    // (Potentially) holds a reference to a buffer, and a selection of part of it.
     class BufferSlice {
     public:
         BufferSlice() = default;
         BufferSlice(Handle<Buffer> buffer);
         BufferSlice(Handle<Buffer> buffer, std::span<const std::byte> data);
 
-        explicit operator bool() const {
-            return static_cast<bool>(buffer_);
-        }
-
-        [[nodiscard]] const Handle<Buffer>& buffer() const;
-
         [[nodiscard]] bool is_empty() const;
         [[nodiscard]] size_t offset() const;
         [[nodiscard]] size_t length() const;
+        [[nodiscard]] const Handle<Buffer>& buffer() const;
         [[nodiscard]] std::span<const std::byte> data() const;
 
     private:
