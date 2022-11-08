@@ -25,52 +25,43 @@ BufferSlice make_buffer_slice(std::string_view string) {
     };
 }
 
+bool is_equal(const BufferSlice& buffer_slice, std::string_view string) {
+    return std::string_view {
+        reinterpret_cast<const char*>(buffer_slice.data().data()),
+        buffer_slice.data().size_bytes()
+    } == string;
+}
+
 Coroutine<int> run_server(const Address& address) {
-    info("run-server enter");
+    Socket listener;
 
-    Socket socket;
+    co_await listener.open(address.family(), SOCK_STREAM, 0);
+    co_await listener.bind(address);
+    co_await listener.listen();
 
-    // initialize the listening socket
-    {
-        {
-            auto result = co_await socket.open(address.family(), SOCK_STREAM, 0);
-            assert(result.has_value());
+    // accept loop
+    while (true) {
+        auto&& [connection, address] = co_await listener.accept();
+
+        co_await connection.send(make_buffer_slice("Hello!\n"));
+
+        // echo loop
+        while (true) {
+            BufferSlice buffer_slice = co_await connection.receive(4096);
+            if (buffer_slice.is_empty()) {
+                break; // posix way of signaling a disconnect
+            }
+
+            if (is_equal(buffer_slice, "close\n")) {
+                break;
+            }
+            if (is_equal(buffer_slice, "exit\n")) {
+                co_return 0;
+            }
+
+            co_await connection.send(std::move(buffer_slice));
         }
-
-        {
-            auto result = co_await socket.bind(address);
-            assert(result.has_value());
-        }
-
-        {
-            auto result = co_await socket.listen();
-            assert(result.has_value());
-        }
-
-        {
-            auto&& [connection, address] = co_await socket.accept();
-
-            size_t result = co_await connection.send(make_buffer_slice("Hello, World!"));
-            info("sent {} bytes", result);
-        }
-
-        magic_trace_stop_indicator();
     }
-
-    // while (Result<Socket> connection_result = co_await socket.accept()) {
-    //     if (connection_result.has_value()) {
-    //         // TODO: create a new fiber to handle this connection
-    //         (void)std::move(connection_result.value());
-    //     }
-    //     else {
-    //         break;
-    //     }
-    // }
-
-    (void)address;
-
-    info("run-server exit");
-    co_return 0;
 }
 
 struct Stopper : public EventObserver {
