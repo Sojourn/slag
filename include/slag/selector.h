@@ -8,80 +8,80 @@
 #include <cstdint>
 #include <cstddef>
 #include "slag/intrusive_list.h"
-#include "slag/selectable.h"
+#include "slag/pollable.h"
 
 namespace slag {
 
     template<typename... Types>
-    class Selector : public Selectable {
+    class Selector : public Pollable {
     public:
-        using Event     = Selectable::Event;
-        using EventMask = Selectable::EventMask;
+        using Event     = Pollable::Event;
+        using EventMask = Pollable::EventMask;
 
-        template<typename SelectableType>
-        void insert(SelectableType& selectable, EventMask events);
+        template<typename PollableType>
+        void insert(PollableType& pollable, EventMask events);
 
-        template<typename SelectableType>
-        void insert(std::unique_ptr<SelectableType> selectable, EventMask events);
+        template<typename PollableType>
+        void insert(std::unique_ptr<PollableType> pollable, EventMask events);
 
-        template<typename SelectableType>
-        void insert(std::shared_ptr<SelectableType> selectable, EventMask events);
+        template<typename PollableType>
+        void insert(std::shared_ptr<PollableType> pollable, EventMask events);
 
-        template<typename SelectableType>
-        void modify(SelectableType& selectable, EventMask events);
+        template<typename PollableType>
+        void modify(PollableType& pollable, EventMask events);
 
-        template<typename SelectableType>
-        void erase(SelectableType& selectable);
+        template<typename PollableType>
+        void erase(PollableType& pollable);
 
         [[nodiscard]] std::optional<std::variant<Types*...>> poll();
 
     private:
-        class Observer : public Selectable::Observer {
+        class Observer : public Pollable::Observer {
             friend class Selector<Types...>;
 
         public:
-            Observer(Selector& selector, Selectable& selectable, int selectable_type_index);
-            Observer(Selector& selector, std::unique_ptr<Selectable> selectable, int selectable_type_index);
-            Observer(Selector& selector, std::shared_ptr<Selectable> selectable, int selectable_type_index);
+            Observer(Selector& selector, Pollable& pollable, int pollable_type_index);
+            Observer(Selector& selector, std::unique_ptr<Pollable> pollable, int pollable_type_index);
+            Observer(Selector& selector, std::shared_ptr<Pollable> pollable, int pollable_type_index);
 
             [[nodiscard]] Selector& selector();
             [[nodiscard]] const Selector& selector() const;
-            [[nodiscard]] Selectable& selectable();
-            [[nodiscard]] const Selectable& selectable() const;
-            [[nodiscard]] int selectable_type_index() const;
+            [[nodiscard]] Pollable& pollable();
+            [[nodiscard]] const Pollable& pollable() const;
+            [[nodiscard]] int pollable_type_index() const;
             [[nodiscard]] const EventMask& events() const;
             [[nodiscard]] const EventMask& requested_events() const;
-            void set_requested_events(Selectable::EventMask events);
+            void set_requested_events(Pollable::EventMask events);
 
         private:
-            void handle_selectable_event(Selectable& selectable, Event event) override;
-            void handle_selectable_destroyed(Selectable& selectable) override;
+            void handle_pollable_event(Pollable& pollable, Event event) override;
+            void handle_pollable_destroyed(Pollable& pollable) override;
 
         private:
-            using SelectableStorage = std::variant<
-                Selectable*,
-                std::unique_ptr<Selectable>,
-                std::shared_ptr<Selectable>
+            using PollableStorage = std::variant<
+                Pollable*,
+                std::unique_ptr<Pollable>,
+                std::shared_ptr<Pollable>
             >;
 
             Selector&         selector_;
-            SelectableStorage selectable_;
-            int               selectable_type_index_;
+            PollableStorage   pollable_;
+            int               pollable_type_index_;
             EventMask         requested_events_;
             IntrusiveListNode ready_hook_;
         };
 
-        void handle_selectable_event(Observer& observer, Selectable& selectable);
-        void handle_selectable_destroyed(Observer& observer, Selectable& selectable);
+        void handle_pollable_event(Observer& observer, Pollable& pollable);
+        void handle_pollable_destroyed(Observer& observer, Pollable& pollable);
 
-        template<int selectable_type_index, typename Visitor>
-        void visit_selectable(Observer& observer, Visitor&& visitor);
+        template<int pollable_type_index, typename Visitor>
+        void visit_pollable(Observer& observer, Visitor&& visitor);
 
         template<typename Visitor>
-        void visit_selectable(Observer& observer, Visitor&& visitor);
+        void visit_pollable(Observer& observer, Visitor&& visitor);
 
     private:
-        std::unordered_map<Selectable*, Observer>       observers_;
+        std::unordered_map<Pollable*, Observer>         observers_;
         IntrusiveList<Observer, &Observer::ready_hook_> ready_observers_;
     };
 

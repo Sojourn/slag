@@ -25,7 +25,7 @@ set(SLAG_SOURCE_FILES
     buffer.cpp
     buffer_slice.cpp
     byte_stream.cpp
-    selectable.cpp
+    pollable.cpp
     trace.cpp
 )
 
@@ -65,7 +65,7 @@ set(SLAG_HEADER_FILES
     ../include/slag/coroutine.hpp
     ../include/slag/socket.h
     ../include/slag/byte_stream.h
-    ../include/slag/selectable.h
+    ../include/slag/pollable.h
     ../include/slag/selector.h
     ../include/slag/selector.hpp
     ../include/slag/trace.h
