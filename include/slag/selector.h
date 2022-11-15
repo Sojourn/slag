@@ -68,18 +68,21 @@ namespace slag {
             SelectableStorage selectable_;
             int               selectable_type_index_;
             EventMask         requested_events_;
-            IntrusiveListNode hook_;
+            IntrusiveListNode ready_hook_;
         };
 
         void handle_selectable_event(Observer& observer, Selectable& selectable);
         void handle_selectable_destroyed(Observer& observer, Selectable& selectable);
 
-        template<int selectable_type_index>
-        void set_result(Observer& observer, std::optional<std::variant<Types*...>>& result);
+        template<int selectable_type_index, typename Visitor>
+        void visit_selectable(Observer& observer, Visitor&& visitor);
+
+        template<typename Visitor>
+        void visit_selectable(Observer& observer, Visitor&& visitor);
 
     private:
-        std::unordered_map<Selectable*, Observer> observers_;
-        IntrusiveList<Observer, &Observer::hook_> ready_observers_;
+        std::unordered_map<Selectable*, Observer>       observers_;
+        IntrusiveList<Observer, &Observer::ready_hook_> ready_observers_;
     };
 
 }

@@ -3,7 +3,7 @@
 slag::Selectable::~Selectable() {
     for (auto it = observers_.begin(); it != observers_.end(); ) {
         Observer& observer = *it;
-        observers_.erase(it);
+        it = observers_.erase(it);
         observer.handle_selectable_destroyed(*this);
     }
 }
@@ -26,7 +26,7 @@ void slag::Selectable::set_event(Event event, bool value) {
     if (value) {
         for (auto it = observers_.begin(); it != observers_.end(); ) {
             Observer& observer = *(it++);
-            observer.handle_selectable_destroyed(*this);
+            observer.handle_selectable_event(*this, event);
         }
     }
 }

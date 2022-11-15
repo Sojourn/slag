@@ -17,6 +17,7 @@ inline void slag::Selector<Types...>::insert(SelectableType& selectable, Selecta
 
     Observer& observer = it->second;
     observer.set_requested_events(events);
+    observer.selectable().add_observer(observer);
     handle_selectable_event(observer, selectable);
 }
 
@@ -36,6 +37,7 @@ inline void slag::Selector<Types...>::insert(std::unique_ptr<SelectableType> sel
 
     Observer& observer = it->second;
     observer.set_requested_events(events);
+    observer.selectable().add_observer(observer);
     handle_selectable_event(observer, selectable);
 }
 
@@ -55,6 +57,7 @@ inline void slag::Selector<Types...>::insert(std::shared_ptr<SelectableType> sel
 
     Observer& observer = it->second;
     observer.set_requested_events(events);
+    observer.selectable().add_observer(observer);
     handle_selectable_event(observer, selectable);
 }
 
@@ -86,6 +89,9 @@ inline void slag::Selector<Types...>::erase(SelectableType& selectable) {
         Observer& observer = it->second;
         selectable.remove_observer(observer); // prevent destruction callback
         observers_.erase(it);
+        if (ready_observers_.is_empty()) {
+            set_event(Event::READABLE, false);
+        }
     }
     else {
         assert(false);
@@ -97,10 +103,13 @@ inline std::optional<std::variant<Types*...>> slag::Selector<Types...>::poll() {
     std::optional<std::variant<Types*...>> result;
     if (!ready_observers_.is_empty()) {
         Observer& observer = ready_observers_.pop_front();
+        visit_selectable(observer, [&](auto&& selectable) {
+            result = &selectable;
+        });
 
-        [&]<int... ints>(std::integer_sequence<int, ints...>) {
-            (set_result<ints>(observer, result), ...);
-        }(std::make_integer_sequence<int, sizeof...(Types)>());
+        if (ready_observers_.is_empty()) {
+            set_event(Event::READABLE, false);
+        }
     }
 
     return result;
@@ -168,7 +177,7 @@ inline int slag::Selector<Types...>::Observer::selectable_type_index() const {
 
 template<typename... Types>
 inline auto slag::Selector<Types...>::Observer::events() const -> const EventMask& {
-    return selector().events();
+    return selectable().events();
 }
 
 template<typename... Types>
@@ -197,14 +206,17 @@ template<typename... Types>
 inline void slag::Selector<Types...>::handle_selectable_event(Observer& observer, Selectable& selectable) {
     (void)selectable;
 
-    if (observer.hook_.is_linked()) {
+    if (observer.ready_hook_.is_linked()) {
         return; // already ready
     }
-    if ((observer.requested_events() & observer.events()).none()) {
+    if ((observer.requested_events() & selectable.events()).none()) {
         return; // not a requested event
     }
 
     ready_observers_.push_back(observer);
+
+    // the selector itself is now readable
+    set_event(Event::READABLE, true);
 }
 
 template<typename... Types>
@@ -214,15 +226,27 @@ inline void slag::Selector<Types...>::handle_selectable_destroyed(Observer& obse
     auto it = observers_.find(&selectable);
     assert(it != observers_.end());
     observers_.erase(it);
+
+    if (ready_observers_.is_empty()) {
+        set_event(Event::READABLE, false);
+    }
 }
 
 template<typename... Types>
-template<int selectable_type_index>
-inline void slag::Selector<Types...>::set_result(Observer& observer, std::optional<std::variant<Types*...>>& result) {
+template<int selectable_type_index, typename Visitor>
+inline void slag::Selector<Types...>::visit_selectable(Observer& observer, Visitor&& visitor) {
     using TypeTuple = std::tuple<Types...>;
+    using Type      = std::tuple_element_t<selectable_type_index, TypeTuple>;
 
     if (observer.selectable_type_index() == selectable_type_index) {
-        assert(!result);
-        result = &static_cast<std::tuple_element_t<selectable_type_index, TypeTuple>&>(observer.selectable());
+        visitor(static_cast<Type&>(observer.selectable()));
     }
+}
+
+template<typename... Types>
+template<typename Visitor>
+inline void slag::Selector<Types...>::visit_selectable(Observer& observer, Visitor&& visitor) {
+    [&]<int... ints>(std::integer_sequence<int, ints...>) {
+        (visit_selectable<ints>(observer, visitor), ...);
+    }(std::make_integer_sequence<int, sizeof...(Types)>());
 }
