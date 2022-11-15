@@ -5,6 +5,7 @@
 #include <optional>
 #include <variant>
 #include <unordered_map>
+#include <initializer_list>
 #include <cstdint>
 #include <cstddef>
 #include "slag/intrusive_list.h"
@@ -22,13 +23,25 @@ namespace slag {
         void insert(PollableType& pollable, EventMask events);
 
         template<typename PollableType>
+        void insert(PollableType& pollable, std::initializer_list<Event> events);
+
+        template<typename PollableType>
         void insert(std::unique_ptr<PollableType> pollable, EventMask events);
+
+        template<typename PollableType>
+        void insert(std::unique_ptr<PollableType> pollable, std::initializer_list<Event> events);
 
         template<typename PollableType>
         void insert(std::shared_ptr<PollableType> pollable, EventMask events);
 
         template<typename PollableType>
+        void insert(std::shared_ptr<PollableType> pollable, std::initializer_list<Event> events);
+
+        template<typename PollableType>
         void modify(PollableType& pollable, EventMask events);
+
+        template<typename PollableType>
+        void modify(PollableType& pollable, std::initializer_list<Event> events);
 
         template<typename PollableType>
         void erase(PollableType& pollable);

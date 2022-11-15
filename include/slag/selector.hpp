@@ -23,6 +23,12 @@ inline void slag::Selector<Types...>::insert(PollableType& pollable, EventMask e
 
 template<typename... Types>
 template<typename PollableType>
+inline void slag::Selector<Types...>::insert(PollableType& pollable, std::initializer_list<Event> events) {
+    insert(pollable, make_pollable_events(events));
+}
+
+template<typename... Types>
+template<typename PollableType>
 inline void slag::Selector<Types...>::insert(std::unique_ptr<PollableType> pollable, EventMask events) {
     constexpr int pollable_type_index = find_type_v<PollableType, Types...>;
     static_assert(pollable_type_index >= 0);
@@ -39,6 +45,12 @@ inline void slag::Selector<Types...>::insert(std::unique_ptr<PollableType> polla
     observer.set_requested_events(events);
     observer.pollable().add_observer(observer);
     handle_pollable_event(observer, pollable);
+}
+
+template<typename... Types>
+template<typename PollableType>
+inline void slag::Selector<Types...>::insert(std::unique_ptr<PollableType> pollable, std::initializer_list<Event> events) {
+    insert(std::move(pollable), make_pollable_events(events));
 }
 
 template<typename... Types>
@@ -63,6 +75,12 @@ inline void slag::Selector<Types...>::insert(std::shared_ptr<PollableType> polla
 
 template<typename... Types>
 template<typename PollableType>
+inline void slag::Selector<Types...>::insert(std::shared_ptr<PollableType> pollable, std::initializer_list<Event> events) {
+    insert(std::move(pollable), make_pollable_events(events));
+}
+
+template<typename... Types>
+template<typename PollableType>
 inline void slag::Selector<Types...>::modify(PollableType& pollable, EventMask events) {
     constexpr int pollable_type_index = find_type_v<PollableType, Types...>;
     static_assert(pollable_type_index >= 0);
@@ -76,6 +94,12 @@ inline void slag::Selector<Types...>::modify(PollableType& pollable, EventMask e
     else {
         assert(false);
     }
+}
+
+template<typename... Types>
+template<typename PollableType>
+inline void slag::Selector<Types...>::modify(PollableType& pollable, std::initializer_list<Event> events) {
+    modify(pollable, make_pollable_events(events));
 }
 
 template<typename... Types>
