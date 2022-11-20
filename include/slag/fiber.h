@@ -12,7 +12,6 @@
 
 namespace slag {
 
-    // TODO: swap the names of Task and Fiber
     template<typename T>
     class Fiber : public FiberBase {
     public:
