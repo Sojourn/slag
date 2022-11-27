@@ -24,7 +24,7 @@ slag::Reactor::~Reactor() {
 }
 
 void slag::Reactor::complete_operation(Operation& operation, int64_t result) {
-    info(
+    trace(
         "Reactor/{} complete_operation Operation[{}]/{} result/{}"
         , (const void*)this
         , to_string(operation.type())
@@ -40,7 +40,7 @@ void slag::Reactor::handle_operation_event(Operation& operation, OperationEvent 
     OperationState original_state = operation.state();
     operation.state_machine().handle_event(operation_event);
 
-    info(
+    trace(
         "Operation[{}]/{} {} + {} -> {}"
         , to_string(operation.type())
         , (const void*)&operation
@@ -58,7 +58,7 @@ void slag::Reactor::defer_operation_action(Operation& operation, OperationAction
         abort();
     }
 
-    info(
+    trace(
         "Reactor/{} defer_operation_action Operation/{} action/{}"
         , (const void*)this
         , (const void*)&operation
@@ -124,12 +124,12 @@ void slag::Reactor::notify() {
 }
 
 void slag::Reactor::startup() {
-    info(
+    trace(
         "Reactor/{} startup beginning"
         , (const void*)this
     );
 
-    info(
+    trace(
         "Reactor/{} startup complete"
         , (const void*)this
     );
@@ -140,7 +140,7 @@ void slag::Reactor::step() {
 }
 
 void slag::Reactor::shutdown() {
-    info(
+    trace(
         "Reactor/{} shutdown beginning"
         , (const void*)this
     );
@@ -153,7 +153,7 @@ void slag::Reactor::shutdown() {
         step();
     }
 
-    info(
+    trace(
         "Reactor/{} shutdown complete"
         , (const void*)this
     );

@@ -12,6 +12,8 @@
 #include "slag/slag.h"
 #include "slag/trace.h"
 #include "slag/handle.h"
+#include "slag/stream.h"
+#include "slag/selector.h"
 
 using namespace slag;
 
@@ -32,8 +34,44 @@ bool is_equal(const BufferSlice& buffer_slice, std::string_view string) {
     } == string;
 }
 
+Coroutine<int> foo() {
+    Selector<Stream<int>, Stream<std::string>> selector;
+
+    Stream<int> s1;
+    Stream<std::string> s2;
+
+    selector.insert(s1, {PollableEvent::READABLE});
+    selector.insert(s2, {PollableEvent::READABLE});
+
+    s1.push(13);
+
+    while (true) {
+        try {
+            std::visit(
+                []<typename T>(T* stream) {
+                    if constexpr (std::is_same_v<T, Stream<int>>) {
+                        std::cout << "int: " << *stream->pop() << std::endl;
+                    }
+                    if constexpr (std::is_same_v<T, Stream<std::string>>) {
+                        std::cout << "string: " << *stream->pop() << std::endl;
+                    }
+                },
+                co_await selector
+            );
+        }
+        catch (const std::exception& ex) {
+            info("{}", ex.what());
+        }
+        break;
+    }
+
+    co_return 3;
+}
+
 Coroutine<int> run_server(const Address& address) {
     Socket listener;
+
+    co_await foo();
 
     co_await listener.open(address.family(), SOCK_STREAM, 0);
     co_await listener.bind(address);

@@ -15,6 +15,9 @@ namespace slag {
 
     template<typename... Args>
     inline void trace(const char* format, Args&&... args) {
-        std::cout << fmt::format(fmt::runtime(format), std::forward<Args>(args)...) << std::endl;
+        (void)format;
+        ((void)args, ...);
+
+        // std::cout << fmt::format(fmt::runtime(format), std::forward<Args>(args)...) << std::endl;
     }
 }

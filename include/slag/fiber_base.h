@@ -25,6 +25,7 @@ namespace slag {
         [[nodiscard]] virtual const Event& completion() const = 0;
 
     protected:
+        friend class Awaitable;
         friend class AwaitableBase;
 
         void resume(std::coroutine_handle<> handle, TaskPriority priority=TaskPriority::NORMAL);

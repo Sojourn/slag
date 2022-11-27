@@ -20,6 +20,7 @@ set(SLAG_SOURCE_FILES
     task_queue.cpp
     executor.cpp
     fiber_base.cpp
+    awaitable.cpp
     awaitable_base.cpp
     socket.cpp
     buffer.cpp

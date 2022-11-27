@@ -18,3 +18,6 @@
 #include "intrusive_list.h"
 #include "byte_stream.h"
 #include "socket.h"
+#include "awaitable.h"
+#include "stream.h"
+

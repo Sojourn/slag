@@ -1,5 +1,44 @@
 #include "slag/pollable.h"
 
+size_t slag::to_index(PollableEvent event) {
+    return static_cast<size_t>(event);
+}
+
+const char* slag::to_string(PollableEvent event) {
+    switch (event) {
+#define X(SLAG_POLLABLE_EVENT) case PollableEvent::SLAG_POLLABLE_EVENT: return #SLAG_POLLABLE_EVENT;
+        SLAG_POLLABLE_EVENTS(X)
+#undef X
+    }
+
+    abort();
+}
+
+slag::PollableEventMask::PollableEventMask(PollableEvent event) {
+    set(to_index(event));
+}
+
+slag::PollableEventMask::PollableEventMask(std::initializer_list<PollableEvent> events) {
+    for (auto&& event: events) {
+        set(to_index(event));
+    }
+}
+
+std::string slag::to_string(PollableEventMask events) {
+    std::string result;
+    for (size_t i = 0; i < POLLABLE_EVENT_COUNT; ++i) {
+        if (events.test(i)) {
+            if (!result.empty()) {
+                result += '|';
+            }
+
+            result += to_string(static_cast<PollableEvent>(i));
+        }
+    }
+
+    return result;
+}
+
 slag::Pollable::~Pollable() {
     for (auto it = observers_.begin(); it != observers_.end(); ) {
         Observer& observer = *it;
@@ -8,7 +47,7 @@ slag::Pollable::~Pollable() {
     }
 }
 
-const slag::Pollable::EventMask& slag::Pollable::events() const {
+auto slag::Pollable::events() const -> const EventMask& {
     return events_;
 }
 
@@ -29,27 +68,4 @@ void slag::Pollable::set_event(Event event, bool value) {
             observer.handle_pollable_event(*this, event);
         }
     }
-}
-
-size_t slag::to_index(Pollable::Event event) {
-    return static_cast<size_t>(event);
-}
-
-const char* slag::to_string(Pollable::Event event) {
-    switch (event) {
-#define X(SLAG_POLLABLE_EVENT) case Pollable::Event::SLAG_POLLABLE_EVENT: return #SLAG_POLLABLE_EVENT;
-        SLAG_POLLABLE_EVENTS(X)
-#undef X
-    }
-
-    abort();
-}
-
-slag::Pollable::EventMask slag::make_pollable_events(std::initializer_list<Pollable::Event> events) {
-    Pollable::EventMask result;
-    for (Pollable::Event event: events) {
-        result.set(to_index(event));
-    }
-
-    return result;
 }

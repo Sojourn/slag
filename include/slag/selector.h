@@ -10,6 +10,7 @@
 #include <cstddef>
 #include "slag/intrusive_list.h"
 #include "slag/pollable.h"
+#include "slag/awaitable.h"
 
 namespace slag {
 
@@ -23,25 +24,13 @@ namespace slag {
         void insert(PollableType& pollable, EventMask events);
 
         template<typename PollableType>
-        void insert(PollableType& pollable, std::initializer_list<Event> events);
-
-        template<typename PollableType>
         void insert(std::unique_ptr<PollableType> pollable, EventMask events);
-
-        template<typename PollableType>
-        void insert(std::unique_ptr<PollableType> pollable, std::initializer_list<Event> events);
 
         template<typename PollableType>
         void insert(std::shared_ptr<PollableType> pollable, EventMask events);
 
         template<typename PollableType>
-        void insert(std::shared_ptr<PollableType> pollable, std::initializer_list<Event> events);
-
-        template<typename PollableType>
         void modify(PollableType& pollable, EventMask events);
-
-        template<typename PollableType>
-        void modify(PollableType& pollable, std::initializer_list<Event> events);
 
         template<typename PollableType>
         void erase(PollableType& pollable);
@@ -97,6 +86,32 @@ namespace slag {
         std::unordered_map<Pollable*, Observer>         observers_;
         IntrusiveList<Observer, &Observer::ready_hook_> ready_observers_;
     };
+
+    template<typename... Types>
+    class SelectorAwaitable : public Awaitable {
+    public:
+        SelectorAwaitable(Selector<Types...>& selector)
+            : Awaitable{selector, PollableEvent::READABLE}
+            , selector_{selector}
+        {
+        }
+
+        [[nodiscard]] std::variant<Types*...> await_resume() {
+            if (auto result = selector_.poll()) {
+                return std::move(*result);
+            }
+
+            throw std::runtime_error("Pollable destroyed");
+        }
+
+    private:
+        Selector<Types...>& selector_;
+    };
+
+    template<typename... Types>
+    [[nodiscard]] inline SelectorAwaitable<Types...> operator co_await(Selector<Types...>& selector) {
+        return SelectorAwaitable<Types...>{selector};
+    }
 
 }
 

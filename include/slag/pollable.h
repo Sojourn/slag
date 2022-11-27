@@ -13,23 +13,35 @@
 
 namespace slag {
 
+    enum class PollableEvent {
+#define X(SLAG_POLLABLE_EVENT) SLAG_POLLABLE_EVENT,
+        SLAG_POLLABLE_EVENTS(X)
+#undef X
+    };
+
+    [[nodiscard]] size_t to_index(PollableEvent event);
+    [[nodiscard]] const char* to_string(PollableEvent event);
+
+    static constexpr size_t POLLABLE_EVENT_COUNT = 0
+#define X(SLAG_POLLABLE_EVENT) + 1
+        SLAG_POLLABLE_EVENTS(X)
+#undef X
+    ;
+
+    struct PollableEventMask : std::bitset<POLLABLE_EVENT_COUNT> {
+        using std::bitset<POLLABLE_EVENT_COUNT>::bitset;
+
+        PollableEventMask(PollableEvent event);
+        PollableEventMask(std::initializer_list<PollableEvent> events);
+    };
+
+    [[nodiscard]] std::string to_string(PollableEventMask events);
+
     class Pollable {
     public:
-        enum class Event {
-    #define X(SLAG_POLLABLE_EVENT) SLAG_POLLABLE_EVENT,
-            SLAG_POLLABLE_EVENTS(X)
-    #undef X
-        };
+        using Event = PollableEvent;
+        using EventMask = PollableEventMask;
 
-        static constexpr size_t EVENT_COUNT = 0
-    #define X(SLAG_POLLABLE_EVENT) + 1
-            SLAG_POLLABLE_EVENTS(X)
-    #undef X
-        ;
-
-        using EventMask = std::bitset<EVENT_COUNT>;
-
-    public:
         class Observer {
             friend class Pollable;
 
@@ -65,9 +77,5 @@ namespace slag {
         EventMask    events_;
         ObserverList observers_;
     };
-
-    [[nodiscard]] size_t to_index(Pollable::Event event);
-    [[nodiscard]] const char* to_string(Pollable::Event event);
-    [[nodiscard]] Pollable::EventMask make_pollable_events(std::initializer_list<Pollable::Event> events);
 
 }
