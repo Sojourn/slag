@@ -4,13 +4,16 @@
 #include <vector>
 #include <cstddef>
 #include "slag/task.h"
-#include "slag/event.h"
+#include "slag/pollable.h"
 
 namespace slag {
 
     class EventLoop;
 
-    class FiberBase : public Task {
+    class FiberBase
+        : public Task
+        , public Pollable
+    {
     public:
         FiberBase() = default;
         FiberBase(FiberBase&&) = delete;
@@ -21,12 +24,9 @@ namespace slag {
         FiberBase& operator=(const FiberBase&) = delete;
 
         [[nodiscard]] bool is_done() const;
-        [[nodiscard]] virtual Event& completion() = 0;
-        [[nodiscard]] virtual const Event& completion() const = 0;
 
     protected:
         friend class Awaitable;
-        friend class AwaitableBase;
 
         void resume(std::coroutine_handle<> handle, TaskPriority priority=TaskPriority::NORMAL);
 

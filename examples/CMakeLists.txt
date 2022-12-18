@@ -1,5 +1,6 @@
 add_executable(example
-        example.cpp
+        scratch.cpp
+        # echo_server.cpp
         )
 
 target_link_libraries(example PUBLIC slag)

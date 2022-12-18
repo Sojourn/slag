@@ -14,6 +14,10 @@
 
 namespace slag {
 
+    enum class SelectorFlag {
+        ONE_SHOT, // automatically remove the pollable from the selector when it has been made ready and polled
+    };
+
     template<typename... Types>
     class Selector : public Pollable {
     public:

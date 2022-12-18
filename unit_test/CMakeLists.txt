@@ -1,7 +1,6 @@
 add_executable(unit_test
         catch.hpp
         unit_test.cpp
-        ut_event.cpp
         ut_result.cpp
         ut_future.cpp
         ut_task_queue.cpp

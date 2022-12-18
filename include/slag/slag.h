@@ -3,7 +3,6 @@
 #include "util.h"
 #include "error.h"
 #include "result.h"
-#include "event.h"
 #include "event_loop.h"
 #include "future.h"
 #include "coroutine.h"

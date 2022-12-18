@@ -2,18 +2,18 @@
 
 template<typename T>
 inline slag::FutureContext<T>::FutureContext()
-    : promise_attached_{false}
-    , future_attached_{false}
+    : promise_{nullptr}
+    , future_{nullptr}
+    , result_{}
     , promise_broken_{false}
     , promise_satisfied_{false}
     , future_retrieved_{false}
-    , result_{}
 {
 }
 
 template<typename T>
 inline bool slag::FutureContext<T>::is_referenced() const {
-    return promise_attached_ || future_attached_;
+    return promise_ || future_;
 }
 
 template<typename T>
@@ -24,16 +24,6 @@ inline bool slag::FutureContext<T>::is_promise_satisfied() const {
 template<typename T>
 inline bool slag::FutureContext<T>::is_future_retrieved() const {
     return future_retrieved_;
-}
-
-template<typename T>
-inline slag::Event& slag::FutureContext<T>::event() {
-    return event_;
-}
-
-template<typename T>
-inline const slag::Event& slag::FutureContext<T>::event() const {
-    return event_;
 }
 
 template<typename T>
@@ -48,7 +38,7 @@ inline auto slag::FutureContext<T>::result() const -> const Result& {
 
 template<typename T>
 inline void slag::FutureContext<T>::handle_promise_broken() {
-    assert(!promise_attached_);
+    assert(!promise_);
     assert(!promise_satisfied_);
     assert(!promise_broken_);
 
@@ -60,12 +50,14 @@ inline void slag::FutureContext<T>::handle_promise_broken() {
     }
 
     promise_broken_ = true;
-    event_.set();
+    if (future_) {
+        future_->set_event(PollableEvent::READABLE);
+    }
 }
 
 template<typename T>
 inline void slag::FutureContext<T>::handle_future_retrieved() {
-    assert(future_attached_);
+    assert(future_);
     assert(!future_retrieved_);
 
     future_retrieved_ = true;
@@ -73,33 +65,40 @@ inline void slag::FutureContext<T>::handle_future_retrieved() {
 
 template<typename T>
 inline void slag::FutureContext<T>::handle_promise_satisfied() {
-    assert(promise_attached_);
+    assert(promise_);
     assert(!promise_satisfied_);
     assert(!promise_broken_);
 
     promise_satisfied_ = true;
-    event_.set();
+    if (future_) {
+        future_->set_event(PollableEvent::READABLE);
+    }
 }
 
 template<typename T>
 inline void slag::FutureContext<T>::attach(Promise<T>& promise) {
-    assert(!promise_attached_);
+    assert(!promise_);
 
-    (void)promise; // add a moved function if we ever care about this
-
-    promise_attached_ = true;
+    promise_ = &promise;
 }
 
 template<typename T>
 inline void slag::FutureContext<T>::detach(Promise<T>& promise) {
-    assert(promise_attached_);
+    assert(promise_);
+    assert(promise_ == &promise);
 
-    (void)promise; // add a moved function if we ever care about this
-
-    promise_attached_ = false;
-    if (future_attached_ && !promise_satisfied_) {
+    promise_ = nullptr;
+    if (future_ && !promise_satisfied_) {
         handle_promise_broken();
     }
+}
+
+template<typename T>
+inline void slag::FutureContext<T>::moved(Promise<T>& old_promise, Promise<T>& new_promise) {
+    assert(promise_ == &old_promise);
+    assert(&old_promise != &new_promise);
+
+    promise_ = &new_promise;
 }
 
 template<typename T>
@@ -107,23 +106,26 @@ inline void slag::FutureContext<T>::attach(Future<T>& future) {
     if (future_retrieved_) {
         Error{ErrorCode::FUTURE_ALREADY_RETRIEVED}.raise("Failed attach future");
     }
-    assert(!future_attached_);
-    assert(!future_retrieved_);
+    assert(!future_);
 
-    (void)future; // add a moved function if we ever care about this
-
-    future_attached_ = true;
+    future_ = &future;
     handle_future_retrieved();
 }
 
 template<typename T>
 inline void slag::FutureContext<T>::detach(Future<T>& future) {
-    assert(future_attached_);
+    assert(future_ == &future);
     assert(future_retrieved_);
 
-    (void)future; // add a moved function if we ever care about this
+    future_ = nullptr;
+}
 
-    future_attached_ = false;
+template<typename T>
+inline void slag::FutureContext<T>::moved(Future<T>& old_future, Future<T>& new_future) {
+    assert(future_ == &old_future);
+    assert(&old_future != &new_future);
+
+    future_ = &new_future;
 }
 
 template<typename T>
@@ -136,6 +138,9 @@ template<typename T>
 inline slag::Promise<T>::Promise(Promise&& other)
     : context_{std::exchange(other.context_, nullptr)}
 {
+    if (context_) {
+        context_->moved(other, *this);
+    }
 }
 
 template<typename T>
@@ -148,6 +153,9 @@ inline slag::Promise<T>& slag::Promise<T>::operator=(Promise&& that) {
     if (this != &that) {
         reset();
         context_ = std::exchange(that.context_, nullptr);
+        if (context_) {
+            context_->moved(that, *this);
+        }
     }
 
     return *this;
@@ -156,11 +164,6 @@ inline slag::Promise<T>& slag::Promise<T>::operator=(Promise&& that) {
 template<typename T>
 inline slag::Future<T> slag::Promise<T>::get_future() {
     return Future<T>{get_context()};
-}
-
-template<typename T>
-inline slag::Event& slag::Promise<T>::event() {
-    return get_context().event();
 }
 
 template<typename T>
@@ -243,6 +246,9 @@ template<typename T>
 inline slag::Future<T>::Future(Future&& other)
     : context_{std::exchange(other.context_, nullptr)}
 {
+    if (context_) {
+        context_->moved(other, *this);
+    }
 }
 
 template<typename T>
@@ -255,6 +261,9 @@ inline slag::Future<T>& slag::Future<T>::operator=(Future&& that) {
     if (this != &that) {
         reset();
         context_ = std::exchange(that.context_, nullptr);
+        if (context_) {
+            context_->moved(that, *this);
+        }
     }
 
     return *this;
@@ -263,16 +272,6 @@ inline slag::Future<T>& slag::Future<T>::operator=(Future&& that) {
 template<typename T>
 inline bool slag::Future<T>::is_ready() const {
     return get_context().is_promise_satisfied();
-}
-
-template<typename T>
-inline slag::Event& slag::Future<T>::event() {
-    return get_context().event();
-}
-
-template<typename T>
-inline const slag::Event& slag::Future<T>::event() const {
-    return get_context().event();
 }
 
 template<typename T>

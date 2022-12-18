@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <cassert>
 #include "slag/error.h"
-#include "slag/event.h"
+#include "slag/pollable.h"
 
 namespace slag {
 
@@ -37,8 +37,6 @@ namespace slag {
         [[nodiscard]] bool is_referenced() const;
         [[nodiscard]] bool is_promise_satisfied() const;
         [[nodiscard]] bool is_future_retrieved() const;
-        [[nodiscard]] Event& event();
-        [[nodiscard]] const Event& event() const;
         [[nodiscard]] Result& result();
         [[nodiscard]] const Result& result() const;
 
@@ -46,22 +44,21 @@ namespace slag {
         void handle_future_retrieved();
         void handle_promise_satisfied();
 
-        // TODO: handle moves?
         void attach(Promise<T>& promise);
         void detach(Promise<T>& promise);
+        void moved(Promise<T>& old_promise, Promise<T>& new_promise);
 
-        // TODO: handle moves?
         void attach(Future<T>& future);
         void detach(Future<T>& future);
+        void moved(Future<T>& old_future, Future<T>& new_future);
 
     private:
-        Event  event_;
-        bool   promise_attached_  : 1;
-        bool   future_attached_   : 1;
-        bool   promise_broken_    : 1;
-        bool   promise_satisfied_ : 1;
-        bool   future_retrieved_  : 1;
-        Result result_;
+        Promise<T>* promise_;
+        Future<T>*  future_;
+        Result      result_;
+        bool        promise_broken_    : 1;
+        bool        promise_satisfied_ : 1;
+        bool        future_retrieved_  : 1;
     };
 
     template<typename T>
@@ -76,7 +73,8 @@ namespace slag {
         Promise& operator=(const Promise&) = delete;
 
         [[nodiscard]] Future<T> get_future();
-        [[nodiscard]] Event& event();
+        [[nodiscard]] Pollable& get_pollable();
+
         [[nodiscard]] void set_value(T&& value);
         [[nodiscard]] void set_value(const T& value);
         [[nodiscard]] void set_error(Error error, std::string_view message);
@@ -99,7 +97,7 @@ namespace slag {
     };
 
     template<typename T>
-    class Future {
+    class Future : public Pollable {
     public:
         Future();
         Future(Future&& other);
@@ -110,8 +108,6 @@ namespace slag {
         Future& operator=(const Future&) = delete;
 
         [[nodiscard]] bool is_ready() const;
-        [[nodiscard]] Event& event();
-        [[nodiscard]] const Event& event() const;
         [[nodiscard]] T& get();
         [[nodiscard]] const T& get() const;
 
@@ -134,7 +130,7 @@ namespace slag {
     };
 
     template<>
-    class Future<void> {
+    class Future<void> : public Pollable {
     public:
         Future()
             : context_{nullptr}
@@ -166,14 +162,6 @@ namespace slag {
         template<typename T>
         [[nodiscard]] bool is_ready() const {
             return get_context().is_promise_satisfied();
-        }
-
-        [[nodiscard]] Event& event() {
-            return get_context().event();
-        }
-
-        [[nodiscard]] const Event& event() const {
-            return get_context().event();
         }
 
         [[nodiscard]] void get() const {
@@ -264,10 +252,6 @@ namespace slag {
 
         [[nodiscard]] Future<void> get_future() {
             return Future<void>{get_context()};
-        }
-
-        [[nodiscard]] Event& event() {
-            return get_context().event();
         }
 
         [[nodiscard]] void set_value() {

@@ -4,11 +4,9 @@
 #include <coroutine>
 #include <cassert>
 #include "slag/task.h"
-#include "slag/event.h"
-#include "slag/future.h"
-#include "slag/coroutine.h"
 #include "slag/fiber_base.h"
-#include "slag/awaitable_base.h"
+#include "slag/awaitable.h"
+#include "slag/coroutine.h"
 
 namespace slag {
 
@@ -18,13 +16,30 @@ namespace slag {
         template<typename CoroutineFactory, typename... Args>
         Fiber(CoroutineFactory&& coroutine_factory, Args&&... args);
 
-        [[nodiscard]] Event& completion() override;
-        [[nodiscard]] const Event& completion() const override;
         [[nodiscard]] T& value();
         [[nodiscard]] const T& value() const;
 
     private:
         Coroutine<T> main_coroutine_;
+    };
+
+#if 0
+
+    template<typename T>
+    class FiberAwaitable : public Awaitable {
+    public:
+        FiberAwaitable(Fiber<T>& fiber)
+            : Awaitable{fiber, PollableEvent::READABLE}
+            , fiber_{fiber}
+        {
+        }
+
+        [[nodiscard]] T& await_resume() {
+            return fiber_.value();
+        }
+
+    private:
+        Fiber<T>& fiber_;
     };
 
     // TEMP TEMP TEMP
@@ -51,17 +66,6 @@ namespace slag {
     };
 
     template<typename T>
-    class FiberAwaitable : public AwaitableBase {
-    public:
-        FiberAwaitable(Fiber<T>& fiber);
-
-        [[nodiscard]] T& await_resume();
-
-    private:
-        Fiber<T>& fiber_;
-    };
-
-    template<typename T>
     inline FutureAwaitable<T> operator co_await(Future<T>& future) {
         return FutureAwaitable<T>{future};
     }
@@ -75,6 +79,8 @@ namespace slag {
     inline FiberAwaitable<T> operator co_await(Fiber<T>& fiber) {
         return FiberAwaitable<T>{fiber};
     }
+
+#endif
 
 }
 

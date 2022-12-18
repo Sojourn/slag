@@ -4,7 +4,7 @@
 #include <cassert>
 
 bool slag::FiberBase::is_done() const {
-    return completion().is_set();
+    return events().test(Event::READABLE);
 }
 
 void slag::FiberBase::resume(std::coroutine_handle<> handle, TaskPriority priority) {
@@ -17,17 +17,17 @@ void slag::FiberBase::resume(std::coroutine_handle<> handle, TaskPriority priori
 }
 
 void slag::FiberBase::run() {
-    if (completion().is_set()) {
+    if (is_done()) {
+        assert(false); // spurious wakeup?
         return;
     }
 
-    Activation activation{*this};
+    {
+        Activation activation{*this};
 
-    trace("FiberBase:{} running {}", static_cast<void*>(this), pending_handle_.address());
-    std::coroutine_handle<> handle = std::exchange(pending_handle_, nullptr);
-    handle.resume();
-
-    trace("FiberBase:run exit");
+        std::coroutine_handle<> handle = std::exchange(pending_handle_, nullptr);
+        handle.resume();
+    }
 }
 
 slag::FiberBase::Activation::Activation()

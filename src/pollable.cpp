@@ -24,6 +24,15 @@ slag::PollableEventMask::PollableEventMask(std::initializer_list<PollableEvent> 
     }
 }
 
+bool slag::PollableEventMask::test(PollableEvent event) const {
+    return test(to_index(event));
+}
+
+slag::PollableEventMask& slag::PollableEventMask::set(PollableEvent event, bool value) {
+    set(to_index(event), value);
+    return *this;
+}
+
 std::string slag::to_string(PollableEventMask events) {
     std::string result;
     for (size_t i = 0; i < POLLABLE_EVENT_COUNT; ++i) {

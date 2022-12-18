@@ -4,7 +4,7 @@
 #include <variant>
 #include <coroutine>
 #include <stdexcept>
-#include "slag/event.h"
+#include "slag/pollable.h"
 #include "slag/fiber_base.h"
 
 namespace slag {
@@ -21,7 +21,7 @@ namespace slag {
     template<typename T>
     class Coroutine {
     public:
-        class Promise {
+        class Promise : public Pollable {
         public:
             [[nodiscard]] Coroutine<T> get_return_object() noexcept;
             [[nodiscard]] InitialSuspend initial_suspend() const noexcept;
@@ -32,13 +32,10 @@ namespace slag {
             void unhandled_exception() noexcept(std::is_nothrow_copy_constructible_v<std::exception_ptr>);
 
             [[nodiscard]] bool is_done() const noexcept;
-            [[nodiscard]] Event& completion() noexcept;
-            [[nodiscard]] const Event& completion() const noexcept;
             [[nodiscard]] T& value();
             [[nodiscard]] const T& value() const;
 
         private:
-            Event                                               completion_;
             std::variant<std::monostate, T, std::exception_ptr> result_;
         };
 
@@ -57,8 +54,6 @@ namespace slag {
         Coroutine& operator=(const Coroutine&) = delete;
 
         [[nodiscard]] bool is_done() const noexcept;
-        [[nodiscard]] Event& completion() noexcept;
-        [[nodiscard]] const Event& completion() const noexcept;
         [[nodiscard]] T& value() noexcept;
         [[nodiscard]] const T& value() const noexcept;
         [[nodiscard]] std::coroutine_handle<> handle() noexcept;

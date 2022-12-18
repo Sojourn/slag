@@ -9,17 +9,8 @@ slag::Fiber<T>::Fiber(CoroutineFactory&& coroutine_factory, Args&&... args) {
     (void)activation;
 
     main_coroutine_ = coroutine_factory(std::forward<Args>(args)...);
+    main_coroutine_.add_observer(static_cast<Pollable::Observer&>(*this));
     resume(main_coroutine_.handle(), TaskPriority::HIGH);
-}
-
-template<typename T>
-slag::Event& slag::Fiber<T>::completion() {
-    return main_coroutine_.completion();
-}
-
-template<typename T>
-const slag::Event& slag::Fiber<T>::completion() const {
-    return main_coroutine_.completion();
 }
 
 template<typename T>
@@ -31,6 +22,8 @@ template<typename T>
 const T& slag::Fiber<T>::value() const {
     return main_coroutine_.value();
 }
+
+#if 0
 
 template<typename T>
 slag::FutureAwaitable<T>::FutureAwaitable(Future<T>& future)
@@ -72,3 +65,5 @@ template<typename T>
 T& slag::FiberAwaitable<T>::await_resume() {
     return fiber_.value();
 }
+
+#endif

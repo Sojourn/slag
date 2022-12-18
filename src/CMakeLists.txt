@@ -10,7 +10,6 @@ set(SLAG_SOURCE_FILES
     io_uring_reactor.cpp
     io_uring_resource_context.cpp
     error.cpp
-    event.cpp
     event_loop.cpp
     task.cpp
     platform.cpp
@@ -21,8 +20,7 @@ set(SLAG_SOURCE_FILES
     executor.cpp
     fiber_base.cpp
     awaitable.cpp
-    awaitable_base.cpp
-    socket.cpp
+    # socket.cpp
     buffer.cpp
     buffer_slice.cpp
     byte_stream.cpp
@@ -44,7 +42,6 @@ set(SLAG_HEADER_FILES
     ../include/slag/io_uring_reactor.h
     ../include/slag/io_uring_resource_context.h
     ../include/slag/error.h
-    ../include/slag/event.h
     ../include/slag/event_loop.h
     ../include/slag/task.h
     ../include/slag/platform.h

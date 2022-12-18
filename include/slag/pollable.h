@@ -29,10 +29,18 @@ namespace slag {
     ;
 
     struct PollableEventMask : std::bitset<POLLABLE_EVENT_COUNT> {
-        using std::bitset<POLLABLE_EVENT_COUNT>::bitset;
+        using Base = std::bitset<POLLABLE_EVENT_COUNT>;
+
+        using Base::Base;
+        using Base::set;
+        using Base::test;
+        using Base::reset;
 
         PollableEventMask(PollableEvent event);
         PollableEventMask(std::initializer_list<PollableEvent> events);
+
+        [[nodiscard]] bool test(PollableEvent event) const;
+        [[nodiscard]] PollableEventMask& set(PollableEvent event, bool value = true);
     };
 
     [[nodiscard]] std::string to_string(PollableEventMask events);
@@ -69,7 +77,7 @@ namespace slag {
         void remove_observer(Observer& observer);
 
     protected:
-        void set_event(Event event, bool value);
+        void set_event(Event event, bool value = true);
 
     private:
         using ObserverList = IntrusiveList<Observer, &Observer::hook_>;
