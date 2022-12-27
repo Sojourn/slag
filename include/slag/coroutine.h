@@ -57,6 +57,7 @@ namespace slag {
         [[nodiscard]] T& value() noexcept;
         [[nodiscard]] const T& value() const noexcept;
         [[nodiscard]] std::coroutine_handle<> handle() noexcept;
+        [[nodiscard]] Pollable& pollable() noexcept;
 
         void resume();
 
