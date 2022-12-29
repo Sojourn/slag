@@ -2,6 +2,8 @@
 
 #include <string>
 #include <string_view>
+#include <exception>
+#include <stdexcept>
 #include <cstdint>
 #include <cstddef>
 #include <cerrno>
@@ -68,5 +70,7 @@ namespace slag {
     [[nodiscard]] std::string to_string(ErrorCategory error_category);
     [[nodiscard]] std::string to_string(ErrorCode error_code);
     [[nodiscard]] std::string to_string(Error error);
+
+    [[nodiscard]] std::exception_ptr to_exception(Error error, std::string_view message);
 
 }

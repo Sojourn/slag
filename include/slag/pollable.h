@@ -78,6 +78,7 @@ namespace slag {
 
     protected:
         void set_event(Event event, bool value = true);
+        void reset_event(Event event);
 
     private:
         using ObserverList = IntrusiveList<Observer, &Observer::hook_>;

@@ -78,3 +78,7 @@ void slag::Pollable::set_event(Event event, bool value) {
         }
     }
 }
+
+void slag::Pollable::reset_event(Event event) {
+    set_event(event, false);
+}

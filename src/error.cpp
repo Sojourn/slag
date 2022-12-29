@@ -72,3 +72,14 @@ std::string slag::to_string(ErrorCode error_code) {
 std::string slag::to_string(Error error) {
     return to_string(error.code());
 }
+
+std::exception_ptr slag::to_exception(Error error, std::string_view message) {
+    try {
+        error.raise(message);
+    }
+    catch (...) {
+        return std::current_exception();
+    }
+
+    abort();
+}

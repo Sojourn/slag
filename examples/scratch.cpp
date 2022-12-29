@@ -1,10 +1,16 @@
 #include <iostream>
-#include "slag/slag.h"
+#include "slag/future2.h"
+
+using namespace slag;
 
 int main(int argc, char** argv) {
     (void)argc;
     (void)argv;
 
-    std::cout << "scratch" << std::endl;
+    auto&& [future, promise] = make_future<int>();
+
+    std::cout << future.get() << std::endl;
+    promise.set_value(13);
+
     return 0;
 }
