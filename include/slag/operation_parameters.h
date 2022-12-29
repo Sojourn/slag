@@ -37,7 +37,7 @@ namespace slag {
             FileDescriptor file_descriptor;
         } arguments;
 
-        Promise<void> result;
+        FutureFactory<void> result;
     };
 
     template<>
@@ -50,7 +50,7 @@ namespace slag {
             Address address;
         } arguments;
 
-        Promise<void> result;
+        FutureFactory<void> result;
     };
 
     template<>
@@ -59,7 +59,7 @@ namespace slag {
             int backlog = 0;
         } arguments;
 
-        Promise<void> result;
+        FutureFactory<void> result;
     };
 
     template<>
@@ -69,7 +69,7 @@ namespace slag {
 
     template<>
     struct OperationParameters<OperationType::ACCEPT> {
-        Promise<std::pair<FileDescriptor, Address>> result;
+        FutureFactory<std::pair<FileDescriptor, Address>> result;
 
         Address   address;
         socklen_t address_length = 0;
@@ -81,7 +81,7 @@ namespace slag {
             BufferSlice buffer_slice;
         } arguments;
 
-        Promise<size_t> result;
+        FutureFactory<size_t> result;
     };
 
     template<>
@@ -90,8 +90,8 @@ namespace slag {
             size_t count = 0;
         } arguments;
 
-        Handle<Buffer>       buffer;
-        Promise<BufferSlice> result;
+        Handle<Buffer>             buffer;
+        FutureFactory<BufferSlice> result;
     };
 
     constexpr size_t max_operation_parameters_size() {

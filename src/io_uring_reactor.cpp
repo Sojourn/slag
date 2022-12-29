@@ -352,12 +352,13 @@ void slag::IOURingReactor::process_completion(Subject<OperationType::ASSIGN>& su
         target_file_descriptor = std::move(source_file_descriptor);
     }
 
+    auto&& promise = subject.operation_parameters.result.promise;
     if (result >= 0) {
-        subject.operation_parameters.result.set_value();
+        promise.set_default_value();
         result = 0;
     }
     else {
-        subject.operation_parameters.result.set_error(make_system_error(-result), "Assign operation failed");
+        promise.set_error(make_system_error(-result), "Assign operation failed");
     }
 
     complete_operation(subject.operation, result);
@@ -382,11 +383,12 @@ void slag::IOURingReactor::process_completion(Subject<OperationType::BIND>& subj
     }
 
     // assign the result
+    auto&& promise = subject.operation_parameters.result.promise;
     if (result >= 0) {
-        subject.operation_parameters.result.set_value();
+        promise.set_default_value();
     }
     else {
-        subject.operation_parameters.result.set_error(make_system_error(-result), "Bind operation failed");
+        promise.set_error(make_system_error(-result), "Bind operation failed");
     }
 
     complete_operation(subject.operation, result);
@@ -411,17 +413,19 @@ void slag::IOURingReactor::process_completion(Subject<OperationType::LISTEN>& su
     }
 
     // assign the result
+    auto&& promise = subject.operation_parameters.result.promise;
     if (result >= 0) {
-        subject.operation_parameters.result.set_value();
+        promise.set_default_value();
     }
     else {
-        subject.operation_parameters.result.set_error(make_system_error(-result), "Listen operation failed");
+        promise.set_error(make_system_error(-result), "Listen operation failed");
     }
 
     complete_operation(subject.operation, result);
 }
 
 void slag::IOURingReactor::process_completion(Subject<OperationType::ACCEPT>& subject, int64_t result) {
+    auto&& promise = subject.operation_parameters.result.promise;
     if (result >= 0) {
         FileDescriptor file_descriptor{static_cast<int>(result)};
 
@@ -430,7 +434,7 @@ void slag::IOURingReactor::process_completion(Subject<OperationType::ACCEPT>& su
             assert(false);
         }
 
-        subject.operation_parameters.result.set_value(
+        promise.set_value(
             std::make_pair(
                 std::move(file_descriptor),
                 subject.operation_parameters.address
@@ -439,28 +443,33 @@ void slag::IOURingReactor::process_completion(Subject<OperationType::ACCEPT>& su
 
         result = 0;
     }
+    else {
+        promise.set_error(make_system_error(-result), "Accept operation failed");
+    }
 
     complete_operation(subject.operation, result);
 }
 
 void slag::IOURingReactor::process_completion(Subject<OperationType::SEND>& subject, int64_t result) {
+    auto&& promise = subject.operation_parameters.result.promise;
     if (result >= 0) {
-        subject.operation_parameters.result.set_value(static_cast<size_t>(result));
+        promise.set_value(static_cast<size_t>(result));
         result = 0; // TODO: figure out if we need to do this
     }
     else {
-        subject.operation_parameters.result.set_error(make_system_error(), "send failed");
+        promise.set_error(make_system_error(), "send failed");
     }
 
     complete_operation(subject.operation, result);
 }
 
 void slag::IOURingReactor::process_completion(Subject<OperationType::RECEIVE>& subject, int64_t result) {
+    auto&& promise = subject.operation_parameters.result.promise;
     if (result >= 0) {
         auto&& buffer = subject.operation_parameters.buffer;
         auto&& data   = buffer->data().first(static_cast<size_t>(result));
 
-        subject.operation_parameters.result.set_value(BufferSlice {
+        promise.set_value(BufferSlice {
             std::move(buffer),
             data
         });
@@ -468,7 +477,7 @@ void slag::IOURingReactor::process_completion(Subject<OperationType::RECEIVE>& s
         result = 0; // TODO: figure out if we need to do this
     }
     else {
-        subject.operation_parameters.result.set_error(make_system_error(), "receive failed");
+        promise.set_error(make_system_error(), "receive failed");
     }
 
     complete_operation(subject.operation, result);

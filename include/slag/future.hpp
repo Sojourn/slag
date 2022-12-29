@@ -1,342 +1,247 @@
-#include <new>
+#include <cassert>
 
-template<typename T>
-inline slag::FutureContext<T>::FutureContext()
-    : promise_{nullptr}
-    , future_{nullptr}
-    , result_{}
-    , promise_broken_{false}
-    , promise_satisfied_{false}
-    , future_retrieved_{false}
-{
-}
+namespace slag {
 
-template<typename T>
-inline bool slag::FutureContext<T>::is_referenced() const {
-    return promise_ || future_;
-}
+    constexpr size_t FUTURE_EMPTY_INDEX = 0;
+    constexpr size_t FUTURE_VALUE_INDEX = 1;
+    constexpr size_t FUTURE_ERROR_INDEX = 2;
 
-template<typename T>
-inline bool slag::FutureContext<T>::is_promise_satisfied() const {
-    return promise_satisfied_;
-}
-
-template<typename T>
-inline bool slag::FutureContext<T>::is_future_retrieved() const {
-    return future_retrieved_;
-}
-
-template<typename T>
-inline auto slag::FutureContext<T>::result() -> Result& {
-    return result_;
-}
-
-template<typename T>
-inline auto slag::FutureContext<T>::result() const -> const Result& {
-    return result_;
-}
-
-template<typename T>
-inline void slag::FutureContext<T>::handle_promise_broken() {
-    assert(!promise_);
-    assert(!promise_satisfied_);
-    assert(!promise_broken_);
-
-    try {
-        Error{ErrorCode::PROMISE_BROKEN}.raise("");
-    }
-    catch (const std::exception&) {
-        result_ = std::current_exception();
+    template<typename T>
+    Future<T>::Future()
+        : promise_{nullptr}
+        , result_{}
+    {
     }
 
-    promise_broken_ = true;
-    if (future_) {
-        future_->set_event(PollableEvent::READABLE);
+    template<typename T>
+    Future<T>::Future(Future&& that)
+        : Future{}
+    {
+        std::exchange(to_pollable(*this), std::move(to_pollable(that)));
+        std::exchange(promise_, std::move(that.promise_));
+        std::exchange(result_, std::move(that.result_));
     }
-}
 
-template<typename T>
-inline void slag::FutureContext<T>::handle_future_retrieved() {
-    assert(future_);
-    assert(!future_retrieved_);
-
-    future_retrieved_ = true;
-}
-
-template<typename T>
-inline void slag::FutureContext<T>::handle_promise_satisfied() {
-    assert(promise_);
-    assert(!promise_satisfied_);
-    assert(!promise_broken_);
-
-    promise_satisfied_ = true;
-    if (future_) {
-        future_->set_event(PollableEvent::READABLE);
-    }
-}
-
-template<typename T>
-inline void slag::FutureContext<T>::attach(Promise<T>& promise) {
-    assert(!promise_);
-
-    promise_ = &promise;
-}
-
-template<typename T>
-inline void slag::FutureContext<T>::detach(Promise<T>& promise) {
-    assert(promise_);
-    assert(promise_ == &promise);
-
-    promise_ = nullptr;
-    if (future_ && !promise_satisfied_) {
-        handle_promise_broken();
-    }
-}
-
-template<typename T>
-inline void slag::FutureContext<T>::moved(Promise<T>& old_promise, Promise<T>& new_promise) {
-    assert(promise_ == &old_promise);
-    assert(&old_promise != &new_promise);
-
-    promise_ = &new_promise;
-}
-
-template<typename T>
-inline void slag::FutureContext<T>::attach(Future<T>& future) {
-    if (future_retrieved_) {
-        Error{ErrorCode::FUTURE_ALREADY_RETRIEVED}.raise("Failed attach future");
-    }
-    assert(!future_);
-
-    future_ = &future;
-    handle_future_retrieved();
-}
-
-template<typename T>
-inline void slag::FutureContext<T>::detach(Future<T>& future) {
-    assert(future_ == &future);
-    assert(future_retrieved_);
-
-    future_ = nullptr;
-}
-
-template<typename T>
-inline void slag::FutureContext<T>::moved(Future<T>& old_future, Future<T>& new_future) {
-    assert(future_ == &old_future);
-    assert(&old_future != &new_future);
-
-    future_ = &new_future;
-}
-
-template<typename T>
-inline slag::Promise<T>::Promise()
-    : context_{nullptr}
-{
-}
-
-template<typename T>
-inline slag::Promise<T>::Promise(Promise&& other)
-    : context_{std::exchange(other.context_, nullptr)}
-{
-    if (context_) {
-        context_->moved(other, *this);
-    }
-}
-
-template<typename T>
-inline slag::Promise<T>::~Promise() {
-    reset();
-}
-
-template<typename T>
-inline slag::Promise<T>& slag::Promise<T>::operator=(Promise&& that) {
-    if (this != &that) {
+    template<typename T>
+    Future<T>::~Future() {
         reset();
-        context_ = std::exchange(that.context_, nullptr);
-        if (context_) {
-            context_->moved(that, *this);
-        }
     }
 
-    return *this;
-}
+    template<typename T>
+    Future<T>& Future<T>::operator=(Future&& that) {
+        if (this != &that) {
+            reset();
 
-template<typename T>
-inline slag::Future<T> slag::Promise<T>::get_future() {
-    return Future<T>{get_context()};
-}
-
-template<typename T>
-inline void slag::Promise<T>::set_value(T&& value) {
-    FutureContext<T>& context = get_context();
-    if (context.is_promise_satisfied()) {
-        Error{ErrorCode::PROMISE_ALREADY_SATISFIED}.raise("Failed to set future value");
-    }
-
-    context.result() = std::move(value);
-    context.handle_promise_satisfied();
-}
-
-template<typename T>
-inline void slag::Promise<T>::set_value(const T& value) {
-    FutureContext<T>& context = get_context();
-    if (context.is_promise_satisfied()) {
-        Error{ErrorCode::PROMISE_ALREADY_SATISFIED}.raise("Failed to set future value");
-    }
-
-    context.result() = value;
-    context.handle_promise_satisfied();
-}
-
-template<typename T>
-inline void slag::Promise<T>::set_error(Error error, std::string_view message) {
-    try {
-        error.raise(message);
-    }
-    catch (const std::exception&) {
-        set_current_exception();
-    }
-}
-
-template<typename T>
-inline void slag::Promise<T>::set_exception(std::exception_ptr ex) {
-    FutureContext<T>& context = get_context();
-    if (context.is_promise_satisfied()) {
-        Error{ErrorCode::PROMISE_ALREADY_SATISFIED}.raise("Failed to set future error");
-    }
-
-    context.result() = std::move(ex);
-    context.handle_promise_satisfied();
-}
-
-template<typename T>
-inline void slag::Promise<T>::set_current_exception() {
-    set_exception(std::current_exception());
-}
-
-template<typename T>
-inline void slag::Promise<T>::reset() {
-    if (context_) {
-        context_->detach(*this);
-        if (!context_->is_referenced()) {
-            delete context_;
+            std::exchange(to_pollable(*this), std::move(to_pollable(that)));
+            std::exchange(promise_, std::move(that.promise_));
+            std::exchange(result_, std::move(that.result_));
         }
 
-        context_ = nullptr;
-    }
-}
-
-template<typename T>
-inline slag::FutureContext<T>& slag::Promise<T>::get_context() {
-    if (!context_) {
-        context_ = new FutureContext<T>; // TODO: use custom allocator(s)
-        context_->attach(*this);
+        return *this;
     }
 
-    return *context_;
-}
-
-template<typename T>
-inline slag::Future<T>::Future()
-    : context_{nullptr}
-{
-}
-
-template<typename T>
-inline slag::Future<T>::Future(Future&& other)
-    : context_{std::exchange(other.context_, nullptr)}
-{
-    if (context_) {
-        context_->moved(other, *this);
+    template<typename T>
+    bool Future<T>::has_result() const {
+        return result_.index() != FUTURE_EMPTY_INDEX;
     }
-}
 
-template<typename T>
-inline slag::Future<T>::~Future() {
-    reset();
-}
+    template<typename T>
+    bool Future<T>::has_value() const {
+        return result_.index() == FUTURE_VALUE_INDEX;
+    }
 
-template<typename T>
-inline slag::Future<T>& slag::Future<T>::operator=(Future&& that) {
-    if (this != &that) {
+    template<typename T>
+    bool Future<T>::has_error() const {
+        return result_.index() == FUTURE_ERROR_INDEX;
+    }
+
+    template<typename T>
+    FutureValue<T>& Future<T>::get() {
+        switch (result_.index()) {
+            case FUTURE_EMPTY_INDEX: {
+                Error{ErrorCode::FUTURE_NOT_READY}.raise("Future::get");
+                abort(); // unreachable
+            }
+            case FUTURE_VALUE_INDEX: {
+                return value();
+            }
+            case FUTURE_ERROR_INDEX: {
+                std::rethrow_exception(error());
+            }
+        }
+
+        abort(); // unreachable
+    }
+
+    template<typename T>
+    const FutureValue<T>& Future<T>::get() const {
+        return static_cast<Future<T>&>(*this).get();
+    }
+
+    template<typename T>
+    FutureValue<T>& Future<T>::value() {
+        return std::get<FutureValue<T>>(result_);
+    }
+
+    template<typename T>
+    const FutureValue<T>& Future<T>::value() const {
+        return std::get<FutureValue<T>>(result_);
+    }
+
+    template<typename T>
+    std::exception_ptr Future<T>::error() const {
+        return std::get<FutureError<T>>(result_);
+    }
+
+    template<typename T>
+    void Future<T>::reset() {
+        to_pollable(*this) = Pollable{};
+
+        if (promise_) {
+            promise_->abandon(*this);
+            promise_ = nullptr;
+        }
+
+        result_ = FutureResult<T>{};
+    }
+
+    template<typename T>
+    Future<T>::Future(Promise<T>& promise)
+        : promise_{&promise}
+    {
+    }
+
+    template<typename T>
+    void Future<T>::abandon(Promise<T>& promise) {
+        assert(promise_ == &promise);
+        promise_ = nullptr;
+
+        if (!has_result()) {
+            auto exception = to_exception(Error(ErrorCode::PROMISE_BROKEN), "Future::abandon");
+            result_.template emplace<std::exception_ptr>(std::move(exception));
+        }
+
+        set_event(PollableEvent::CLOSED);
+    }
+
+    template<typename T>
+    Promise<T>::Promise()
+        : future_{nullptr}
+    {
+    }
+
+    template<typename T>
+    Promise<T>::Promise(Promise&& that)
+        : future_{nullptr}
+    {
+        std::exchange(future_, std::move(that.future_));
+    }
+
+    template<typename T>
+    Promise<T>::~Promise() {
         reset();
-        context_ = std::exchange(that.context_, nullptr);
-        if (context_) {
-            context_->moved(that, *this);
+    }
+
+    template<typename T>
+    Promise<T>& Promise<T>::operator=(Promise&& that) {
+        if (this != &that) {
+            reset();
+        }
+
+        return *this;
+    }
+
+    template<typename T>
+    template<typename... Args>
+    void Promise<T>::emplace_value(Args&&... args) {
+        if (!future_) {
+            Error{ErrorCode::FUTURE_DETACHED}.raise("Promies::emplace_value");
+        }
+        if (future_->has_result()) {
+            Error{ErrorCode::PROMISE_ALREADY_SATISFIED}.raise("Promies::emplace_value");
+        }
+
+        auto&& result = future_->result_;
+        result.template emplace<FutureValue<T>>(std::forward<Args>(args)...);
+        reset_event(PollableEvent::WRITABLE);
+    }
+
+    template<typename T>
+    void Promise<T>::set_value(FutureValue<T> value) {
+        emplace_value(std::move(value));
+    }
+
+    template<typename T>
+    void Promise<T>::set_default_value() {
+        emplace_value(FutureValue<T>{});
+    }
+
+    template<typename T>
+    void Promise<T>::set_error(std::exception_ptr exception) {
+        if (!future_) {
+            Error{ErrorCode::FUTURE_DETACHED}.raise("Promies::set_error");
+        }
+        if (future_->has_result()) {
+            Error{ErrorCode::PROMISE_ALREADY_SATISFIED}.raise("Promies::set_error");
+        }
+
+        auto&& result = future_->result_;
+        result.template emplace<std::exception_ptr>(std::move(exception));
+        reset_event(PollableEvent::WRITABLE);
+    }
+
+    template<typename T>
+    void Promise<T>::set_error(Error error, std::string_view message) {
+        set_error(to_exception(error, message));
+    }
+
+    template<typename T>
+    void Promise<T>::reset() {
+        to_pollable(*this) = Pollable{};
+
+        if (future_) {
+            future_->abandon(*this);
+            future_ = nullptr;
         }
     }
 
-    return *this;
-}
-
-template<typename T>
-inline bool slag::Future<T>::is_ready() const {
-    return get_context().is_promise_satisfied();
-}
-
-template<typename T>
-inline T& slag::Future<T>::get() {
-    auto&& context = get_context();
-    if (!context.is_promise_satisfied()) {
-        Error{ErrorCode::FUTURE_NOT_READY}.raise("Failed to get result");
+    template<typename T>
+    Promise<T>::Promise(Future<T>& future)
+        : future_{&future}
+    {
+        set_event(PollableEvent::WRITABLE);
     }
 
-    auto&& result = context.result();
-    if (auto ex = std::get_if<std::exception_ptr>(&result)) {
-        std::rethrow_exception(*ex);
+    template<typename T>
+    void Promise<T>::abandon(Future<T>& future)     {
+        assert(future_ == &future);
+        future_ = nullptr;
+
+        reset_event(PollableEvent::WRITABLE);
+        set_event(PollableEvent::CLOSED);
     }
 
-    return std::get<T>(result);
-}
-
-template<typename T>
-inline const T& slag::Future<T>::get() const {
-    auto&& context = get_context();
-    if (!context.is_promise_satisfied()) {
-        Error{ErrorCode::FUTURE_NOT_READY}.raise("Failed to get result");
+    template<typename T>
+    FutureFactory<T>::FutureFactory()
+        : future{promise}
+        , promise{future}
+    {
     }
 
-    auto&& result = context.result();
-    if (auto ex = std::get_if<std::exception_ptr>(&result)) {
-        std::rethrow_exception(*ex);
+    template<typename T>
+    FutureFactory<T> make_future() {
+        return {};
     }
 
-    return std::get<T>(result);
-}
-
-template<typename T>
-inline void slag::Future<T>::reset() {
-    if (context_) {
-        context_->detach(*this);
-        if (!context_->is_referenced()) {
-            delete context_;
-        }
-
-        context_ = nullptr;
-    }
-}
-
-template<typename T>
-inline slag::Future<T>::Future(FutureContext<T>& context)
-    : context_{&context}
-{
-    context_->attach(*this);
-}
-
-template<typename T>
-inline slag::FutureContext<T>& slag::Future<T>::get_context() {
-    if (!context_) {
-        Error{ErrorCode::FUTURE_DETACHED}.raise("Failed to get the future context");
+    template<typename T>
+    Pollable& to_pollable(Future<T>& future) {
+        return future;
     }
 
-    return *context_;
-}
-
-template<typename T>
-inline const slag::FutureContext<T>& slag::Future<T>::get_context() const {
-    if (!context_) {
-        Error{ErrorCode::FUTURE_DETACHED}.raise("Failed to get the future context");
+    template<typename T>
+    Pollable& to_pollable(Promise<T>& promise) {
+        return promise;
     }
 
-    return *context_;
 }
+

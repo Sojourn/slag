@@ -1,5 +1,5 @@
 #include <iostream>
-#include "slag/future2.h"
+#include "slag/slag.h"
 
 using namespace slag;
 
