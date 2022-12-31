@@ -137,3 +137,25 @@ void slag::Coroutine<T>::resume() {
     assert(!is_done());
     handle_.resume();
 }
+
+template<typename T>
+slag::CoroutineAwaitable<T>::CoroutineAwaitable(Coroutine<T> coroutine)
+    : Awaitable{to_pollable(coroutine), PollableEvent::READABLE}
+    , coroutine_{std::move(coroutine)}
+{
+}
+
+template<typename T>
+T slag::CoroutineAwaitable<T>::await_resume() {
+    return std::move(coroutine_.value());
+}
+
+template<typename T>
+slag::Pollable& slag::to_pollable(Coroutine<T>& coroutine) {
+    return coroutine.pollable();
+}
+
+template<typename T>
+slag::CoroutineAwaitable<T> slag::operator co_await(Coroutine<T> coroutine) {
+    return CoroutineAwaitable<T>{std::move(coroutine)};
+}
