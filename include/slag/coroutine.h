@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include "slag/pollable.h"
 #include "slag/fiber_base.h"
+#include "slag/awaitable.h"
 
 namespace slag {
 
@@ -64,6 +65,33 @@ namespace slag {
     private:
         std::coroutine_handle<Promise> handle_;
     };
+
+    template<typename T>
+    [[nodiscard]] inline Pollable& to_pollable(Coroutine<T>& coroutine) {
+        return coroutine.pollable();
+    }
+
+    template<typename T>
+    class CoroutineAwaitable : public Awaitable {
+    public:
+        CoroutineAwaitable(Coroutine<T> coroutine)
+            : Awaitable{to_pollable(coroutine), PollableEvent::READABLE}
+            , coroutine_{std::move(coroutine)}
+        {
+        }
+
+        [[nodiscard]] T await_resume() {
+            return std::move(coroutine_.value());
+        }
+
+    private:
+        Coroutine<T> coroutine_;
+    };
+
+    template<typename T>
+    [[nodiscard]] inline CoroutineAwaitable<T> operator co_await(Coroutine<T> coroutine) {
+        return CoroutineAwaitable<T>{std::move(coroutine)};
+    }
 
 }
 

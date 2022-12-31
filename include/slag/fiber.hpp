@@ -9,8 +9,13 @@ slag::Fiber<T>::Fiber(CoroutineFactory&& coroutine_factory, Args&&... args) {
     (void)activation;
 
     main_coroutine_ = coroutine_factory(std::forward<Args>(args)...);
-    main_coroutine_.add_observer(static_cast<Pollable::Observer&>(*this));
+    to_pollable(main_coroutine_).add_observer(*this);
     resume(main_coroutine_.handle(), TaskPriority::HIGH);
+}
+
+template<typename T>
+slag::Fiber<T>::~Fiber() {
+    to_pollable(main_coroutine_).remove_observer(*this);
 }
 
 template<typename T>
@@ -21,6 +26,22 @@ T& slag::Fiber<T>::value() {
 template<typename T>
 const T& slag::Fiber<T>::value() const {
     return main_coroutine_.value();
+}
+
+template<typename T>
+void slag::Fiber<T>::handle_pollable_event(Pollable& pollable, Event event) {
+    assert(&pollable == &to_pollable(main_coroutine_));
+
+    if (event == PollableEvent::READABLE) {
+        set_event(event);
+    }
+}
+
+template<typename T>
+void slag::Fiber<T>::handle_pollable_destroyed(Pollable& pollable) {
+    assert(&pollable == &to_pollable(main_coroutine_));
+
+    abort();
 }
 
 #if 0

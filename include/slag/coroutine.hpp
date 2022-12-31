@@ -128,6 +128,11 @@ std::coroutine_handle<> slag::Coroutine<T>::handle() noexcept {
 }
 
 template<typename T>
+slag::Pollable& slag::Coroutine<T>::pollable() noexcept {
+    return handle_.promise();
+}
+
+template<typename T>
 void slag::Coroutine<T>::resume() {
     assert(!is_done());
     handle_.resume();

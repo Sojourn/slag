@@ -11,13 +11,21 @@
 namespace slag {
 
     template<typename T>
-    class Fiber : public FiberBase {
+    class Fiber
+        : public FiberBase
+        , private Pollable::Observer
+    {
     public:
         template<typename CoroutineFactory, typename... Args>
         Fiber(CoroutineFactory&& coroutine_factory, Args&&... args);
+        ~Fiber();
 
         [[nodiscard]] T& value();
         [[nodiscard]] const T& value() const;
+
+    private:
+        void handle_pollable_event(Pollable& pollable, Event event) override;
+        void handle_pollable_destroyed(Pollable& pollable) override;
 
     private:
         Coroutine<T> main_coroutine_;
