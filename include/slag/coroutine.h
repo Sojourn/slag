@@ -69,7 +69,7 @@ namespace slag {
     template<typename T>
     class CoroutineAwaitable : public Awaitable {
     public:
-        CoroutineAwaitable(Coroutine<T> coroutine);
+        explicit CoroutineAwaitable(Coroutine<T> coroutine);
 
         [[nodiscard]] T await_resume();
 

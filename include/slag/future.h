@@ -6,6 +6,7 @@
 #include "slag/void.h"
 #include "slag/error.h"
 #include "slag/pollable.h"
+#include "slag/awaitable.h"
 
 namespace slag {
 
@@ -101,6 +102,28 @@ namespace slag {
     private:
         Future<T>* future_;
     };
+
+    template<typename T>
+    class FutureAwaitable : public Awaitable {
+    public:
+        explicit FutureAwaitable(Future<T> future)
+            : Awaitable{to_pollable(future), PollableEvent::READABLE}
+            , future_{std::move(future)}
+        {
+        }
+
+        [[nodiscard]] FutureValue<T> await_resume() {
+            return future_.get();
+        }
+
+    private:
+        Future<T> future_;
+    };
+
+    template<typename T>
+    [[nodiscard]] inline FutureAwaitable<T> operator co_await(Future<T> future) {
+        return FutureAwaitable<T>{std::move(future)};
+    }
 
     // FuturePromisePair?
     template<typename T>
