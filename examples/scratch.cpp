@@ -5,7 +5,6 @@ using namespace slag;
 
 Future<void> make_ready_future() {
     auto&& [future, promise] = make_future<void>();
-    asm("int $3");
     promise.set_default_value();
     return std::move(future);
 }
@@ -31,14 +30,11 @@ int main(int argc, char** argv) {
     (void)argc;
     (void)argv;
 
-    Future<void> future = make_ready_future();
-    (void)future.get();
+    EventLoop event_loop{std::make_unique<IOURingReactor>()};
 
-    // EventLoop event_loop{std::make_unique<IOURingReactor>()};
+    Fiber<Void> fiber{foo};
 
-    // Fiber<Void> fiber{foo};
-
-    // event_loop.run();
+    event_loop.run();
 
     return 0;
 }

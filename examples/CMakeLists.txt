@@ -1,6 +1,7 @@
 add_executable(example
-        scratch.cpp
+        # scratch.cpp
         # echo_server.cpp
+        fuzz_intrusive_list.cpp
         )
 
 target_link_libraries(example PUBLIC slag)
