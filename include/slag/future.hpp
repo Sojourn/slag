@@ -1,4 +1,5 @@
 #include <cassert>
+#include "slag/logging.h"
 
 namespace slag {
 
@@ -17,9 +18,13 @@ namespace slag {
     Future<T>::Future(Future&& that)
         : Future{}
     {
-        std::exchange(to_pollable(*this), std::move(to_pollable(that)));
-        std::exchange(promise_, std::move(that.promise_));
-        std::exchange(result_, std::move(that.result_));
+        std::swap(to_pollable(*this), to_pollable(that));
+        std::swap(promise_, that.promise_);
+        std::swap(result_, that.result_);
+
+        if (promise_) {
+            promise_->future_ = this;
+        }
     }
 
     template<typename T>
@@ -32,9 +37,13 @@ namespace slag {
         if (this != &that) {
             reset();
 
-            std::exchange(to_pollable(*this), std::move(to_pollable(that)));
-            std::exchange(promise_, std::move(that.promise_));
-            std::exchange(result_, std::move(that.result_));
+            std::swap(to_pollable(*this), to_pollable(that));
+            std::swap(promise_, that.promise_);
+            std::swap(result_, that.result_);
+
+            if (promise_) {
+                promise_->future_ = this;
+            }
         }
 
         return *this;
@@ -134,7 +143,12 @@ namespace slag {
     Promise<T>::Promise(Promise&& that)
         : future_{nullptr}
     {
-        std::exchange(future_, std::move(that.future_));
+        std::swap(to_pollable(*this), to_pollable(that));
+        std::swap(future_, that.future_);
+
+        if (future_) {
+            future_->promise_ = this;
+        }
     }
 
     template<typename T>
@@ -146,6 +160,13 @@ namespace slag {
     Promise<T>& Promise<T>::operator=(Promise&& that) {
         if (this != &that) {
             reset();
+
+            std::swap(to_pollable(*this), to_pollable(that));
+            std::swap(future_, that.future_);
+
+            if (future_) {
+                future_->promise_ = this;
+            }
         }
 
         return *this;
