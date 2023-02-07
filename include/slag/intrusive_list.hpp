@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <utility>
 #include <cassert>
 #include <cstdlib>
@@ -54,15 +55,15 @@ inline bool slag::IntrusiveListNode::is_linked() const {
 }
 
 inline void slag::IntrusiveListNode::unlink() {
-    if (!is_linked()) {
-        return;
+    if (is_linked()) {
+        auto prev = std::exchange(prev_, this);
+        auto next = std::exchange(next_, this);
+
+        prev->next_ = next;
+        next->prev_ = prev;
     }
 
-    prev_->next_ = next_;
-    next_->prev_ = prev_;
-
-    prev_ = this;
-    next_ = this;
+    assert(!is_linked());
 }
 
 template<typename T, slag::IntrusiveListNode T::*node_>
@@ -80,6 +81,12 @@ inline slag::IntrusiveListNode& slag::IntrusiveListNode::to_node(T& element) noe
 }
 
 inline void slag::IntrusiveListNode::link_before(IntrusiveListNode& other) noexcept {
+    assert(this != &other);
+    if (other.is_linked()) {
+        assert(other.prev_->is_linked());
+        assert(other.next_->is_linked());
+    }
+
     if (is_linked()) {
         abort(); // throw instead?
     }
@@ -183,6 +190,13 @@ inline slag::IntrusiveList<T, node_>& slag::IntrusiveList<T, node_>::operator=(I
 template<typename T, slag::IntrusiveListNode T::*node_>
 inline bool slag::IntrusiveList<T, node_>::is_empty() const {
     return !root_.is_linked();
+}
+
+template<typename T, slag::IntrusiveListNode T::*node_>
+inline size_t slag::IntrusiveList<T, node_>::size() const {
+    // TODO: add const_iterator begin/end overloads to avoid this cast
+    auto self = const_cast<IntrusiveList<T, node_>*>(this);
+    return std::distance(self->begin(), self->end());
 }
 
 template<typename T, slag::IntrusiveListNode T::*node_>

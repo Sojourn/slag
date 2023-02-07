@@ -84,6 +84,7 @@ namespace slag {
         IntrusiveList& operator=(const IntrusiveList&) = delete;
 
         [[nodiscard]] bool is_empty() const;
+        [[nodiscard]] size_t size() const;
         [[nodiscard]] iterator begin();
         [[nodiscard]] iterator end();
         [[nodiscard]] T& front();
