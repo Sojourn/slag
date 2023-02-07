@@ -38,8 +38,115 @@ bool equals(ItemList& items, std::initializer_list<int> expected_values) {
     return true;
 }
 
+TEST_CASE("Fuzz IntrusiveList") {
+    int item_sum = 0;
 
-TEST_CASE("IntrusiveList", "basic") {
+    ItemList list1;
+    ItemList list2;
+
+    std::vector<Item> items;
+    items.resize(1000);
+    for (size_t i = 0 ; i < items.size(); ++i) {
+        Item& item = items[i];
+
+        item.value = static_cast<int>(i);
+        item_sum += item.value;
+
+        if ((i % 2) == 0) {
+            list1.push_back(item);
+        }
+        else {
+            list2.push_back(item);
+        }
+    }
+
+    for (size_t i = 0; i < 1000; ++i) {
+        CHECK(static_cast<size_t>(std::distance(list1.begin(), list1.end()) + std::distance(list2.begin(), list2.end())) == items.size());
+        for (auto&& item: items) {
+            CHECK(item.node.is_linked());
+        }
+
+        switch (rand() % 5) {
+            case 0: {
+                if (!list1.is_empty()) {
+                    list2.push_back(list1.pop_front());
+                }
+                break;
+            }
+            case 1: {
+                if (!list2.is_empty()) {
+                    list1.push_back(list2.pop_front());
+                }
+                break;
+            }
+            case 2: {
+                if (!list1.is_empty()) {
+                    list2.push_front(list1.pop_back());
+                }
+                break;
+            }
+            case 3: {
+                if (!list2.is_empty()) {
+                    list1.push_front(list2.pop_back());
+                }
+                break;
+            }
+            case 4: {
+                Item& item = items[rand() % items.size()];
+                CHECK(item.node.is_linked());
+                item.node.unlink();
+                list1.push_back(item);
+                break;
+            }
+            case 5: {
+                Item& item = items[rand() % items.size()];
+                CHECK(item.node.is_linked());
+                item.node.unlink();
+                list2.push_back(item);
+                break;
+            }
+            case 6: {
+                Item& item = items[rand() % items.size()];
+                CHECK(item.node.is_linked());
+                item.node.unlink();
+                list1.push_front(item);
+                break;
+            }
+            case 7: {
+                Item& item = items[rand() % items.size()];
+                CHECK(item.node.is_linked());
+                item.node.unlink();
+                list2.push_front(item);
+                break;
+            }
+            case 8: {
+                std::swap(list1, list2);
+                break;
+            }
+            case 9: {
+                Item& item1 = items[rand() % items.size()];
+                Item& item2 = items[rand() % items.size()];
+                std::swap(item1, item2);
+                break;
+            }
+
+            default: {
+                break;
+            }
+        }
+    }
+
+    for (const Item& item: list1) {
+        item_sum -= item.value;
+    }
+    for (const Item& item: list2) {
+        item_sum -= item.value;
+    }
+
+    CHECK(item_sum == 0);
+}
+
+TEST_CASE("Basic IntrusiveList") {
     static constexpr int ITEM_COUNT = 3;
 
     ItemList list;
@@ -109,18 +216,18 @@ TEST_CASE("IntrusiveList", "basic") {
 
     SECTION("moving a list") {
         list.push_back(items[0]);
-        list.push_back(items[1]);
-        list.push_back(items[2]);
 
         // move construct
         ItemList new_list{std::move(list)};
         CHECK(equals(list, {}));
-        CHECK(equals(new_list, {0, 1, 2}));
+        CHECK(equals(new_list, {0}));
 
         // move assign
         list = std::move(new_list);
-        CHECK(equals(list, {0, 1, 2}));
-        CHECK(equals(new_list, {}));
+        list.push_back(items[1]);
+        new_list.push_back(items[2]);
+        CHECK(equals(list, {0, 1}));
+        CHECK(equals(new_list, {2}));
     }
 
     SECTION("moving an element") {
