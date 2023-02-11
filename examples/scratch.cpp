@@ -16,10 +16,15 @@ Coroutine<int> bar(int value) {
 Coroutine<Void> foo() {
     std::cout << "Running!" << std::endl;
 
-    co_await make_ready_future();
+    auto future = make_ready_future();
+    // asm("int $3");
+    std::cout << "awaiting!" << std::endl;
+    co_await std::move(future);
+    std::cout << "awaited!" << std::endl;
+    // asm("int $3");
 
-    std::cout << (co_await bar(14)) << std::endl;
-    std::cout << (co_await bar(17)) << std::endl;
+    // std::cout << (co_await bar(14)) << std::endl;
+    // std::cout << (co_await bar(17)) << std::endl;
 
     local_event_loop().stop();
 
