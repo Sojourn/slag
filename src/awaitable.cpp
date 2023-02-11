@@ -8,7 +8,7 @@ slag::Awaitable::Awaitable(Pollable& pollable, PollableEventMask events)
 }
 
 bool slag::Awaitable::await_ready() const noexcept {
-    return (pollable_.events() & events_).any();
+    return (pollable_.events() & events_).none();
 }
 
 void slag::Awaitable::await_suspend(std::coroutine_handle<> handle) {
