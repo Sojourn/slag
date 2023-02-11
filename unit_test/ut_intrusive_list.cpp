@@ -247,4 +247,96 @@ TEST_CASE("Basic IntrusiveList") {
         CHECK(items[0].node.is_linked());
         CHECK(equals(list, {0, 1, 2}));
     }
+
+    SECTION("auto-unlinking an element") {
+        {
+            list.push_back(items[0]);
+            {
+                Item temp_item = {
+                    .value = 14,
+                    .node  = {},
+                };
+                list.push_back(temp_item);
+
+                CHECK(list.front().value == 0);
+                CHECK(list.back().value == 14);
+            }
+
+            CHECK(list.size() == 1);
+            CHECK(list.front().value == 0);
+            CHECK(list.back().value == 0);
+
+            list.clear();
+        }
+
+        // temp (front)
+        {
+            struct ItemWrapper {
+                Item item = {
+                    .value = 13,
+                    .node  = {},
+                };
+
+                Item& item_ref() {
+                    return item;
+                }
+            };
+
+            list.push_back(ItemWrapper{}.item_ref());
+            list.push_back(items[2]);
+
+            CHECK(list.size() == 1);
+            CHECK(list.front().value == 2);
+            CHECK(list.back().value == 2);
+
+            list.clear();
+        }
+
+        // temp (middle)
+        {
+            struct ItemWrapper {
+                Item item = {
+                    .value = 13,
+                    .node  = {},
+                };
+
+                Item& item_ref() {
+                    return item;
+                }
+            };
+
+            list.push_front(items[1]);
+            list.push_back(ItemWrapper{}.item_ref());
+            list.push_back(items[2]);
+
+            CHECK(list.size() == 2);
+            CHECK(list.front().value == 1);
+            CHECK(list.back().value == 2);
+
+            list.clear();
+        }
+
+        // temp (back)
+        {
+            struct ItemWrapper {
+                Item item = {
+                    .value = 13,
+                    .node  = {},
+                };
+
+                Item& item_ref() {
+                    return item;
+                }
+            };
+
+            list.push_front(items[1]);
+            list.push_back(ItemWrapper{}.item_ref());
+
+            CHECK(list.size() == 1);
+            CHECK(list.front().value == 1);
+            CHECK(list.back().value == 1);
+
+            list.clear();
+        }
+    }
 }
