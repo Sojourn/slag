@@ -281,7 +281,7 @@ namespace slag {
     template<typename T, IntrusiveListNode T::*node_>
     inline void IntrusiveList<T, node_>::clear() {
         while (!is_empty()) {
-            erase(front());
+            pop_back(); // LIFO
         }
     }
 
