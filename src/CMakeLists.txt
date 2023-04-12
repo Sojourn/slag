@@ -26,6 +26,9 @@ set(SLAG_SOURCE_FILES
     byte_stream.cpp
     pollable.cpp
     trace.cpp
+    message_fragment.cpp
+    message_record_fragment.cpp
+    message_buffer_fragment.cpp
 )
 
 set(SLAG_HEADER_FILES
@@ -67,6 +70,11 @@ set(SLAG_HEADER_FILES
     ../include/slag/selector.h
     ../include/slag/selector.hpp
     ../include/slag/trace.h
+    ../include/slag/buffer_writer.h
+    ../include/slag/buffer_writer.hpp
+    ../include/slag/message_fragment.h
+    ../include/slag/message_record_fragment.h
+    ../include/slag/message_buffer_fragment.h
 )
 
 add_library(slag ${SLAG_SOURCE_FILES} ${SLAG_HEADER_FILES})
