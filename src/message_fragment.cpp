@@ -142,7 +142,9 @@ namespace slag {
             writer.write_unchecked(std::span{header_buffer});
         }
 
-        writer.write_unchecked(fragment.data());
+        if (fragment.size()) {
+            writer.write_unchecked(fragment.data());
+        }
     }
 
 }
