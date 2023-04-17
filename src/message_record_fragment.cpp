@@ -33,12 +33,18 @@ namespace slag {
     }
 
     void MessageRecordFragment::push_back(uint64_t value) {
-        assert(size() < capacity());
+        if (capacity() <= size()) {
+            throw std::runtime_error("MessageRecordFragment overflow");
+        }
 
         data_[size_++] = value;
     }
 
     void MessageRecordFragment::resize(size_t size) {
+        if (capacity() < size) {
+            throw std::runtime_error("MessageRecordFragment overflow");
+        }
+
         size_t old_size = size_;
         size_t new_size = size;
 
@@ -51,7 +57,9 @@ namespace slag {
     }
 
     void MessageRecordFragment::resize_uninitialized(size_t size) {
-        assert(size <= capacity());
+        if (capacity() < size) {
+            throw std::runtime_error("MessageRecordFragment overflow");
+        }
 
         size_ = size;
     }

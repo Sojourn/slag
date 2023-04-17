@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstddef>
 #include "slag/buffer_writer.h"
+#include "slag/buffer_reader.h"
 
 namespace slag {
 
@@ -27,10 +28,16 @@ namespace slag {
     };
     static_assert(sizeof(MessageFragmentHeader) == 1);
 
-    [[nodiscard]] void write_message_fragment(BufferWriter& writer, const MessageRecordFragment& fragment);
-    [[nodiscard]] void write_message_fragment(BufferWriter& writer, const MessageBufferFragment& fragment);
+    class MessageFragmentHandler {
+    public:
+        virtual ~MessageFragmentHandler() = default;
 
-    template<typename FragmentHandler>
-    [[nodiscard]] size_t read_message_fragment(std::span<const std::byte> buffer, FragmentHandler&& handler);
+        virtual void handle_message_record_fragment(const MessageRecordFragment& fragment) = 0;
+        virtual void handle_message_buffer_fragment(const MessageBufferFragment& fragment) = 0;
+    };
+
+    void write_message_fragment(BufferWriter& writer, const MessageRecordFragment& fragment);
+    void write_message_fragment(BufferWriter& writer, const MessageBufferFragment& fragment);
+    [[nodiscard]] bool read_message_fragment(BufferReader& reader, MessageFragmentHandler& handler);
 
 }

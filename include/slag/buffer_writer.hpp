@@ -1,4 +1,3 @@
-#include <stdexcept>
 #include <cstring>
 #include <cassert>
 
@@ -26,20 +25,22 @@ namespace slag {
         return buffer_.size_bytes() - offset_;
     }
 
-    inline void BufferWriter::write(std::byte data) {
+    inline bool BufferWriter::write(std::byte data) {
         if (writable_size_bytes() < sizeof(data)) {
-            throw std::runtime_error("BufferWriter underflow");
+            return false;
         }
 
         write_unchecked(data);
+        return true;
     }
 
-    inline void BufferWriter::write(std::span<const std::byte> data) {
+    inline bool BufferWriter::write(std::span<const std::byte> data) {
         if (writable_size_bytes() < data.size_bytes()) {
-            throw std::runtime_error("BufferWriter underflow");
+            return false;
         }
 
         write_unchecked(data);
+        return true;
     }
 
     inline void BufferWriter::write_unchecked(std::byte data) {

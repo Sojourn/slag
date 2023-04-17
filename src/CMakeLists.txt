@@ -72,6 +72,8 @@ set(SLAG_HEADER_FILES
     ../include/slag/trace.h
     ../include/slag/buffer_writer.h
     ../include/slag/buffer_writer.hpp
+    ../include/slag/buffer_reader.h
+    ../include/slag/buffer_reader.hpp
     ../include/slag/message_fragment.h
     ../include/slag/message_record_fragment.h
     ../include/slag/message_buffer_fragment.h

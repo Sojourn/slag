@@ -1,6 +1,7 @@
 #include "slag/message_fragment.h"
 #include "slag/message_record_fragment.h"
 #include "slag/message_buffer_fragment.h"
+#include <stdexcept>
 #include <cassert>
 
 namespace slag {
@@ -145,6 +146,190 @@ namespace slag {
         if (fragment.size()) {
             writer.write_unchecked(fragment.data());
         }
+    }
+
+    std::optional<uint64_t> read_message_record_fragment_encoding_mask(BufferReader& reader, size_t field_count) {
+        auto saturated_encoding_mask = (1ull << (field_count * 2)) - 1;
+        auto size_bytes              = static_cast<size_t>(8 - (__builtin_clzll(saturated_encoding_mask) >> 3));
+
+        if (reader.readable_size_bytes() < size_bytes) {
+            return std::nullopt;
+        }
+
+        uint64_t result = 0;
+        switch (size_bytes) {
+            case 8:
+                result |= static_cast<uint64_t>(reader.read_unchecked()) << 56;
+                [[fallthrough]];
+            case 7:
+                result |= static_cast<uint64_t>(reader.read_unchecked()) << 48;
+                [[fallthrough]];
+            case 6:
+                result |= static_cast<uint64_t>(reader.read_unchecked()) << 40;
+                [[fallthrough]];
+            case 5:
+                result |= static_cast<uint64_t>(reader.read_unchecked()) << 32;
+                [[fallthrough]];
+            case 4:
+                result |= static_cast<uint64_t>(reader.read_unchecked()) << 24;
+                [[fallthrough]];
+            case 3:
+                result |= static_cast<uint64_t>(reader.read_unchecked()) << 16;
+                [[fallthrough]];
+            case 2:
+                result |= static_cast<uint64_t>(reader.read_unchecked()) << 8;
+                [[fallthrough]];
+            case 1:
+                result |= static_cast<uint64_t>(reader.read_unchecked()) << 0;
+                [[fallthrough]];
+            case 0:
+                break;
+        }
+
+        return result;
+    }
+
+    // TODO: rename
+    uint8_t encoded_field_mask(uint64_t encoding_mask, size_t field_index) {
+        return static_cast<uint8_t>((encoding_mask >> (field_index * 2)) & 3);
+    }
+
+    // TODO: rename
+    uint8_t encoded_field_size_bytes(uint8_t encoded_field_mask) {
+        return static_cast<uint8_t>(1 << encoded_field_mask);
+    }
+
+    // TODO: rename
+    uint8_t encoded_field_size_bytes(uint64_t encoding_mask, size_t field_index) {
+        return encoded_field_size_bytes(encoded_field_mask(encoding_mask, field_index));
+    }
+
+    bool read_message_record_fragment(BufferReader& reader, MessageFragmentHandler& handler, const MessageFragmentHeader& header) {
+        size_t field_count = header.size;
+
+        MessageRecordFragment fragment;
+        fragment.resize(field_count);
+        if (header.head) {
+            fragment.set_head();
+        }
+        if (header.tail) {
+            fragment.set_tail();
+        }
+
+        auto encoding_mask = read_message_record_fragment_encoding_mask(reader, fragment.size());
+        if (!encoding_mask) {
+            return false; // missing data
+        }
+
+        // aggregate bounds checking for encoded fields
+        size_t total_encoded_field_size_bytes = 0;
+        for (size_t field_index = 0; field_index < field_count; ++field_index) {
+            total_encoded_field_size_bytes += encoded_field_size_bytes(
+                encoded_field_mask(*encoding_mask, field_index)
+            );
+        }
+        if (reader.readable_size_bytes() < total_encoded_field_size_bytes) {
+            return false; // missing data
+        }
+
+        for (size_t field_index = 0; field_index < field_count; ++field_index) {
+            uint64_t& field = fragment[field_index];
+
+            switch (encoded_field_mask(*encoding_mask, field_index)) {
+                case 3: {
+                    field |= static_cast<uint64_t>(reader.read_unchecked()) << 56;
+                    field |= static_cast<uint64_t>(reader.read_unchecked()) << 48;
+                    field |= static_cast<uint64_t>(reader.read_unchecked()) << 40;
+                    field |= static_cast<uint64_t>(reader.read_unchecked()) << 32;
+                    break;
+                }
+                case 2: {
+                    field |= static_cast<uint64_t>(reader.read_unchecked()) << 24;
+                    field |= static_cast<uint64_t>(reader.read_unchecked()) << 16;
+                    break;
+                }
+                case 1: {
+                    field |= static_cast<uint64_t>(reader.read_unchecked()) << 8;
+                    break;
+                }
+                case 0: {
+                    field |= static_cast<uint64_t>(reader.read_unchecked()) << 0;
+                    break;
+                }
+            }
+        }
+
+        handler.handle_message_record_fragment(fragment);
+        return true;
+    }
+
+    bool read_message_buffer_fragment(BufferReader& reader, MessageFragmentHandler& handler, const MessageFragmentHeader& header) {
+        size_t buffer_size_bytes = header.size;
+
+        MessageBufferFragment fragment;
+        fragment.resize_uninitialized(buffer_size_bytes);
+        if (header.head) {
+            fragment.set_head();
+        }
+        if (header.tail) {
+            fragment.set_tail();
+        }
+
+        if (reader.readable_size_bytes() < buffer_size_bytes) {
+            return false; // missing data
+        }
+
+        {
+            auto src_buf = reader.read_unchecked(buffer_size_bytes);
+            auto dst_buf = fragment.data();
+
+            assert(src_buf.size_bytes() == buffer_size_bytes);
+            assert(dst_buf.size_bytes() == buffer_size_bytes);
+
+            memcpy(dst_buf.data(), src_buf.data(), buffer_size_bytes);
+        }
+
+        handler.handle_message_buffer_fragment(fragment);
+        return true;
+    }
+
+    std::optional<MessageFragmentHeader> read_message_fragment_header(BufferReader& reader) {
+        MessageFragmentHeader header;
+
+        auto buffer = reader.read(sizeof(header));
+        if (!buffer) {
+            return std::nullopt; // missing data
+        }
+
+        assert(sizeof(header) == buffer->size_bytes());
+        memcpy(&header, buffer->data(), sizeof(header));
+        return header;
+    }
+
+    bool read_message_fragment(BufferReader& reader, MessageFragmentHandler& handler) {
+        BufferReader transaction = reader; // make a working copy of the reader
+
+        auto header = read_message_fragment_header(transaction);
+        if (!header) {
+            return false;
+        }
+
+        bool result = false;
+        switch (static_cast<MessageFragmentType>(header->type)) {
+            case MessageFragmentType::RECORD: {
+                result = read_message_record_fragment(transaction, handler, *header);
+                break;
+            }
+            case MessageFragmentType::BUFFER: {
+                result = read_message_buffer_fragment(transaction, handler, *header);
+                break;
+            }
+        }
+        if (result) {
+            reader = transaction; // commit
+        }
+
+        return result;
     }
 
 }

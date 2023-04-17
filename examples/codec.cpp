@@ -12,6 +12,18 @@
 
 using namespace slag;
 
+class DummyHandler : public MessageFragmentHandler {
+    void handle_message_record_fragment(const MessageRecordFragment& fragment) override {
+        (void)fragment;
+        asm("int $3");
+    }
+
+    void handle_message_buffer_fragment(const MessageBufferFragment& fragment) override {
+        (void)fragment;
+        asm("int $3");
+    }
+};
+
 int main(int argc, char** argv) {
     (void)argc;
     (void)argv;
@@ -19,6 +31,7 @@ int main(int argc, char** argv) {
     std::byte buffer[1024];
     memset(buffer, 0, sizeof(buffer));
     BufferWriter writer{buffer};
+    BufferReader reader{buffer};
 
     MessageRecordFragment fragment;
     fragment.set_head();
@@ -28,7 +41,10 @@ int main(int argc, char** argv) {
     fragment.set_tail();
 
     write_message_fragment(writer, fragment);
-    asm("int $3");
+
+    DummyHandler handler;
+    bool result = read_message_fragment(reader, handler);
+    assert(result);
 
     return 0;
 }

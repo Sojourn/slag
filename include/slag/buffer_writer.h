@@ -15,8 +15,8 @@ namespace slag {
         [[nodiscard]] size_t offset() const;
         [[nodiscard]] size_t writable_size_bytes() const;
 
-        void write(std::byte data);
-        void write(std::span<const std::byte> data);
+        [[nodiscard]] bool write(std::byte data);
+        [[nodiscard]] bool write(std::span<const std::byte> data);
 
         void write_unchecked(std::byte data);
         void write_unchecked(std::span<const std::byte> data);
