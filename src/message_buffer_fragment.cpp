@@ -33,12 +33,18 @@ namespace slag {
     }
 
     void MessageBufferFragment::push_back(std::byte value) {
-        assert(size() < capacity());
+        if (capacity() <= size()) {
+            throw std::runtime_error("MessageBufferFragment overflow");
+        }
 
         data_[size_++] = value;
     }
 
     void MessageBufferFragment::resize(size_t size) {
+        if (capacity() < size) {
+            throw std::runtime_error("MessageBufferFragment overflow");
+        }
+
         size_t old_size = size_;
         size_t new_size = size;
 
@@ -51,7 +57,9 @@ namespace slag {
     }
 
     void MessageBufferFragment::resize_uninitialized(size_t size) {
-        assert(size <= capacity());
+        if (capacity() < size) {
+            throw std::runtime_error("MessageBufferFragment overflow");
+        }
 
         size_ = size;
     }

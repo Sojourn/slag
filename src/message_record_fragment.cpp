@@ -4,6 +4,10 @@
 
 namespace slag {
 
+    bool MessageRecordFragment::is_empty() const {
+        return size_ == 0;
+    }
+
     size_t MessageRecordFragment::size() const {
         return size_;
     }
