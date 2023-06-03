@@ -1,0 +1,17 @@
+enum TestEnum : u8 {
+    FOO,
+    BAR,
+    BAZ
+};
+
+struct TestStruct {
+    a: list[i8];
+    b: boolean;
+    c: string;
+    d: tuple[string, list[u8]];
+    e: union[
+        TestEnum, map[i8, i8]
+    ];
+    f: blob;
+}
+

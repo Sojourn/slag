@@ -1,3 +1,8 @@
 .idea
 cmake-build*
 bld
+*.o
+tools/sgen/parser
+tools/sgen/parser.hpp
+tools/sgen/parser.cpp
+tools/sgen/tokens.cpp
