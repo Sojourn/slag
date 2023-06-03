@@ -19,18 +19,29 @@ namespace slag {
         BAZ,
     };
 
-    [[nodiscard]] std::string_view to_string(TestEnum value);
+    enum class RecordType : uint16_t {
+        HEADER,
+        TEST_STRUCT,
+    };
 
-    struct Header;
-    struct TestStruct;
+    [[nodiscard]] std::optional<std::string_view> to_string(TestEnum value);
+    [[nodiscard]] std::optional<std::string_view> to_string(RecordType value);
 
-    struct Header {
+    template<RecordType>
+    struct Record;
+
+    using Header = Record<RecordType::HEADER>;
+    using TestStruct = Record<RecordType::TEST_STRUCT>;
+
+    template<>
+    struct Record<RecordType::HEADER> {
         std::string channel = {};
         std::string topic = {};
         uint64_t sequence_number = {};
     };
 
-    struct TestStruct {
+    template<>
+    struct Record<RecordType::TEST_STRUCT> {
         Header header = {};
         std::vector<int8_t> a = {};
         bool b = {};

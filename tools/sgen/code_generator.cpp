@@ -1,4 +1,5 @@
 #include "code_generator.h"
+#include "string_util.h"
 #include "ast.h"
 #include "ast_query.h"
 #include "ast_context.h"
@@ -100,8 +101,16 @@ public:
 
 private:
     void generate_forward_declarations() {
+        line("template<RecordType>");
+        line("struct Record;");
+        line();
+
         for (StructDecl* struct_decl: context_.nodes<NodeKind::STRUCT_DECL>()) {
-            line("struct {};", struct_decl->name());
+            line(
+                "using {} = Record<RecordType::{}>;",
+                struct_decl->name(),
+                to_record_type(struct_decl->name())
+            );
         }
 
         line();
@@ -126,7 +135,7 @@ private:
 
     void generate_enum_to_string_function_prototypes() {
         for (EnumDecl* enum_decl: context_.nodes<NodeKind::ENUM_DECL>()) {
-            line("[[nodiscard]] std::string_view to_string({} value);", enum_decl->name());
+            line("[[nodiscard]] std::optional<std::string_view> to_string({} value);", enum_decl->name());
         }
 
         line();
@@ -134,7 +143,8 @@ private:
 
     void generate_struct_declarations() {
         for (StructDecl* struct_decl: context_.nodes<NodeKind::STRUCT_DECL>()) {
-            line("struct {} {{", struct_decl->name());
+            line("template<>");
+            line("struct Record<RecordType::{}> {{", to_record_type(struct_decl->name()));
             {
                 Level struct_level{*this};
 
@@ -196,7 +206,7 @@ public:
 private:
     void generate_enum_to_string_functions() {
         for (EnumDecl* enum_decl: context_.nodes<NodeKind::ENUM_DECL>()) {
-            line("std::string_view to_string({} value) {{", enum_decl->name());
+            line("std::optional<std::string_view> to_string({} value) {{", enum_decl->name());
             {
                 Level function_level{*this};
 
@@ -212,12 +222,11 @@ private:
                 }
                 line("}}");
                 line();
-                line("return \"UNKNOWN\"sv;");
+                line("return std::nullopt;");
             }
             line("}}");
+            line();
         }
-
-        line();
     }
 
 private:

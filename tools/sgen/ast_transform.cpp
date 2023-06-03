@@ -1,7 +1,8 @@
+#include "ast_transform.h"
 #include "ast.h"
 #include "ast_query.h"
 #include "ast_context.h"
-#include "ast_transform.h"
+#include "string_util.h"
 #include <string>
 #include <unordered_map>
 #include <cassert>
@@ -10,6 +11,17 @@
 #include <fmt/printf.h>
 
 namespace ast {
+
+    void create_record_type_enum(Context& context) {
+        std::vector<std::string> values;
+        for (StructDecl* struct_decl: context.nodes<NodeKind::STRUCT_DECL>()) {
+            values.push_back(
+                to_record_type(struct_decl->name())
+            );
+        }
+
+        (void)context.new_enum_decl("RecordType", "u16", std::move(values));
+    }
 
     void resolve_named_types(Context& context) {
         std::unordered_map<std::string, ast::Node*> targets;

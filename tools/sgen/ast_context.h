@@ -65,6 +65,14 @@ namespace ast {
             return make_node<NodeKind::VARIABLE_DECL>(std::move(name), type);
         }
 
+        [[nodiscard]] EnumDecl& new_enum_decl(std::string name, std::string underlying_type_name, std::vector<std::string> values) {
+            return new_enum_decl(
+                std::move(name),
+                new_named_type(std::move(underlying_type_name)),
+                std::move(values)
+            );
+        }
+
         [[nodiscard]] EnumDecl& new_enum_decl(std::string name, Type& underlying_type, std::vector<std::string> values) {
             return make_node<NodeKind::ENUM_DECL>(std::move(name), underlying_type, std::move(values));
         }

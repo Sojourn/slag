@@ -5,6 +5,7 @@ OBJS = parser.o         \
        tokens.o         \
        ast_transform.o  \
        code_generator.o \
+       string_util.o \
 
 CPPFLAGS = -std=c++20
 LDFLAGS = -lpthread -ldl -lz -rdynamic

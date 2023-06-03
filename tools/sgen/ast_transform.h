@@ -6,7 +6,9 @@ namespace ast {
 
     class Context;
 
+    void create_record_type_enum(Context& context);
+
     // Determines what each NamedType node is referencing, and binds it.
     void resolve_named_types(Context& context);
-    
+
 }

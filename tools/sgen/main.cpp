@@ -1,6 +1,8 @@
 #include <iostream>
 #include <algorithm>
 #include <stdexcept>
+#include <cctype>
+#include <clocale>
 #include <cstdlib>
 #include <cstdint>
 #include <cstddef>
@@ -109,6 +111,13 @@ int main(int argc, char** argv) {
     catch (const std::exception& ex) {
         std::cerr << "Parsing failed: " << ex.what() << std::endl;
         return EXIT_FAILURE;
+    }
+
+    try {
+        ast::create_record_type_enum(context);
+    }
+    catch (const std::exception& ex) {
+        std::cerr << "Failed to create record type enum: " << ex.what() << std::endl;
     }
 
     try {
