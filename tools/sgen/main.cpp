@@ -70,22 +70,33 @@ private:
     size_t depth_ = 0;
 };
 
-void write_text_file(const std::string& file_path, const std::string& text) {
+void write_file(const std::string& file_path, std::span<const std::byte> buffer) {
     int file_descriptor = ::open(file_path.c_str(), O_RDWR|O_CREAT|O_TRUNC, 0644);
     if (file_descriptor < 0) {
         throw std::runtime_error(fmt::format("Failed to open file: {}", strerror(errno)));
     }
 
-    ssize_t bytes_written = ::write(file_descriptor, text.data(), text.size());
+    ssize_t bytes_written = ::write(file_descriptor, buffer.data(), buffer.size_bytes());
     if (bytes_written < 0) {
         throw std::runtime_error(fmt::format("Failed to write file: {}", strerror(errno)));
     }
-    if (bytes_written < text.size()) {
+    if (bytes_written < buffer.size_bytes()) {
         throw std::runtime_error("Failed to write file: truncated write");
     }
 
     int rc = ::close(file_descriptor);
     assert(rc >= 0);
+}
+
+void write_file(const std::string& file_path, const std::string& text) {
+    auto buffer = std::as_bytes(
+        std::span(
+            text.data(),
+            text.size()
+        )
+    );
+
+    write_file(file_path, buffer);
 }
 
 int main(int argc, char** argv) {
@@ -114,14 +125,14 @@ int main(int argc, char** argv) {
             .namespace_name = "slag",
         };
 
-        std::string output_directory = "../../examples"; // for testing...
+        std::string output_directory = "../../examples";
 
-        write_text_file(
+        write_file(
             fmt::format("{}/{}.h", output_directory, settings.base_file_name),
             generate_header_file(context, settings)
         );
 
-        write_text_file(
+        write_file(
             fmt::format("{}/{}.cpp", output_directory, settings.base_file_name),
             generate_source_file(context, settings)
         );
