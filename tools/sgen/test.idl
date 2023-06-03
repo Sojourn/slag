@@ -4,7 +4,14 @@ enum TestEnum : u8 {
     BAZ
 };
 
+struct Header {
+    channel: string;
+    topic: string;
+    sequence_number: u64;
+};
+
 struct TestStruct {
+    header: Header;
     a: list[i8];
     b: boolean;
     c: string;
