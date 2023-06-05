@@ -13,6 +13,97 @@
 
 using namespace slag;
 
+class RecordPrettyPrinter {
+public:
+    RecordPrettyPrinter(std::string_view name, const Record<type>& record) {
+        this->operator()(name, record);
+    }
+
+    [[nodiscard]] std::string output() const {
+        return out_.str();
+    }
+
+public:
+    template<RecordType type>
+    void operator()(std::string_view name, const Record<type>& value) {
+        line("{}: Record<{}> {{", name, to_string(type));
+        {
+            indent();
+            visit(*this, value);
+            dedent();
+        }
+        line("}};");
+    }
+
+    template<typename... Ts>
+    void operator()(std::string_view name, const std::tuple<Ts...>& value) {
+        line("{}: tuple", name);
+    }
+
+    template<typename... Ts>
+    void operator()(std::string_view name, const std::variant<Ts...>& value) {
+        line("{}: variant", name);
+    }
+
+    template<typename T>
+    void operator()(std::string_view name, const std::vector<T>& value) {
+        line("{}: [", name);
+        {
+            indent();
+            for (size_t i = 0; i < values.size(); ++i) {
+                std::string index_name = fmt::format("{}", i);
+                this->operator()(index_name, values[i]);
+            }
+            dedent();
+        }
+        line("];");
+    }
+
+    template<typename K, typename V>
+    void operator()(std::string_view name, const std::unordered_map<K, V>& value) {
+        line("{}: {", name);
+        {
+            indent();
+            for (size_t i = 0; i < values.size(); ++i) {
+                this->operator()(index_name, values[i]);
+            }
+            dedent();
+        }
+        line("};");
+    }
+
+    template<typename T>
+    void operator()(std::string_view name, const T& value) {
+        line("{}: {}", name, value);
+    }
+
+private:
+    void indent() {
+        ++indent_level_;
+    }
+
+    void dedent() {
+        --indent_level_;
+    }
+
+    template<typename... Args>
+    void line(const char* fmt, Args&&... args) {
+        for (size_t i = 0; i < indent_level_; ++i) {
+            out_ << "    ";
+        }
+
+        out_ << fmt::format(fmt::runtime(fmt), std::forward<Args>(args)...) << '\n';
+    }
+
+    void line() {
+        out_ << '\n';
+    }
+
+private:
+    std::stringstream out_;
+    size_t            indent_level_ = 0;
+};
+
 int main(int argc, char** argv) {
     (void)argc;
     (void)argv;

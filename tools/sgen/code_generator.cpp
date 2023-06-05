@@ -94,6 +94,9 @@ public:
             generate_forward_declarations();
             generate_struct_declarations();
             generate_struct_field_visitors();
+
+            generate_record_info();
+            generate_record_field_info();
         }
         line("}}");
         line();
@@ -101,8 +104,16 @@ public:
 
 private:
     void generate_forward_declarations() {
-        line("template<RecordType>");
+        line("template<RecordType type>");
         line("struct Record;");
+        line();
+
+        line("template<RecordType type>");
+        line("struct RecordInfo;");
+        line();
+
+        line("template<RecordType type, size_t index>");
+        line("struct RecordFieldInfo;");
         line();
 
         for (StructDecl* struct_decl: context_.nodes<NodeKind::STRUCT_DECL>()) {
@@ -176,6 +187,51 @@ private:
                 line();
             }
         }
+    }
+
+    void generate_record_info() {
+        for (StructDecl* struct_decl: context_.nodes<NodeKind::STRUCT_DECL>()) {
+            auto record_type = to_record_type(struct_decl->name());
+            auto record_fields = query_struct_fields(*struct_decl);
+
+            line("template<>");
+            line("struct RecordInfo<RecordType::{}> {{", record_type);
+            {
+                Level function_level{*this};
+
+                line("constexpr static std::string_view type_name = to_string(RecordType::{});", record_type);
+                line("constexpr static size_t field_count = {};", record_fields.size());
+            }
+            line("}}");
+            line();
+
+            for (size_t record_field_index = 0; record_field_index < record_fields.size(); ++record_field_index) {
+                VariableDecl* variable_decl = record_fields[record_field_index];
+
+                line("template<>");
+                line("struct RecordFieldInfo<RecordType::{}, {}> {{", record_type, record_field_index);
+                {
+                    Level function_level{*this};
+
+                    line(
+                        "constexpr static std::string_view name = \"{}\";",
+                        variable_decl->name()
+                    );
+                    line(
+                        "constexpr static {} Record<RecordType::{}>::*accessor = &Record<RecordType::{}>::{};",
+                        variable_decl->type().cpp_type_signature(),
+                        record_type,
+                        record_type,
+                        variable_decl->name()
+                    );
+                }
+                line("}}");
+                line();
+            }
+        }
+    }
+
+    void generate_record_field_info() {
     }
 
 private:
