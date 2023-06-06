@@ -13,95 +13,126 @@
 
 using namespace slag;
 
-class RecordPrettyPrinter {
-public:
-    RecordPrettyPrinter(std::string_view name, const Record<type>& record) {
-        this->operator()(name, record);
+template<typename Visitor, typename T>
+constexpr inline void visit(Visitor&& visitor, const T& value) {
+    visitor.enter(value);
+    visitor.leave(value);
+}
+
+template<typename Visitor, typename T>
+constexpr inline void visit(Visitor&& visitor, const std::optional<T>& value) {
+    visitor.enter(value);
+    if (value) {
+        visit(visitor, *value);
+    }
+    visitor.leave(value);
+}
+
+template<typename Visitor, typename... Types>
+constexpr inline void visit(Visitor&& visitor, const std::tuple<Types...>& value) {
+    visitor.enter(value);
+    {
+        using IndexSequence = std::make_index_sequence<sizeof...(Types)>;
+
+        [&]<size_t... I>(std::index_sequence<I...>) {
+            (visit(visitor, std::get<I>(value)), ...);
+        }(IndexSequence{});
+    }
+    visitor.leave(value);
+}
+
+template<typename Visitor, typename... Types>
+constexpr inline void visit(Visitor&& visitor, const std::variant<Types...>& value) {
+    visitor.enter(value);
+    std::visit([&](auto&& element) {
+        visit(visitor, element);
+    }, value);
+    visitor.leave(value);
+}
+
+template<typename Visitor, typename T>
+constexpr inline void visit(Visitor&& visitor, const std::vector<T>& value) {
+    visitor.enter(value);
+    for (auto&& element: value) {
+        visit(visitor, element);
+    }
+    visitor.leave(value);
+}
+
+template<typename Visitor, typename Key, typename T>
+constexpr inline void visit(Visitor&& visitor, const std::unordered_map<Key, T>& value) {
+    visitor.enter(value);
+    for (auto&& [key, element]: value) {
+        visit(visitor, key);
+        visit(visitor, element);
+    }
+    visitor.leave(value);
+}
+
+struct PrettyPrinter {
+    void enter(bool value) {
+        std::cout << "bool: " << value << std::endl;
+    }
+    void enter(int8_t value) {
+        std::cout << "int8_t: " << (int)value << std::endl;
+    }
+    void enter(const std::string& value) {
+        std::cout << "string: " << value << std::endl;
     }
 
-    [[nodiscard]] std::string output() const {
-        return out_.str();
+    template<typename T>
+    void enter(const T& value) {
+        std::cout << "enter " << (const void*)&value << std::endl;
+    }
+
+    template<typename T>
+    void leave(const T& value) {
+        std::cout << "leave " << (const void*)&value << std::endl;
+    }
+};
+
+template<typename Handler>
+class RecordEncoder {
+public:
+    explicit RecordEncoder(Handler& handler)
+        : handler_{handler}
+    {
+    }
+
+    template<RecordType type>
+    void encode(const Record<type>& record) {
+        visit(*this, record);
     }
 
 public:
     template<RecordType type>
-    void operator()(std::string_view name, const Record<type>& value) {
-        line("{}: Record<{}> {{", name, to_string(type));
-        {
-            indent();
-            visit(*this, value);
-            dedent();
-        }
-        line("}};");
+    void enter(const Record<type>& record) {
     }
 
-    template<typename... Ts>
-    void operator()(std::string_view name, const std::tuple<Ts...>& value) {
-        line("{}: tuple", name);
+    template<RecordType type>
+    void leave(const Record<type>& record) {
     }
 
-    template<typename... Ts>
-    void operator()(std::string_view name, const std::variant<Ts...>& value) {
-        line("{}: variant", name);
+    void enter(bool value) {
+        handler_.write_value(static_cast<uint64_t>(value));
+    }
+
+    void leave(bool value) {
+        (void)value;
     }
 
     template<typename T>
-    void operator()(std::string_view name, const std::vector<T>& value) {
-        line("{}: [", name);
-        {
-            indent();
-            for (size_t i = 0; i < values.size(); ++i) {
-                std::string index_name = fmt::format("{}", i);
-                this->operator()(index_name, values[i]);
-            }
-            dedent();
-        }
-        line("];");
-    }
-
-    template<typename K, typename V>
-    void operator()(std::string_view name, const std::unordered_map<K, V>& value) {
-        line("{}: {", name);
-        {
-            indent();
-            for (size_t i = 0; i < values.size(); ++i) {
-                this->operator()(index_name, values[i]);
-            }
-            dedent();
-        }
-        line("};");
+    void enter(const std::vector<T>& value) {
+        handler_.write_value(value.size());
     }
 
     template<typename T>
-    void operator()(std::string_view name, const T& value) {
-        line("{}: {}", name, value);
+    void leave(const std::vector<T>& value) {
+        (void)value;
     }
 
 private:
-    void indent() {
-        ++indent_level_;
-    }
-
-    void dedent() {
-        --indent_level_;
-    }
-
-    template<typename... Args>
-    void line(const char* fmt, Args&&... args) {
-        for (size_t i = 0; i < indent_level_; ++i) {
-            out_ << "    ";
-        }
-
-        out_ << fmt::format(fmt::runtime(fmt), std::forward<Args>(args)...) << '\n';
-    }
-
-    void line() {
-        out_ << '\n';
-    }
-
-private:
-    std::stringstream out_;
-    size_t            indent_level_ = 0;
+    Handler& handler_;
 };
 
 int main(int argc, char** argv) {
@@ -109,13 +140,12 @@ int main(int argc, char** argv) {
     (void)argv;
 
     TestStruct test_struct;
+    test_struct.a.push_back(0);
+    test_struct.a.push_back(1);
+    test_struct.a.push_back(2);
     test_struct.c = "hello";
 
-    visit_fields(test_struct, []<typename T>(std::string_view name, const T& value) {
-        if constexpr (std::is_same_v<T, std::string>) {
-            std::cout << name << "=" << value << std::endl;
-        }
-    });
+    visit(PrettyPrinter{}, test_struct);
 
     return 0;
 }

@@ -30,12 +30,6 @@ namespace slag {
     template<RecordType type>
     struct Record;
 
-    template<RecordType type>
-    struct RecordInfo;
-
-    template<RecordType type, size_t index>
-    struct RecordFieldInfo;
-
     using Header = Record<RecordType::HEADER>;
     using TestStruct = Record<RecordType::TEST_STRUCT>;
 
@@ -58,119 +52,55 @@ namespace slag {
     };
 
     template<typename Visitor>
-    constexpr inline void visit_fields(Header& object, Visitor&& visitor) {
-        using namespace std::string_view_literals;
-
-        visitor("channel"sv, object.channel);
-        visitor("topic"sv, object.topic);
-        visitor("sequence_number"sv, object.sequence_number);
+    constexpr inline void visit(Visitor&& visitor, Header& record) {
+        visitor.enter(record);
+        {
+            visit(visitor, record.channel);
+            visit(visitor, record.topic);
+            visit(visitor, record.sequence_number);
+        }
+        visitor.leave(record);
     }
 
     template<typename Visitor>
-    constexpr inline void visit_fields(TestStruct& object, Visitor&& visitor) {
-        using namespace std::string_view_literals;
-
-        visitor("header"sv, object.header);
-        visitor("a"sv, object.a);
-        visitor("b"sv, object.b);
-        visitor("c"sv, object.c);
-        visitor("d"sv, object.d);
-        visitor("e"sv, object.e);
-        visitor("f"sv, object.f);
+    constexpr inline void visit(Visitor&& visitor, const Header& record) {
+        visitor.enter(record);
+        {
+            visit(visitor, record.channel);
+            visit(visitor, record.topic);
+            visit(visitor, record.sequence_number);
+        }
+        visitor.leave(record);
     }
 
     template<typename Visitor>
-    constexpr inline void visit_fields(const Header& object, Visitor&& visitor) {
-        using namespace std::string_view_literals;
-
-        visitor("channel"sv, object.channel);
-        visitor("topic"sv, object.topic);
-        visitor("sequence_number"sv, object.sequence_number);
+    constexpr inline void visit(Visitor&& visitor, TestStruct& record) {
+        visitor.enter(record);
+        {
+            visit(visitor, record.header);
+            visit(visitor, record.a);
+            visit(visitor, record.b);
+            visit(visitor, record.c);
+            visit(visitor, record.d);
+            visit(visitor, record.e);
+            visit(visitor, record.f);
+        }
+        visitor.leave(record);
     }
 
     template<typename Visitor>
-    constexpr inline void visit_fields(const TestStruct& object, Visitor&& visitor) {
-        using namespace std::string_view_literals;
-
-        visitor("header"sv, object.header);
-        visitor("a"sv, object.a);
-        visitor("b"sv, object.b);
-        visitor("c"sv, object.c);
-        visitor("d"sv, object.d);
-        visitor("e"sv, object.e);
-        visitor("f"sv, object.f);
-    }
-
-    template<>
-    struct RecordInfo<RecordType::HEADER> {
-        constexpr static std::string_view type_name = to_string(RecordType::HEADER);
-        constexpr static size_t field_count = 3;
-    }
-
-    template<>
-    struct RecordFieldInfo<RecordType::HEADER, 0> {
-        constexpr static std::string_view name = "channel";
-        constexpr static std::string Record<RecordType::HEADER>::*accessor = &Record<RecordType::HEADER>::channel;
-    }
-
-    template<>
-    struct RecordFieldInfo<RecordType::HEADER, 1> {
-        constexpr static std::string_view name = "topic";
-        constexpr static std::string Record<RecordType::HEADER>::*accessor = &Record<RecordType::HEADER>::topic;
-    }
-
-    template<>
-    struct RecordFieldInfo<RecordType::HEADER, 2> {
-        constexpr static std::string_view name = "sequence_number";
-        constexpr static uint64_t Record<RecordType::HEADER>::*accessor = &Record<RecordType::HEADER>::sequence_number;
-    }
-
-    template<>
-    struct RecordInfo<RecordType::TEST_STRUCT> {
-        constexpr static std::string_view type_name = to_string(RecordType::TEST_STRUCT);
-        constexpr static size_t field_count = 7;
-    }
-
-    template<>
-    struct RecordFieldInfo<RecordType::TEST_STRUCT, 0> {
-        constexpr static std::string_view name = "header";
-        constexpr static Header Record<RecordType::TEST_STRUCT>::*accessor = &Record<RecordType::TEST_STRUCT>::header;
-    }
-
-    template<>
-    struct RecordFieldInfo<RecordType::TEST_STRUCT, 1> {
-        constexpr static std::string_view name = "a";
-        constexpr static std::vector<int8_t> Record<RecordType::TEST_STRUCT>::*accessor = &Record<RecordType::TEST_STRUCT>::a;
-    }
-
-    template<>
-    struct RecordFieldInfo<RecordType::TEST_STRUCT, 2> {
-        constexpr static std::string_view name = "b";
-        constexpr static bool Record<RecordType::TEST_STRUCT>::*accessor = &Record<RecordType::TEST_STRUCT>::b;
-    }
-
-    template<>
-    struct RecordFieldInfo<RecordType::TEST_STRUCT, 3> {
-        constexpr static std::string_view name = "c";
-        constexpr static std::string Record<RecordType::TEST_STRUCT>::*accessor = &Record<RecordType::TEST_STRUCT>::c;
-    }
-
-    template<>
-    struct RecordFieldInfo<RecordType::TEST_STRUCT, 4> {
-        constexpr static std::string_view name = "d";
-        constexpr static std::tuple<std::string, std::vector<uint8_t>> Record<RecordType::TEST_STRUCT>::*accessor = &Record<RecordType::TEST_STRUCT>::d;
-    }
-
-    template<>
-    struct RecordFieldInfo<RecordType::TEST_STRUCT, 5> {
-        constexpr static std::string_view name = "e";
-        constexpr static std::variant<std::monostate, TestEnum, std::unordered_map<int8_t, int8_t>> Record<RecordType::TEST_STRUCT>::*accessor = &Record<RecordType::TEST_STRUCT>::e;
-    }
-
-    template<>
-    struct RecordFieldInfo<RecordType::TEST_STRUCT, 6> {
-        constexpr static std::string_view name = "f";
-        constexpr static std::vector<std::byte> Record<RecordType::TEST_STRUCT>::*accessor = &Record<RecordType::TEST_STRUCT>::f;
+    constexpr inline void visit(Visitor&& visitor, const TestStruct& record) {
+        visitor.enter(record);
+        {
+            visit(visitor, record.header);
+            visit(visitor, record.a);
+            visit(visitor, record.b);
+            visit(visitor, record.c);
+            visit(visitor, record.d);
+            visit(visitor, record.e);
+            visit(visitor, record.f);
+        }
+        visitor.leave(record);
     }
 
 }
