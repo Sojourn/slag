@@ -17,25 +17,81 @@ using namespace slag;
 
 class RecordEncoder {
 public:
+    RecordEncoder() {
+        fields_.reserve(16 * 1024);
+        appendage_.reserve(16 * 1024);
+        output_.resize(16 * 1024 * 1024);
+    }
+
     template<RecordType type>
-    [[nodiscard]] void encode(const Record<type>& record) {
+    [[nodiscard]] std::span<const std::byte> encode(const Record<type>& record) {
         reset();
 
+        // populate fields_ and appendage_
+        fields_.push_back(static_cast<size_t>(type));
         visit(*this, record);
-    }
 
-    [[nodiscard]] std::span<const uint64_t> fields() const {
-        return {
-            fields_.data(),
-            fields_.size(),
+        auto writer = BufferWriter {
+            std::span {
+                output_.data(),
+                output_.size(),
+            }
         };
-    }
 
-    [[nodiscard]] std::span<const std::byte> appendage() const {
-        return {
-            appendage_.data(),
-            appendage_.size(),
-        };
+        // write message fields
+        MessageRecordFragment record_fragment;
+        record_fragment.set_head();
+        for (size_t i = 0; i < fields_.size(); ++i) {
+            // check if we need to flush this fragment
+            if (record_fragment.is_full()) {
+                write_message_fragment(writer, record_fragment);
+                record_fragment.clear();
+            }
+
+            record_fragment.push_back(fields_[i]);
+        }
+
+        // TODO: refactor this
+        if (appendage_.empty()) {
+            record_fragment.set_tail();
+            write_message_fragment(writer, record_fragment);
+        }
+        else {
+            write_message_fragment(writer, record_fragment);
+
+            auto buffer = std::span {
+                appendage_.data(),
+                appendage_.size(),
+            };
+
+            MessageBufferFragment buffer_fragment;
+            while (!buffer.empty()) {
+                // check if we need to flush this fragment
+                if (buffer_fragment.is_full()) {
+                    write_message_fragment(writer, buffer_fragment);
+                    buffer_fragment.clear();
+                }
+
+                // figure out how much of the source buffer we can pack into this fragment
+                size_t length = std::min(buffer.size(), buffer_fragment.capacity());
+                buffer_fragment.resize(length);
+
+                auto src = buffer.first(length);
+                auto dst = buffer_fragment.data();
+                memcpy(dst.data(), src.data(), length);
+
+                // slice off the bit we just copied
+                buffer = buffer.subspan(length);
+            }
+
+            buffer_fragment.set_tail();
+            write_message_fragment(writer, buffer_fragment);
+        }
+
+        // TODO: make this more ergonomic
+        return writer.buffer().first(
+            writer.offset()
+        );
     }
 
     void reset() {
@@ -154,9 +210,29 @@ public:
     }
 
 private:
+    // NOTE: bitfield size (1, 8, ...)  have some tradeoffs (how often it changes, present mask size)
+
     std::vector<uint64_t>  fields_;
     std::vector<std::byte> appendage_;
+    std::vector<std::byte> output_;
 };
+
+// JSR: just thinking about how to frame a message
+//
+// could add a stream offset for the reference message
+//
+/*
+struct MessageHeader {
+    uint32_t message_length; // steal bits for flags from here
+    uint16_t field_count;
+    // uint16_t type;           // this can be a field (small, doesn't change)
+
+    // present bitmask
+    // encoding bitmask (less fields that aren't present)
+    // encoded fields
+    // appendage
+};
+*/
 
 int main(int argc, char** argv) {
     (void)argc;
@@ -169,7 +245,8 @@ int main(int argc, char** argv) {
     test_struct.c = "hello";
 
     RecordEncoder encoder;
-    encoder.encode(test_struct);
+    std::span<const std::byte> buffer = encoder.encode(test_struct);
+    std::cout << buffer.size() << std::endl;
 
     return 0;
 }

@@ -4,6 +4,14 @@
 
 namespace slag {
 
+    bool MessageBufferFragment::is_full() const {
+        return size_ == MESSAGE_FRAGMENT_CAPACITY;
+    }
+
+    bool MessageBufferFragment::is_empty() const {
+        return size_ == 0;
+    }
+
     size_t MessageBufferFragment::size() const {
         return size_;
     }

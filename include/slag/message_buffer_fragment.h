@@ -9,6 +9,8 @@ namespace slag {
 
     class MessageBufferFragment {
     public:
+        [[nodiscard]] bool is_full() const;
+        [[nodiscard]] bool is_empty() const;
         [[nodiscard]] size_t size() const;
         [[nodiscard]] size_t capacity() const;
         [[nodiscard]] std::span<std::byte> data();

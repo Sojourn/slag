@@ -4,6 +4,10 @@
 
 namespace slag {
 
+    bool MessageRecordFragment::is_full() const {
+        return size_ == MESSAGE_FRAGMENT_CAPACITY;
+    }
+
     bool MessageRecordFragment::is_empty() const {
         return size_ == 0;
     }
@@ -37,7 +41,7 @@ namespace slag {
     }
 
     void MessageRecordFragment::push_back(uint64_t value) {
-        if (capacity() <= size()) {
+        if (is_full()) {
             throw std::runtime_error("MessageRecordFragment overflow");
         }
 

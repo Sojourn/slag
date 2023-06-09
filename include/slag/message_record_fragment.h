@@ -10,6 +10,7 @@ namespace slag {
     // TODO: optimized copy constructor
     class MessageRecordFragment {
     public:
+        [[nodiscard]] bool is_full() const;
         [[nodiscard]] bool is_empty() const;
         [[nodiscard]] size_t size() const;
         [[nodiscard]] size_t capacity() const;
