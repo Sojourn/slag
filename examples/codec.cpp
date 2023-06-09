@@ -1,4 +1,6 @@
 #include "slag/slag.h"
+#include "slag/util.h"
+#include "slag/visit.h"
 #include "slag/transform.h"
 #include "slag/buffer_writer.h"
 #include "slag/message_fragment.h"
@@ -13,126 +15,147 @@
 
 using namespace slag;
 
-template<typename Visitor, typename T>
-constexpr inline void visit(Visitor&& visitor, const T& value) {
-    visitor.enter(value);
-    visitor.leave(value);
-}
-
-template<typename Visitor, typename T>
-constexpr inline void visit(Visitor&& visitor, const std::optional<T>& value) {
-    visitor.enter(value);
-    if (value) {
-        visit(visitor, *value);
-    }
-    visitor.leave(value);
-}
-
-template<typename Visitor, typename... Types>
-constexpr inline void visit(Visitor&& visitor, const std::tuple<Types...>& value) {
-    visitor.enter(value);
-    {
-        using IndexSequence = std::make_index_sequence<sizeof...(Types)>;
-
-        [&]<size_t... I>(std::index_sequence<I...>) {
-            (visit(visitor, std::get<I>(value)), ...);
-        }(IndexSequence{});
-    }
-    visitor.leave(value);
-}
-
-template<typename Visitor, typename... Types>
-constexpr inline void visit(Visitor&& visitor, const std::variant<Types...>& value) {
-    visitor.enter(value);
-    std::visit([&](auto&& element) {
-        visit(visitor, element);
-    }, value);
-    visitor.leave(value);
-}
-
-template<typename Visitor, typename T>
-constexpr inline void visit(Visitor&& visitor, const std::vector<T>& value) {
-    visitor.enter(value);
-    for (auto&& element: value) {
-        visit(visitor, element);
-    }
-    visitor.leave(value);
-}
-
-template<typename Visitor, typename Key, typename T>
-constexpr inline void visit(Visitor&& visitor, const std::unordered_map<Key, T>& value) {
-    visitor.enter(value);
-    for (auto&& [key, element]: value) {
-        visit(visitor, key);
-        visit(visitor, element);
-    }
-    visitor.leave(value);
-}
-
-struct PrettyPrinter {
-    void enter(bool value) {
-        std::cout << "bool: " << value << std::endl;
-    }
-    void enter(int8_t value) {
-        std::cout << "int8_t: " << (int)value << std::endl;
-    }
-    void enter(const std::string& value) {
-        std::cout << "string: " << value << std::endl;
-    }
-
-    template<typename T>
-    void enter(const T& value) {
-        std::cout << "enter " << (const void*)&value << std::endl;
-    }
-
-    template<typename T>
-    void leave(const T& value) {
-        std::cout << "leave " << (const void*)&value << std::endl;
-    }
-};
-
-template<typename Handler>
 class RecordEncoder {
 public:
-    explicit RecordEncoder(Handler& handler)
-        : handler_{handler}
-    {
-    }
-
     template<RecordType type>
-    void encode(const Record<type>& record) {
+    [[nodiscard]] void encode(const Record<type>& record) {
+        reset();
+
         visit(*this, record);
     }
 
+    [[nodiscard]] std::span<const uint64_t> fields() const {
+        return {
+            fields_.data(),
+            fields_.size(),
+        };
+    }
+
+    [[nodiscard]] std::span<const std::byte> appendage() const {
+        return {
+            appendage_.data(),
+            appendage_.size(),
+        };
+    }
+
+    void reset() {
+        fields_.clear();
+        appendage_.clear();
+    }
+
 public:
     template<RecordType type>
-    void enter(const Record<type>& record) {
+    void enter(const Record<type>&) {
+        // TODO: record the start of record field index
     }
 
     template<RecordType type>
-    void leave(const Record<type>& record) {
+    void leave(const Record<type>&) {
+        // TODO: record the end of record field index
     }
 
     void enter(bool value) {
-        handler_.write_value(static_cast<uint64_t>(value));
+        enter(static_cast<uint64_t>(value));
     }
 
-    void leave(bool value) {
-        (void)value;
+    void enter(std::byte) {
+        // We are visiting elements of a blob, which we
+        // have already copied into the appendage.
+    }
+
+    void enter(int8_t value) {
+        enter(int64_t{value});
+    }
+
+    void enter(int16_t value) {
+        enter(int64_t{value});
+    }
+
+    void enter(int32_t value) {
+        enter(int64_t{value});
+    }
+
+    void enter(int64_t value) {
+        enter(encode_zig_zag(value));
+    }
+
+    void enter(uint8_t value) {
+        enter(uint64_t{value});
+    }
+
+    void enter(uint16_t value) {
+        enter(uint64_t{value});
+    }
+
+    void enter(uint32_t value) {
+        enter(uint64_t{value});
+    }
+
+    void enter(uint64_t value) {
+        fields_.push_back(value);
+    }
+
+    void enter(const std::string& value) {
+        auto buffer = std::as_bytes(std::span{value.data(), value.size()});
+
+        fields_.push_back(value.size());
+        appendage_.insert(appendage_.end(), buffer.begin(), buffer.end());
+    }
+
+    template<typename T>
+    void enter(const std::optional<T>& value) {
+        enter(static_cast<bool>(value));
+    }
+
+    template<typename... Types>
+    void enter(const std::pair<Types...>&) {
+        // pass
+    }
+
+    template<typename... Types>
+    void enter(const std::tuple<Types...>&) {
+        // pass
+    }
+
+    template<typename... Types>
+    void enter(const std::variant<Types...>& value) {
+        enter(value.index());
+    }
+
+    void enter(const std::monostate&) {
+        // pass
+    }
+
+    void enter(const std::vector<std::byte>& value) {
+        enter(value.size());
+        appendage_.insert(appendage_.end(), value.begin(), value.end());
     }
 
     template<typename T>
     void enter(const std::vector<T>& value) {
-        handler_.write_value(value.size());
+        enter(value.size());
+    }
+
+    template<typename Key, typename T>
+    void enter(const std::unordered_map<Key, T>& value) {
+        enter(value.size());
     }
 
     template<typename T>
-    void leave(const std::vector<T>& value) {
-        (void)value;
+    void enter(const T& value) {
+        static_assert(std::is_enum_v<T>, "Missing case for this type.");
+
+        enter(static_cast<std::underlying_type_t<T>>(value));
+    }
+
+    template<typename T>
+    void leave(const T&) {
+        // pass
     }
 
 private:
-    Handler& handler_;
+    std::vector<uint64_t>  fields_;
+    std::vector<std::byte> appendage_;
 };
 
 int main(int argc, char** argv) {
@@ -145,7 +168,8 @@ int main(int argc, char** argv) {
     test_struct.a.push_back(2);
     test_struct.c = "hello";
 
-    visit(PrettyPrinter{}, test_struct);
+    RecordEncoder encoder;
+    encoder.encode(test_struct);
 
     return 0;
 }

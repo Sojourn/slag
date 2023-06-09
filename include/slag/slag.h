@@ -1,6 +1,7 @@
 #pragma once
 
 #include "util.h"
+#include "visit.h"
 #include "error.h"
 #include "result.h"
 #include "event_loop.h"

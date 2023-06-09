@@ -58,6 +58,8 @@ set(SLAG_HEADER_FILES
     ../include/slag/pool_allocator.hpp
     ../include/slag/logging.h
     ../include/slag/util.h
+    ../include/slag/visit.h
+    ../include/slag/visit.hpp
     ../include/slag/task_queue.h
     ../include/slag/fiber_base.h
     ../include/slag/fiber.h
