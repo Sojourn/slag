@@ -1,4 +1,4 @@
-#include "test_generated.h"
+#include "record.h"
 
 namespace slag {
 

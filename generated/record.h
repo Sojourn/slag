@@ -11,6 +11,10 @@
 #include <cstddef>
 #include <cstdint>
 
+#define SLAG_RECORD_TYPES(X) \
+    X(HEADER) \
+    X(TEST_STRUCT) \
+
 namespace slag {
 
     enum class TestEnum : uint8_t {

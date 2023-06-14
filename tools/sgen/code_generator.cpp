@@ -84,6 +84,8 @@ public:
         line("#include <cstdint>");
         line();
 
+        generate_macros();
+
         line("namespace {} {{", settings_.namespace_name);
         {
             Level namespace_level{*this};
@@ -100,6 +102,15 @@ public:
     }
 
 private:
+    void generate_macros() {
+        line("#define SLAG_RECORD_TYPES(X) \\");
+        for (StructDecl* struct_decl: context_.nodes<NodeKind::STRUCT_DECL>()) {
+            line("    X({}) \\", to_record_type(struct_decl->name()));
+        }
+
+        line();
+    }
+
     void generate_forward_declarations() {
         line("template<RecordType type>");
         line("struct Record;");

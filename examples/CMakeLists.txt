@@ -1,6 +1,5 @@
 add_executable(example
         codec.cpp
-        test_generated.cpp
         )
 
 target_link_libraries(example PUBLIC slag)

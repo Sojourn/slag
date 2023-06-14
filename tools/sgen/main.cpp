@@ -130,11 +130,11 @@ int main(int argc, char** argv) {
 
     try {
         CodeGeneratorSettings settings {
-            .base_file_name = "test_generated",
+            .base_file_name = "record",
             .namespace_name = "slag",
         };
 
-        std::string output_directory = "../../examples";
+        std::string output_directory = "../../generated";
 
         write_file(
             fmt::format("{}/{}.h", output_directory, settings.base_file_name),

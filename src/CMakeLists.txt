@@ -29,6 +29,8 @@ set(SLAG_SOURCE_FILES
     message_fragment.cpp
     message_record_fragment.cpp
     message_buffer_fragment.cpp
+    message_encoder.cpp
+    ../generated/record.cpp
 )
 
 set(SLAG_HEADER_FILES
@@ -79,6 +81,8 @@ set(SLAG_HEADER_FILES
     ../include/slag/message_fragment.h
     ../include/slag/message_record_fragment.h
     ../include/slag/message_buffer_fragment.h
+    ../include/slag/message_encoder.h
+    ../generated/record.h
 )
 
 add_library(slag ${SLAG_SOURCE_FILES} ${SLAG_HEADER_FILES})
