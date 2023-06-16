@@ -11,6 +11,7 @@ add_executable(unit_test
         ut_byte_stream.cpp
         ut_lru16.cpp
         ut_transform.cpp
+        ut_message.cpp
         )
 
 target_link_libraries(unit_test PUBLIC slag)

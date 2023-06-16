@@ -23,4 +23,4 @@
 #include "transform.h"
 #include "buffer_writer.h"
 #include "buffer_reader.h"
-
+#include "message.h"
