@@ -12,7 +12,6 @@
 #include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/printf.h>
-#include "slag/message_encoder.h"
 
 using namespace slag;
 
@@ -43,11 +42,11 @@ int main(int argc, char** argv) {
     test_struct.a.push_back(2);
     test_struct.c = "hello";
 
-    std::byte buffer[1024];
+    // std::byte buffer[1024];
 
-    MessageEncoder encoder;
-    size_t bytes_written = encoder.encode(test_struct, buffer);
-    std::cout << bytes_written << std::endl;
+    // MessageEncoder encoder;
+    // size_t bytes_written = encoder.encode(test_struct, buffer);
+    // std::cout << bytes_written << std::endl;
 
     return 0;
 }

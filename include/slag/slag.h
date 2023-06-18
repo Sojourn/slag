@@ -24,3 +24,4 @@
 #include "buffer_writer.h"
 #include "buffer_reader.h"
 #include "message.h"
+#include "../../generated/record.h"

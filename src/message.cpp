@@ -64,14 +64,25 @@ namespace slag {
         );
     }
 
+    MessageReader::MessageReader()
+        : message_{nullptr}
+        , slot_index_{0}
+        , appendage_offset_{0}
+    {
+    }
+
     MessageReader::MessageReader(const Message& message)
-        : message_{message}
+        : message_{&message}
         , slot_index_{0}
         , appendage_offset_{0}
     {
     }
 
     bool MessageReader::read_flag() {
+        if (!message_) {
+            return false;
+        }
+
         if (!flag_slot_) {
             flag_slot_ = MessageFlagSlot {
                 .index = slot_index_++,
@@ -80,7 +91,7 @@ namespace slag {
         }
 
         // extract the next flag from the slot
-        bool flag = message_.slots_[flag_slot_->index] & (1ull << flag_slot_->width);
+        bool flag = message_->slots_[flag_slot_->index] & (1ull << flag_slot_->width);
         flag_slot_->width += 1;
 
         // reset if the current flag slot has been exhausted
@@ -92,11 +103,19 @@ namespace slag {
     }
 
     uint64_t MessageReader::read_slot() {
-        return message_.slots_[slot_index_++];
+        if (!message_) {
+            return 0;
+        }
+
+        return message_->slots_[slot_index_++];
     }
 
     std::string_view MessageReader::read_text(size_t size) {
-        const std::byte* data = &message_.appendage_[appendage_offset_];
+        if (!message_) {
+            return {};
+        }
+
+        const std::byte* data = &message_->appendage_[appendage_offset_];
         appendage_offset_ += size;
 
         return {
@@ -106,7 +125,11 @@ namespace slag {
     }
 
     std::span<const std::byte> MessageReader::read_blob(size_t size) {
-        const std::byte* data = &message_.appendage_[appendage_offset_];
+        if (!message_) {
+            return {};
+        }
+
+        const std::byte* data = &message_->appendage_[appendage_offset_];
         appendage_offset_ += size;
 
         return {

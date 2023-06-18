@@ -12,8 +12,8 @@
 #include <cstdint>
 
 #define SLAG_RECORD_TYPES(X) \
-    X(HEADER) \
-    X(TEST_STRUCT) \
+    X(HEADER)                \
+    X(TEST_STRUCT)           \
 
 namespace slag {
 

@@ -3,88 +3,7 @@
 
 namespace slag {
 
-    std::span<const uint64_t> MessageState::fields() const {
-        return {
-            fields_.data(),
-            fields_.size(),
-        };
-    }
-
-    std::span<const std::byte> MessageState::appendage() const {
-        return {
-            appendage_.data(),
-            appendage_.size(),
-        };
-    }
-
-    size_t MessageState::add_field(uint64_t field) {
-        size_t index = fields_.size();
-        fields_.push_back(field);
-        return index;
-    }
-
-    void MessageState::add_flag(bool value) {
-        if (bitmask_field_info_) {
-            auto&& [index, width] = *bitmask_field_info_;
-
-            fields_[index] |= (static_cast<uint64_t>(value) << (1ull * width));
-
-            width += 1;
-            if (width == 8) {
-                bitmask_field_info_.reset();
-            }
-        }
-        else {
-            bitmask_field_info_.emplace(
-                BitmaskFieldInfo {
-                    .index = add_field(static_cast<uint64_t>(value)),
-                    .width = 1,
-                }
-            );
-        }
-    }
-
-    void MessageState::add_appendage(std::span<const std::byte> buffer) {
-        appendage_.insert(appendage_.end(), buffer.begin(), buffer.end());
-    }
-
-    void MessageState::add_appendage(std::string_view buffer) {
-        add_appendage(
-            std::as_bytes(
-                std::span{buffer.data(), buffer.size()}
-            )
-        );
-    }
-
-    void MessageState::reset() {
-        fields_.clear();
-        appendage_.clear();
-        bitmask_field_info_.reset();
-    }
-
-    MessageEncoder::MessageEncoder() {
-        fields_.reserve(100);
-        appendage_.reserve(1000);
-    }
-
-    template<RecordType type>
-    size_t MessageEncoder::encode(const Record<type>& record, std::span<std::byte> output_buffer) {
-        reset();
-
-        // populate fields and the appendage
-        add_field(static_cast<uint64_t>(type));
-        visit(*this, record);
-
-        (void)output_buffer;
-        return 0;
-        // return encode(output_buffer);
-    }
-
-    void MessageEncoder::reset() {
-        fields_.clear();
-        appendage_.clear();
-        bitmask_field_info_.reset();
-    }
+#if 0
 
     template<RecordType type>
     void MessageEncoder::enter(const Record<type>&) {
@@ -195,39 +114,13 @@ namespace slag {
         // pass
     }
 
-    size_t MessageEncoder::add_field(uint64_t field) {
-        size_t index = fields_.size();
-        fields_.push_back(field);
-        return index;
-    }
-
-    void MessageEncoder::add_flag(bool value) {
-        if (bitmask_field_info_) {
-            auto&& [index, width] = *bitmask_field_info_;
-
-            fields_[index] |= (static_cast<uint64_t>(value) << (1ull * width));
-
-            width += 1;
-            if (width == 8) {
-                bitmask_field_info_.reset();
-            }
-        }
-        else {
-            bitmask_field_info_.emplace(
-                BitmaskFieldInfo {
-                    .index = add_field(static_cast<uint64_t>(value)),
-                    .width = 1,
-                }
-            );
-        }
-    }
-
 #define X(SLAG_RECORD_TYPE)                                                                                                \
     template                                                                                                               \
-    size_t MessageEncoder::encode(const Record<RecordType::SLAG_RECORD_TYPE>& record, std::span<std::byte> output_buffer); \
+    void MessageEncoder::encode(const Record<RecordType::SLAG_RECORD_TYPE>& record, std::span<std::byte> output_buffer); \
 
     SLAG_RECORD_TYPES(X)
 #undef X
 
-}
+#endif
 
+}

@@ -11,6 +11,15 @@ namespace slag {
 
     static constexpr size_t MAX_MESSAGE_FLAG_SLOT_WIDTH = 8;
 
+#pragma pack(push, 1)
+    struct MessageHeader {
+        uint32_t length      : 20; // 1MB
+        uint32_t field_count : 12; // 4096 fields
+        uint16_t lineage;
+    };
+#pragma pack(pop)
+    static_assert(sizeof(MessageHeader) == 6);
+
     struct MessageFlagSlot {
         size_t index = 0;
         size_t width = 0;
@@ -47,6 +56,7 @@ namespace slag {
 
     class MessageReader {
     public:
+        MessageReader();
         explicit MessageReader(const Message& message);
 
         [[nodiscard]] bool read_flag();
@@ -55,7 +65,7 @@ namespace slag {
         [[nodiscard]] std::span<const std::byte> read_blob(size_t size);
 
     private:
-        const Message&                 message_;
+        const Message*                 message_;
         std::optional<MessageFlagSlot> flag_slot_;
         size_t                         slot_index_;
         size_t                         appendage_offset_;
