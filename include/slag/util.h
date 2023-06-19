@@ -2,8 +2,19 @@
 
 #include <concepts>
 #include <type_traits>
+#include <cstddef>
 
 namespace slag {
+
+    template<typename T>
+    struct TypeWrapper {
+        using type = T;
+    };
+
+    template<size_t I>
+    struct IndexWrapper {
+        static constexpr size_t value = I;
+    };
 
     template<int I, typename TargetType, typename... Types>
     struct FindType;

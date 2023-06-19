@@ -32,6 +32,7 @@ set(SLAG_SOURCE_FILES
     message_encoder.cpp
     message.cpp
     record_encoder.cpp
+    record_decoder.cpp
     ../generated/record.cpp
 )
 
@@ -86,6 +87,7 @@ set(SLAG_HEADER_FILES
     ../include/slag/message_encoder.h
     ../include/slag/message.h
     ../include/slag/record_encoder.h
+    ../include/slag/record_decoder.h
     ../generated/record.h
 )
 
