@@ -7,8 +7,8 @@ namespace slag {
 
     class RecordEncoder {
     public:
-        explicit RecordEncoder(Message& message)
-            : writer_{message}
+        explicit RecordEncoder(MessageWriter& writer)
+            : writer_{writer}
         {
         }
 
@@ -54,6 +54,7 @@ namespace slag {
         }
 
         void enter(const std::string& value) {
+            writer_.write_slot(value.size());
             writer_.write_text(value);
         }
 
@@ -82,9 +83,10 @@ namespace slag {
         }
 
         void enter(const std::vector<std::byte>& value) {
-            writer_.write_blob(
-                std::span{value.data(), value.size()}
-            );
+            auto blob = std::span{value.data(), value.size()};
+
+            writer_.write_slot(blob.size_bytes());
+            writer_.write_blob(blob);
         }
 
         template<typename T>
@@ -124,15 +126,14 @@ namespace slag {
     };
 
     template<RecordType type>
-    void encode(const Record<type>& record, Message& message) {
-        RecordEncoder encoder{message};
-        encoder.enter(static_cast<std::underlying_type_t<RecordType>>(type));
+    void encode(const Record<type>& record, MessageWriter& writer) {
+        RecordEncoder encoder{writer};
         visit(encoder, record);
     }
 
-#define X(SLAG_RECORD_TYPE)                                                            \
-    template                                                                           \
-    void encode(const Record<RecordType::SLAG_RECORD_TYPE>& record, Message& message); \
+#define X(SLAG_RECORD_TYPE)                                                                 \
+    template                                                                                \
+    void encode(const Record<RecordType::SLAG_RECORD_TYPE>& record, MessageWriter& writer); \
 
     SLAG_RECORD_TYPES(X)
 #undef X

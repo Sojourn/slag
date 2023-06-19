@@ -15,38 +15,26 @@
 
 using namespace slag;
 
-// JSR: just thinking about how to frame a message
-//
-// could add a stream offset for the reference message
-//
-/*
-struct MessageHeader {
-    uint32_t message_length; // steal bits for flags from here
-    uint16_t field_count;
-    // uint16_t type;           // this can be a field (small, doesn't change)
-
-    // present bitmask
-    // encoding bitmask (less fields that aren't present)
-    // encoded fields
-    // appendage
-};
-*/
-
 int main(int argc, char** argv) {
     (void)argc;
     (void)argv;
 
-    TestStruct test_struct;
-    test_struct.a.push_back(0);
-    test_struct.a.push_back(1);
-    test_struct.a.push_back(2);
-    test_struct.c = "hello";
+    TestStruct src_record;
+    src_record.a.push_back(0);
+    src_record.a.push_back(1);
+    src_record.a.push_back(2);
+    src_record.c = "hello";
 
-    // std::byte buffer[1024];
+    Message message;
+    MessageWriter writer{message};
+    MessageReader reader{message};
 
-    // MessageEncoder encoder;
-    // size_t bytes_written = encoder.encode(test_struct, buffer);
-    // std::cout << bytes_written << std::endl;
+    encode(src_record, writer);
+    {
+        TestStruct dst_record;
+        decode(dst_record, reader);
+        asm("int $3");
+    }
 
     return 0;
 }

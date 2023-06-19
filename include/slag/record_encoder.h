@@ -6,6 +6,6 @@
 namespace slag {
 
     template<RecordType type>
-    void encode(const Record<type>& record, Message& message);
+    void encode(const Record<type>& record, MessageWriter& writer);
 
 }

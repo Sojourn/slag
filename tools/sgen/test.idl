@@ -11,7 +11,6 @@ struct Header {
 };
 
 struct TestStruct {
-    header: Header;
     a: list[i8];
     b: boolean;
     c: string;
