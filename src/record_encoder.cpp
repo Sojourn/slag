@@ -128,6 +128,7 @@ namespace slag {
     template<RecordType type>
     void encode(const Record<type>& record, MessageWriter& writer) {
         RecordEncoder encoder{writer};
+        writer.write_slot(static_cast<uint64_t>(type));
         visit(encoder, record);
     }
 

@@ -23,19 +23,24 @@ TEST_CASE("Record") {
         src_record.f.push_back(static_cast<std::byte>(16));
 
         Message message;
+
         {
             MessageWriter writer{message};
             encode(src_record, writer);
-
-            MessageReader reader{message};
-            decode(dst_record, reader);
         }
 
-        CHECK(src_record.a == dst_record.a);
-        CHECK(src_record.b == dst_record.b);
-        CHECK(src_record.c == dst_record.c);
-        CHECK(src_record.d == dst_record.d);
-        CHECK(src_record.e == dst_record.e);
-        CHECK(src_record.f == dst_record.f);
+        {
+            MessageReader reader{message};
+            decode([&]<RecordType type>(const Record<type>& dst_record) {
+                if constexpr (type == RecordType::TEST_STRUCT) {
+                    CHECK(src_record.a == dst_record.a);
+                    CHECK(src_record.b == dst_record.b);
+                    CHECK(src_record.c == dst_record.c);
+                    CHECK(src_record.d == dst_record.d);
+                    CHECK(src_record.e == dst_record.e);
+                    CHECK(src_record.f == dst_record.f);
+                }
+            }, reader);
+        }
     }
 }

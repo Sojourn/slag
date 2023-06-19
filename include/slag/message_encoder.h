@@ -9,4 +9,6 @@
 
 namespace slag {
 
+    // void encode(const Message& message, BufferWriter& writer);
+
 }
