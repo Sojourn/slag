@@ -12,8 +12,9 @@
 #include <cstdint>
 
 #define SLAG_RECORD_TYPES(X) \
-    X(HEADER)                \
-    X(TEST_STRUCT)           \
+    X(HEADER) \
+    X(LOGIN_REQUEST) \
+    X(TEST_STRUCT) \
 
 namespace slag {
 
@@ -23,30 +24,41 @@ namespace slag {
         BAZ,
     };
 
+    enum class ModuleType : uint16_t {
+        SESSION,
+    };
+
     enum class RecordType : uint16_t {
         HEADER,
+        LOGIN_REQUEST,
         TEST_STRUCT,
     };
 
     [[nodiscard]] std::optional<std::string_view> to_string(TestEnum value);
+    [[nodiscard]] std::optional<std::string_view> to_string(ModuleType value);
     [[nodiscard]] std::optional<std::string_view> to_string(RecordType value);
 
     template<RecordType type>
     struct Record;
 
     using Header = Record<RecordType::HEADER>;
+    using LoginRequest = Record<RecordType::LOGIN_REQUEST>;
     using TestStruct = Record<RecordType::TEST_STRUCT>;
 
     template<>
     struct Record<RecordType::HEADER> {
-        std::string channel = {};
-        std::string topic = {};
         uint64_t sequence_number = {};
     };
 
     template<>
-    struct Record<RecordType::TEST_STRUCT> {
+    struct Record<RecordType::LOGIN_REQUEST> {
         Header header = {};
+        std::string client_name = {};
+        std::string server_name = {};
+    };
+
+    template<>
+    struct Record<RecordType::TEST_STRUCT> {
         std::vector<int8_t> a = {};
         bool b = {};
         std::string c = {};
@@ -59,8 +71,6 @@ namespace slag {
     constexpr inline void visit(Visitor&& visitor, Header& record) {
         visitor.enter(record);
         {
-            visit(visitor, record.channel);
-            visit(visitor, record.topic);
             visit(visitor, record.sequence_number);
         }
         visitor.leave(record);
@@ -70,9 +80,29 @@ namespace slag {
     constexpr inline void visit(Visitor&& visitor, const Header& record) {
         visitor.enter(record);
         {
-            visit(visitor, record.channel);
-            visit(visitor, record.topic);
             visit(visitor, record.sequence_number);
+        }
+        visitor.leave(record);
+    }
+
+    template<typename Visitor>
+    constexpr inline void visit(Visitor&& visitor, LoginRequest& record) {
+        visitor.enter(record);
+        {
+            visit(visitor, record.header);
+            visit(visitor, record.client_name);
+            visit(visitor, record.server_name);
+        }
+        visitor.leave(record);
+    }
+
+    template<typename Visitor>
+    constexpr inline void visit(Visitor&& visitor, const LoginRequest& record) {
+        visitor.enter(record);
+        {
+            visit(visitor, record.header);
+            visit(visitor, record.client_name);
+            visit(visitor, record.server_name);
         }
         visitor.leave(record);
     }
@@ -81,7 +111,6 @@ namespace slag {
     constexpr inline void visit(Visitor&& visitor, TestStruct& record) {
         visitor.enter(record);
         {
-            visit(visitor, record.header);
             visit(visitor, record.a);
             visit(visitor, record.b);
             visit(visitor, record.c);
@@ -96,7 +125,6 @@ namespace slag {
     constexpr inline void visit(Visitor&& visitor, const TestStruct& record) {
         visitor.enter(record);
         {
-            visit(visitor, record.header);
             visit(visitor, record.a);
             visit(visitor, record.b);
             visit(visitor, record.c);

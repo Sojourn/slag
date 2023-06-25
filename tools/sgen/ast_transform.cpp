@@ -12,6 +12,17 @@
 
 namespace ast {
 
+    void create_module_type_enum(Context& context) {
+        std::vector<std::string> values;
+        for (ModuleDecl* module_decl: context.nodes<NodeKind::MODULE_DECL>()) {
+            values.push_back(
+                to_record_type(module_decl->name())
+            );
+        }
+
+        (void)context.new_enum_decl("ModuleType", "u16", std::move(values));
+    }
+
     void create_record_type_enum(Context& context) {
         std::vector<std::string> values;
         for (StructDecl* struct_decl: context.nodes<NodeKind::STRUCT_DECL>()) {

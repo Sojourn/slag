@@ -18,6 +18,7 @@
 %%
 
 [ \t\r\n]                 ;
+"module"                  return TOKEN(TMODULE);
 "struct"                  return TOKEN(TSTRUCT);
 "enum"                    return TOKEN(TENUM);
 "union"                   return TOKEN(TUNION);

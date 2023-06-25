@@ -1,22 +1,51 @@
-enum TestEnum : u8 {
-    FOO,
-    BAR,
-    BAZ
-};
+module Test[1] {
 
-struct Header {
-    channel: string;
-    topic: string;
-    sequence_number: u64;
-};
+    enum TestEnum : u8 {
+        FOO,
+        BAR,
+        BAZ,
+    };
 
-struct TestStruct {
-    a: list[i8];
-    b: boolean;
-    c: string;
-    d: tuple[string, list[u8]];
-    e: union[
-        TestEnum, map[i8, i8]
-    ];
-    f: blob;
-}
+    struct Header {
+        channel: string;
+        topic: string;
+        sequence_number: u64;
+    };
+
+    struct TestStruct {
+        a: list[i8];
+        b: boolean;
+        c: string;
+        d: tuple[string, list[u8]];
+        e: union[
+            TestEnum, map[i8, i8]
+        ];
+        f: blob;
+    };
+
+    module Spooler[0] {
+    };
+
+    module Spooler[1] {
+        struct TestStruct {
+            a: i8;
+        };
+    };
+
+    module Spooler[2] {
+        struct TestStruct {
+            a: u8;
+        };
+    };
+
+    template<>
+    struct Record<RecordType::TEST_STRUCT, Module::SPOOLER, 1> {
+        int8_t a = {};
+    };
+
+    template<>
+    struct Record<RecordType::TEST_STRUCT, Module::SPOOLER, 2> {
+        uint8_t a = {};
+    };
+
+};

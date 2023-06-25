@@ -14,11 +14,22 @@ namespace slag {
         return std::nullopt;
     }
 
+    std::optional<std::string_view> to_string(ModuleType value) {
+        using namespace std::string_view_literals;
+
+        switch (value) {
+            case ModuleType::SESSION: return "SESSION"sv;
+        }
+
+        return std::nullopt;
+    }
+
     std::optional<std::string_view> to_string(RecordType value) {
         using namespace std::string_view_literals;
 
         switch (value) {
             case RecordType::HEADER: return "HEADER"sv;
+            case RecordType::LOGIN_REQUEST: return "LOGIN_REQUEST"sv;
             case RecordType::TEST_STRUCT: return "TEST_STRUCT"sv;
         }
 

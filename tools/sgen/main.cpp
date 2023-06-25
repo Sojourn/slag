@@ -25,53 +25,6 @@ void yyerror(ast::Context& context, const char* text) {
     exit(EXIT_FAILURE);
 }
 
-class PrettyPrint {
-public:
-    void enter(ast::StructDecl& node) {
-        indent(); std::cout << to_string(node.kind()) << " name:" << node.name() << std::endl;
-        ++depth_;
-    }
-
-    void enter(ast::EnumDecl& node) {
-        indent(); std::cout << to_string(node.kind()) << " name:" << node.name() << std::endl;
-        ++depth_;
-    }
-
-    void enter(ast::VariableDecl& node) {
-        indent(); std::cout << to_string(node.kind()) << " name:" << node.name() << std::endl;
-        ++depth_;
-    }
-
-    void enter(ast::NamedType& node) {
-        indent(); std::cout << to_string(node.kind()) << " name:" << node.name() << std::endl;
-        ++depth_;
-    }
-
-    void enter(ast::IntegerType& node) {
-        indent(); std::cout << to_string(node.kind()) << " bit_count:" << node.bit_count() << " is_signed:" << node.is_signed() << std::endl;
-        ++depth_;
-    }
-
-    void enter(ast::Node& node) {
-        indent(); std::cout << to_string(node.kind()) << std::endl;
-        ++depth_;
-    }
-
-    void leave(ast::Node& node) {
-        --depth_;
-    }
-
-private:
-    void indent() {
-        for (size_t i = 0; i < (depth_ * 2); ++i) {
-            std::cout << ' ';
-        }
-    }
-
-private:
-    size_t depth_ = 0;
-};
-
 void write_file(const std::string& file_path, std::span<const std::byte> buffer) {
     int file_descriptor = ::open(file_path.c_str(), O_RDWR|O_CREAT|O_TRUNC, 0644);
     if (file_descriptor < 0) {
@@ -111,6 +64,13 @@ int main(int argc, char** argv) {
     catch (const std::exception& ex) {
         std::cerr << "Parsing failed: " << ex.what() << std::endl;
         return EXIT_FAILURE;
+    }
+
+    try {
+        ast::create_module_type_enum(context);
+    }
+    catch (const std::exception& ex) {
+        std::cerr << "Failed to create module type enum: " << ex.what() << std::endl;
     }
 
     try {

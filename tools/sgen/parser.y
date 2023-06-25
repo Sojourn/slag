@@ -41,12 +41,12 @@ void yyerror(ast::Context& context, const char* text);
 
 %token <string> TIDENT TSTRING TINTEGER
 %token <token>  TPLUS TMINUS TMULTIPLY TDIVIDE
-%token <token>  TSTRUCT TENUM TUNION TTUPLE TLIST TMAP
+%token <token>  TMODULE TSTRUCT TENUM TUNION TTUPLE TLIST TMAP
 
 %type <strings> enum_values;
 %type <stmt> stmt unit decl_stmt struct_field
 %type <stmts> stmts struct_fields
-%type <decl> decl struct_decl enum_decl
+%type <decl> decl module_decl struct_decl enum_decl
 %type <type> type named_type union_type tuple_type list_type map_type
 %type <types> type_list
 
@@ -57,15 +57,18 @@ void yyerror(ast::Context& context, const char* text);
 
 %%
 
-unit : stmts { $$ = &context.new_file_stmt(context.new_compound_stmt(*$1)); }
-     ;
+unit : module_decl { $$ = &context.new_file_stmt(context.new_compound_stmt(*$1)); };
 
-stmts : stmts ';' stmt { $1->push_back($3); }
-      | stmt           { $$ = new std::vector<ast::Stmt*>; $$->push_back($1); }
-      | %empty         { $$ = new std::vector<ast::Stmt*>; }
+module_decl : TMODULE TIDENT '[' TINTEGER ']' '{' stmts '}' ';' { $$ = &context.new_module_decl(*$2, context.new_compound_stmt(*$7), atoi($4->c_str())); }
+            | TMODULE TIDENT '{' stmts '}' ';'                  { $$ = &context.new_module_decl(*$2, context.new_compound_stmt(*$4)); }
+            ;
+
+stmts : stmts stmt { $1->push_back($2); }
+      | stmt       { $$ = new std::vector<ast::Stmt*>; $$->push_back($1); }
+      | %empty     { $$ = new std::vector<ast::Stmt*>; }
       ;
 
-stmt : decl_stmt
+stmt : decl_stmt ';'
      ;
 
 decl_stmt : decl { $$ = &context.new_decl_stmt(*$1); }
@@ -89,8 +92,8 @@ enum_decl : TENUM TIDENT '{' enum_values '}'          { $$ = &context.new_enum_d
           | TENUM TIDENT ':' type '{' enum_values '}' { $$ = &context.new_enum_decl(*$2, *$4, *$6); }
           ;
 
-enum_values : enum_values ',' TIDENT { $1->push_back(*$3); }
-            | TIDENT                 { $$ = new std::vector<std::string>; $$->push_back(*$1); }
+enum_values : enum_values TIDENT ',' { $1->push_back(*$2); }
+            | TIDENT ','             { $$ = new std::vector<std::string>; $$->push_back(*$1); }
             | %empty                 { $$ = new std::vector<std::string>; }
             ;
 

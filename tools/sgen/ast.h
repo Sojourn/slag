@@ -22,6 +22,7 @@
     X(COMPOUND, STMT)     \
     X(FILE,     STMT)     \
     X(VARIABLE, DECL)     \
+    X(MODULE,   DECL)     \
     X(ENUM,     DECL)     \
     X(STRUCT,   DECL)     \
     X(BOOLEAN,  TYPE)     \
@@ -147,6 +148,7 @@ namespace ast {
     using CompoundStmt = NodeKindImpl<NodeKind::COMPOUND_STMT>;
     using FileStmt     = NodeKindImpl<NodeKind::FILE_STMT>;
     using VariableDecl = NodeKindImpl<NodeKind::VARIABLE_DECL>; // TODO: rename to StructMemberDecl
+    using ModuleDecl   = NodeKindImpl<NodeKind::MODULE_DECL>;
     using EnumDecl     = NodeKindImpl<NodeKind::ENUM_DECL>;
     using StructDecl   = NodeKindImpl<NodeKind::STRUCT_DECL>;
     using BooleanType  = NodeKindImpl<NodeKind::BOOLEAN_TYPE>;
@@ -230,6 +232,63 @@ namespace ast {
     private:
         CompoundStmt& body_;
     };
+
+    template<>
+    class NodeKindImpl<NodeKind::MODULE_DECL> : public Decl {
+    public:
+        NodeKindImpl(std::string name, CompoundStmt& body, size_t version)
+            : Decl{NodeKind::MODULE_DECL}
+            , name_{std::move(name)}
+            , body_{body}
+            , version_{version}
+        {
+        }
+
+        [[nodiscard]] const std::string& name() const {
+            return name_;
+        }
+
+        [[nodiscard]] size_t version() const {
+            return version_;
+        }
+
+        [[nodiscard]] CompoundStmt& body() {
+            return body_;
+        }
+
+        [[nodiscard]] std::string idl_type_signature() const {
+            return name_;
+        }
+
+        [[nodiscard]] std::string cpp_type_signature() const {
+            return name_;
+        }
+
+        [[nodiscard]] bool is_type_decl() const {
+            return false;
+        }
+
+        template<>
+        struct SpoolerModule<1> {
+            enum class Foo : uint8_t {
+                COOL,
+                STUFF,
+            };
+        };
+
+        void add_decl()
+
+        template<typename Visitor>
+        void accept(Visitor& visitor) {
+            visit(visitor, body_);
+        }
+
+    private:
+        std::string   name_;
+        CompoundStmt& body_;
+        size_t        version_;
+    };
+
 
     template<>
     class NodeKindImpl<NodeKind::VARIABLE_DECL> : public Decl {

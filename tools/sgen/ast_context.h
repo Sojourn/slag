@@ -57,12 +57,24 @@ namespace ast {
             return make_node<NodeKind::COMPOUND_STMT>(std::move(stmts));
         }
 
+        [[nodiscard]] CompoundStmt& new_compound_stmt(Decl& decl) {
+            std::vector<Stmt*> stmts = {{
+                &new_decl_stmt(decl)
+            }};
+
+            return new_compound_stmt(stmts);
+        }
+
         [[nodiscard]] FileStmt& new_file_stmt(CompoundStmt& body) {
             return make_node<NodeKind::FILE_STMT>(body);
         }
 
         [[nodiscard]] VariableDecl& new_variable_decl(std::string name, Type& type) {
             return make_node<NodeKind::VARIABLE_DECL>(std::move(name), type);
+        }
+
+        [[nodiscard]] ModuleDecl& new_module_decl(std::string name, CompoundStmt& body, size_t version=0) {
+            return make_node<NodeKind::MODULE_DECL>(std::move(name), body, version);
         }
 
         [[nodiscard]] EnumDecl& new_enum_decl(std::string name, std::string underlying_type_name, std::vector<std::string> values) {

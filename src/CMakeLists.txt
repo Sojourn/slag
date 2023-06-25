@@ -77,6 +77,9 @@ set(SLAG_HEADER_FILES
     ../include/slag/selector.h
     ../include/slag/selector.hpp
     ../include/slag/trace.h
+    ../include/slag/stack.h
+    ../include/slag/stack.hpp
+    ../include/slag/stack_util.h
     ../include/slag/buffer_writer.h
     ../include/slag/buffer_writer.hpp
     ../include/slag/buffer_reader.h
