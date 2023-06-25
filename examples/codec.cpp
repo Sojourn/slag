@@ -17,46 +17,6 @@
 
 using namespace slag;
 
-template<template<typename> class LayerImpl, typename Stack>
-class Layer {
-public:
-    using Above = typename Stack::LayerAboveType<LayerImpl<Stack>>;
-    using Below = typename Stack::LayerBelowType<LayerImpl<Stack>>;
-
-    void attach(Stack& stack) {
-        above_ = stack.template get_layer_above<LayerImpl<Stack>>();
-        below_ = stack.template get_layer_below<LayerImpl<Stack>>();
-    }
-
-    void detach(Stack&) {
-        above_ = nullptr;
-        below_ = nullptr;
-    }
-
-    void start() {}
-    void stop() {}
-
-    [[nodiscard]] Above* above() {
-        return above_;
-    }
-
-    [[nodiscard]] const Above* above() const {
-        return above_;
-    }
-
-    [[nodiscard]] Below* below() {
-        return below_;
-    }
-
-    [[nodiscard]] const Below* below() const {
-        return below_;
-    }
-
-private:
-    Above* above_ = nullptr;
-    Below* below_ = nullptr;
-};
-
 template<typename Stack>
 struct RecordLayer : Layer<RecordLayer, Stack> {
     using Layer<RecordLayer, Stack>::above;
