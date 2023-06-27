@@ -8,7 +8,6 @@ add_executable(unit_test
         ut_executor.cpp
         ut_operation_state_machine.cpp
         ut_io_uring_reactor.cpp
-        ut_byte_stream.cpp
         ut_lru16.cpp
         ut_transform.cpp
         ut_message.cpp

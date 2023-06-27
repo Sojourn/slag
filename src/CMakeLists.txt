@@ -23,7 +23,6 @@ set(SLAG_SOURCE_FILES
     # socket.cpp
     buffer.cpp
     buffer_slice.cpp
-    byte_stream.cpp
     pollable.cpp
     trace.cpp
     message_fragment.cpp
@@ -72,13 +71,14 @@ set(SLAG_HEADER_FILES
     ../include/slag/coroutine.h
     ../include/slag/coroutine.hpp
     ../include/slag/socket.h
-    ../include/slag/byte_stream.h
     ../include/slag/pollable.h
     ../include/slag/selector.h
     ../include/slag/selector.hpp
     ../include/slag/trace.h
     ../include/slag/stack.h
     ../include/slag/stack.hpp
+    ../include/slag/layer.h
+    ../include/slag/layer.hpp
     ../include/slag/stack_util.h
     ../include/slag/buffer_writer.h
     ../include/slag/buffer_writer.hpp

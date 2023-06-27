@@ -5,61 +5,39 @@
 #include <type_traits>
 #include "slag/util.h"
 #include "slag/stack_util.h"
+#include "slag/layer.h"
 
 namespace slag {
 
     template<template<typename> class... Layers>
     class Stack {
-    public:
         Stack(Stack&&) = delete;
         Stack(const Stack&) = delete;
         Stack& operator=(Stack&&) = delete;
         Stack& operator=(const Stack&) = delete;
 
+    public:
+        Stack();
+        ~Stack();
+
+    public:
         using LayersTuple = std::tuple<
             Layers<Stack<Layers...>>...
         >;
 
-    public:
         template<size_t index>
-        [[nodiscard]] std::tuple_element_t<index, LayersTuple>& get_layer_at() {
-            return std::get<index>(layers_);
-        }
+        [[nodiscard]] std::tuple_element_t<index, LayersTuple>& get_layer_at();
 
         template<size_t index>
-        [[nodiscard]] const std::tuple_element_t<index, LayersTuple>& get_layer_at() const {
-            return std::get<index>(layers_);
-        }
+        [[nodiscard]] const std::tuple_element_t<index, LayersTuple>& get_layer_at() const;
+
+        [[nodiscard]] std::tuple_element_t<0, LayersTuple>& get_top_layer();
+        [[nodiscard]] const std::tuple_element_t<0, LayersTuple>& get_top_layer() const;
+        [[nodiscard]] std::tuple_element_t<sizeof...(Layers) - 1, LayersTuple>& get_bottom_layer();
+        [[nodiscard]] const std::tuple_element_t<sizeof...(Layers) - 1, LayersTuple>& get_bottom_layer() const;
 
         template<typename Functor>
-        void for_each_layer(Functor&& functor) {
-            auto visit = [&]<size_t... I>(std::index_sequence<I...>) {
-                (functor(get_layer_at<I>()), ...);
-            };
-
-            visit(std::make_index_sequence<sizeof...(Layers)>{});
-        }
-
-    public:
-        Stack() {
-            for_each_layer([this](auto&& layer) {
-                layer.attach(*this);
-            });
-
-            for_each_layer([this](auto&& layer) {
-                layer.start();
-            });
-        }
-
-        ~Stack() {
-            for_each_layer([this](auto&& layer) {
-                layer.stop();
-            });
-
-            for_each_layer([this](auto&& layer) {
-                layer.detach(*this);
-            });
-        }
+        void for_each_layer(Functor&& functor);
 
     private:
         template<template<typename> class LayerImpl, typename StackImpl>
@@ -107,52 +85,6 @@ namespace slag {
         LayersTuple layers_;
     };
 
-    template<template<typename> class LayerImpl, typename StackImpl>
-    class Layer {
-    public:
-        using Above = typename StackImpl::LayerAboveType<LayerImpl<StackImpl>>;
-        using Below = typename StackImpl::LayerBelowType<LayerImpl<StackImpl>>;
-
-        [[nodiscard]] Above* above() {
-            return above_;
-        }
-
-        [[nodiscard]] const Above* above() const {
-            return above_;
-        }
-
-        [[nodiscard]] Below* below() {
-            return below_;
-        }
-
-        [[nodiscard]] const Below* below() const {
-            return below_;
-        }
-
-        void start() {
-            // shadow this if you want the lifetime event hook
-        }
-
-        void stop() {
-            // shadow this if you want the lifetime event hook
-        }
-
-    private:
-        template<template<typename> class... Layers>
-        friend class Stack;
-
-        void attach(StackImpl& stack) {
-            above_ = stack.template get_layer_above<LayerImpl<StackImpl>>();
-            below_ = stack.template get_layer_below<LayerImpl<StackImpl>>();
-        }
-
-        void detach(StackImpl&) {
-            above_ = nullptr;
-            below_ = nullptr;
-        }
-
-        Above* above_ = nullptr;
-        Below* below_ = nullptr;
-    };
-
 }
+
+#include "stack.hpp"
