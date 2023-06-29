@@ -66,4 +66,32 @@ namespace slag {
         visit(std::make_index_sequence<sizeof...(Layers)>{});
     }
 
+    template<template<typename> class... Layers>
+    template<typename LayerImpl>
+    inline auto Stack<Layers...>::get_layer_above() -> LayerAboveType<LayerImpl>* {
+        using T = LayerAboveType<LayerImpl>;
+        static_assert(!std::is_same_v<T, LayerImpl>);
+
+        if constexpr (std::is_same_v<T, void>) {
+            return static_cast<void*>(nullptr); // for return type deduction
+        }
+        else {
+            return &std::get<T>(layers_);
+        }
+    }
+
+    template<template<typename> class... Layers>
+    template<typename LayerImpl>
+    inline auto Stack<Layers...>::get_layer_below() -> LayerBelowType<LayerImpl>* {
+        using T = LayerBelowType<LayerImpl>;
+        static_assert(!std::is_same_v<T, LayerImpl>);
+
+        if constexpr (std::is_same_v<T, void>) {
+            return static_cast<void*>(nullptr); // for return type deduction
+        }
+        else {
+            return &std::get<T>(layers_);
+        }
+    }
+
 }

@@ -56,30 +56,10 @@ namespace slag {
         >;
 
         template<typename LayerImpl>
-        [[nodiscard]] auto* get_layer_above() {
-            using T = LayerAboveType<LayerImpl>;
-            static_assert(!std::is_same_v<T, LayerImpl>);
-
-            if constexpr (std::is_same_v<T, void>) {
-                return static_cast<void*>(nullptr); // for return type deduction
-            }
-            else {
-                return &std::get<T>(layers_);
-            }
-        }
+        [[nodiscard]] LayerAboveType<LayerImpl>* get_layer_above();
 
         template<typename LayerImpl>
-        [[nodiscard]] auto* get_layer_below() {
-            using T = LayerBelowType<LayerImpl>;
-            static_assert(!std::is_same_v<T, LayerImpl>);
-
-            if constexpr (std::is_same_v<T, void>) {
-                return static_cast<void*>(nullptr); // for return type deduction
-            }
-            else {
-                return &std::get<T>(layers_);
-            }
-        }
+        [[nodiscard]] LayerBelowType<LayerImpl>* get_layer_below();
 
     private:
         LayersTuple layers_;
