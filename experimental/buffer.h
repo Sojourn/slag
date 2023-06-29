@@ -1,3 +1,13 @@
+// single buffer manager per-process
+// single buffer group (for a given set of parameters) per-process
+// per-thread buffer pools which access potentially multiple buffer groups
+
+// update and compaction protocol for buffers?
+// reference counting for buffers vs. probabalistic detection
+// buffer pool configuration (pre-allocated buffers from various pools)
+// buffer request/return ring buffers from the manager to pools
+//   - groups internal to the manager?
+
 // identifier for a buffer
 struct BufferDescriptor {
     uint32_t group : 12; // (1ull << (group + 9)) -> (512, 2M)
@@ -14,7 +24,14 @@ public:
         size_t block_size;
     };
 
-    explicit BufferManager(const Config& config);
+    explicit BufferManager(const Config& config)
+        : config_{config}
+    {
+        blocks_.reserve(config_.block_count);
+    }
+
+    ~BufferManager() {
+    }
 
 private:
     Config             config_;
@@ -40,15 +57,15 @@ private:
     void increment_reference_count(BufferDescriptor descriptor);
     void decrement_reference_count(BufferDescriptor descriptor);
 
-    void pin(BufferDescriptor descriptor);
-    void unpin(BufferDescriptor descriptor);
+    void acquire_lock(BufferDescriptor descriptor);
+    void release_lock(BufferDescriptor descriptor);
 
 private:
     struct Buffer {
         BufferDescriptor descriptor;      // details about
         uint32_t         reference_count; // number of handles pointing to this buffer
-        bool             pinned;          // someone is accessing the underlying bytes
-        uint32_t         nonce;           // when the buffer was allocated
+        bool             locked;          // someone is exclusively accessing this piece of memory
+        uint32_t         nonce;           // when the buffer was allocated / stale handle
     };
 };
 
@@ -73,6 +90,7 @@ public:
         return static_cast<bool>(descriptor_);
     }
 
+    // may fail to acquire the lock
     [[nodiscard]] BufferAccessor lock() {
         if (!descriptor_) {
             throw std::runtime_error("Invalid BufferHandle");
@@ -94,6 +112,8 @@ enum BufferAccess : uint8_t {
 };
 
 // indicates that the buffer is being written/read
+// pins the memory
+// exclusive access
 class BufferAccessor {
 public:
     BufferAccessor();
