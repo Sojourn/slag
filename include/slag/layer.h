@@ -4,7 +4,7 @@ namespace slag {
 
     template<template<typename> class LayerImpl, typename StackImpl>
     class Layer {
-    public:
+    protected:
         using Above = typename StackImpl::LayerAboveType<LayerImpl<StackImpl>>;
         using Below = typename StackImpl::LayerBelowType<LayerImpl<StackImpl>>;
 
@@ -24,8 +24,8 @@ namespace slag {
         void detach(StackImpl&);
 
     private:
-        Above* above_ = nullptr;
-        Below* below_ = nullptr;
+        Above* above_    = nullptr;
+        Below* below_    = nullptr;
     };
 
 }
