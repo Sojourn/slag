@@ -12,7 +12,32 @@
 struct BufferDescriptor {
     uint32_t group : 12; // (1ull << (group + 9)) -> (512, 2M)
     uint32_t index : 20; // ~1M
-    uint32_t nonce;
+    uint32_t nonce : 31;
+    uint32_t flags : 1;
+};
+
+class Block {
+public:
+    Block();
+    explicit Block(size_t capacity);
+    Block(Block&& other);
+    Block(const Block&) = delete;
+    ~Block();
+
+    Block& operator=(Block&& rhs);
+    Block& operator=(const Block&) = delete;
+
+    explicit operator bool() const;
+
+    [[nodiscard]] size_t size() const;
+    [[nodiscard]] std::byte* data();
+    [[nodiscard]] const std::byte* data() const;
+    [[nodiscard]] std::span<std::byte> get();
+    [[nodiscard]] std::span<const std::byte> get() const;
+
+private:
+    size_t size_;
+    void*  data_;
 };
 
 // manages blocks of memory (and registers/unregisters)
@@ -34,8 +59,12 @@ public:
     }
 
 private:
-    Config             config_;
-    std::vector<void*> blocks_;
+    friend class BufferGroup;
+
+private:
+    Config                  config_;
+    std::vector<BlockIndex> free_blocks_;
+    std::vector<void*>      block_storage_; // block base pointers
 };
 
 // maintains attributes about buffers of similar (same size) buffers
