@@ -12,6 +12,7 @@ add_executable(unit_test
         ut_transform.cpp
         ut_message.cpp
         ut_record.cpp
+        ut_spsc_queue.cpp
         )
 
 target_link_libraries(unit_test PUBLIC slag)

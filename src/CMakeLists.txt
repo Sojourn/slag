@@ -80,6 +80,8 @@ set(SLAG_HEADER_FILES
     ../include/slag/layer.h
     ../include/slag/layer.hpp
     ../include/slag/stack_util.h
+    ../include/slag/spsc_queue.h
+    ../include/slag/spsc_queue.hpp
     ../include/slag/buffer_writer.h
     ../include/slag/buffer_writer.hpp
     ../include/slag/buffer_reader.h
