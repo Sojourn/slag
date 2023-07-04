@@ -22,13 +22,16 @@ TEST_CASE("SpscQueue") {
 
         for (int i = 0; i < 1024; ++i) {
             int producer_value = i;
-            bool producer_success = producer.produce(producer_value);
+            bool producer_success = producer.insert(producer_value);
             CHECK(producer_success);
+            producer.flush();
 
-            int consumer_value = -1;
-            bool consumer_success = consumer.consume(consumer_value);
-            CHECK(consumer_success);
-            CHECK(consumer_value == producer_value);
+            int* consumer_value;
+            size_t count = consumer.poll(std::span{&consumer_value, 1});
+            CHECK(count == 1);
+            CHECK(*consumer_value == producer_value);
+
+            consumer.remove(1);
         }
     }
 
@@ -43,17 +46,19 @@ TEST_CASE("SpscQueue") {
             for (int j = 0; j < stride; ++j) {
                 producer_values[j] = i + j;
             }
-            size_t produced_value_count = producer.produce(std::span{producer_values});
-            CHECK(produced_value_count == size_t{stride});
+            bool producer_success = producer.insert(std::span<const int>{producer_values});
+            CHECK(producer_success);
+            producer.flush();
 
-            int consumed_values[stride];
-            memset(consumed_values, 0, sizeof(consumed_values));
-            size_t consumed_value_count = consumer.consume(std::span{consumed_values});
+            int* consumed_values[stride];
+            size_t consumed_value_count = consumer.poll(std::span{consumed_values, stride});
             CHECK(consumed_value_count == size_t{stride});
 
             for (int j = 0; j < stride; ++j) {
-                CHECK(consumed_values[j] == i + j);
+                CHECK(*consumed_values[j] == i + j);
             }
+
+            consumer.remove(consumed_value_count);
         }
     }
 }

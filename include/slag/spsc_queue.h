@@ -48,9 +48,9 @@ namespace slag {
         };
 
         std::vector<Slot>                              slots_;
-        alignas(64) std::atomic_uint_fast64_t          head_; // sequence of the next slot to be consumed (front)
+        alignas(64) std::atomic_uint32_t               head_; // sequence of the next slot to be consumed (front)
         alignas(64) std::atomic<SpscQueueConsumer<T>*> consumer_;
-        alignas(64) std::atomic_uint_fast64_t          tail_; // sequence of the next slot to be produced (back)
+        alignas(64) std::atomic_uint32_t               tail_; // sequence of the next slot to be produced (back)
         alignas(64) std::atomic<SpscQueueProducer<T>*> producer_;
     };
 
@@ -65,23 +65,31 @@ namespace slag {
         explicit SpscQueueProducer(SpscQueue<T>& queue);
         ~SpscQueueProducer();
 
-        [[nodiscard]] bool produce(T item);
-        [[nodiscard]] size_t produce(std::span<T> items);
+        template<typename... Args>
+        [[nodiscard]] bool insert(Args&&... args);
+        [[nodiscard]] bool insert(std::span<T> items);
+        [[nodiscard]] bool insert(std::span<const T> items);
+
+        // This will make insertions visible to the consumer. It will be automatically
+        // called after a number of inserts to prevent livelocking.
+        void flush();
 
     private:
-        [[nodiscard]] size_t available_slots(bool refresh);
+        [[nodiscard]] size_t available_slots(bool synchronize);
 
     private:
         using Slot = typename SpscQueue<T>::Slot;
 
         SpscQueue<T>&                    queue_;
         Slot*                            slots_;
-        uint64_t                         capacity_;
-        uint64_t                         mask_;
-        uint64_t                         cached_head_;
-        uint64_t                         cached_tail_;
-        const std::atomic_uint_fast64_t& head_;
-        std::atomic_uint_fast64_t&       tail_;
+        uint32_t                         capacity_;
+        uint32_t                         mask_;
+        uint32_t                         pending_insert_count_;
+        uint32_t                         max_pending_insert_count_;
+        uint32_t                         cached_head_;
+        uint32_t                         cached_tail_;
+        const std::atomic_uint32_t&      head_;
+        std::atomic_uint32_t&            tail_;
     };
 
     template<typename T>
@@ -95,23 +103,31 @@ namespace slag {
         explicit SpscQueueConsumer(SpscQueue<T>& queue);
         ~SpscQueueConsumer();
 
-        [[nodiscard]] bool consume(T& item);
-        [[nodiscard]] size_t consume(std::span<T> items);
+        [[nodiscard]] size_t poll(std::span<T*> items);
+
+        // Destroys items returned by pool and advances the consumer.
+        void remove(size_t count);
+
+        // This will make removals visible to the producer. It will be automatically
+        // called after a number of removals to prevent livelocking.
+        void flush();
 
     private:
-        [[nodiscard]] size_t available_slots(bool refresh);
+        [[nodiscard]] size_t available_slots(bool synchronize);
 
     private:
         using Slot = typename SpscQueue<T>::Slot;
 
         SpscQueue<T>&                    queue_;
         Slot*                            slots_;
-        uint64_t                         capacity_;
-        uint64_t                         mask_;
-        uint64_t                         cached_head_;
-        uint64_t                         cached_tail_;
-        std::atomic_uint_fast64_t&       head_;
-        const std::atomic_uint_fast64_t& tail_;
+        uint32_t                         capacity_;
+        uint32_t                         mask_;
+        uint32_t                         pending_remove_count_;
+        uint32_t                         max_pending_remove_count_;
+        uint32_t                         cached_head_;
+        uint32_t                         cached_tail_;
+        std::atomic_uint32_t&            head_;
+        const std::atomic_uint32_t&      tail_;
     };
 
 }
