@@ -31,20 +31,58 @@ namespace slag {
         std::vector<WorkerThreadConfig> worker_threads;
     };
 
-    class ControllerThread {
+    struct WorkerThreadRequest {
+        uint64_t sequence_number = 0;
+    };
+
+    struct WorkerThreadReply {
+        uint64_t sequence_number = 0;
+    };
+
+    template<typename T1, typename T2>
+    class SpscConnection {
     public:
-        ControllerThread(const ControllerThreadConfig& config);
-        ~ControllerThread();
+        SpscConnection(size_t capacity)
+            : SpscConnection(capacity, capacity)
+        {
+        }
 
-        [[nodiscard]] std::future<void> run();
+        SpscConnection(size_t capacity1, size_t capacity2)
+            : queue1_{capacity1}
+            , queue2_{capacity2}
+        {
+        }
 
-        // void set_controller_connection(SpscQueue<WorkerRequest>& request_queue, SpscQueue<WorkerReply>& reply_queue);
+        template<typename U>
+        [[nodiscard]] SpscQueueProducer<U> make_producer() {
+            if constexpr (std::is_same_v<U, T1>) {
+                return SpscQueueProducer<T1>{queue1_};
+            }
+            if constexpr (std::is_same_v<U, T2>) {
+                return SpscQueueProducer<T2>{queue2_};
+            }
+
+            throw std::runtime_error("Unexpected type");
+        }
+
+        template<typename U>
+        [[nodiscard]] SpscQueueConsumer<U> make_consumer() {
+            if constexpr (std::is_same_v<U, T1>) {
+                return SpscQueueConsumer<T1>{queue1_};
+            }
+            if constexpr (std::is_same_v<U, T2>) {
+                return SpscQueueConsumer<T2>{queue2_};
+            }
+
+            throw std::runtime_error("Unexpected type");
+        }
 
     private:
-        const ControllerThreadConfig& config_;
-        std::thread                   thread_;
-        std::promise<void>            completion_;
+        SpscQueue<T1> queue1_;
+        SpscQueue<T2> queue2_;
     };
+
+    using WorkerThreadConnection = SpscConnection<WorkerThreadRequest, WorkerThreadReply>;
 
     // explicit start/stop messages to parallelize initialization/destruction
     class WorkerThread {
@@ -54,12 +92,55 @@ namespace slag {
 
         [[nodiscard]] std::future<void> run();
 
-        // void add_worker_connection(SpscQueue<WorkerRequest>& request_queue, SpscQueue<WorkerReply>& reply_queue);
+    private:
+        friend class ControllerThread;
+
+        using ControllerConnection = SpscConnection<WorkerThreadRequest, WorkerThreadReply>;
+
+        [[nodiscard]] ControllerConnection& controller_connection() {
+            return controller_connection_;
+        }
 
     private:
-        const WorkerThreadConfig& config_;
-        std::thread               thread_;
-        std::promise<void>        completion_;
+        const WorkerThreadConfig&              config_;
+        std::thread                            thread_;
+        std::promise<void>                     completion_;
+        ControllerConnection                   controller_connection_;
+        SpscQueueConsumer<WorkerThreadRequest> controller_connection_consumer_;
+        SpscQueueProducer<WorkerThreadReply>   controller_connection_producer_;
+    };
+
+    class ControllerThread {
+    public:
+        ControllerThread(const ControllerThreadConfig& config);
+        ~ControllerThread();
+
+        [[nodiscard]] std::future<void> run();
+
+        void add_worker_thread(WorkerThread& worker_thread) {
+            worker_threads_.push_back(
+                WorkerThreadContext {
+                    worker_thread.controller_connection()
+                }
+            );
+        }
+
+    private:
+        struct WorkerThreadContext {
+            SpscQueueProducer<WorkerThreadRequest> producer;
+            SpscQueueConsumer<WorkerThreadReply>   consumer;
+
+            explicit WorkerThreadContext(WorkerThreadConnection& connection)
+                : producer{connection.make_producer<WorkerThreadRequest>()}
+                , consumer{connection.make_consumer<WorkerThreadReply>()}
+            {
+            }
+        };
+
+        const ControllerThreadConfig&    config_;
+        std::thread                      thread_;
+        std::promise<void>               completion_;
+        std::vector<WorkerThreadContext> worker_threads_;
     };
 
     class Application {
