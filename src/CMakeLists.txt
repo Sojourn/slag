@@ -25,6 +25,7 @@ set(SLAG_SOURCE_FILES
     buffer_slice.cpp
     pollable.cpp
     trace.cpp
+    application.cpp
     message_fragment.cpp
     message_record_fragment.cpp
     message_buffer_fragment.cpp

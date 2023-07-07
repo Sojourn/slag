@@ -56,4 +56,7 @@ namespace slag {
     // raise a system error for the currently set errno
     void raise_system_error(const char* message);
 
+    // set the cpu affinity of the current thread
+    void set_cpu_affinity(int cpu_affinity);
+
 }

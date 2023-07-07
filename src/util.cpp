@@ -5,6 +5,8 @@
 #include <cerrno>
 #include <cassert>
 
+#include <sched.h>
+
 namespace slag {
 
     // test tuple_reverse_t
@@ -37,6 +39,17 @@ namespace slag {
         assert(message);
         assert(errno != 0);
         throw std::system_error{errno, std::generic_category(), message};
+    }
+
+    void set_cpu_affinity(int cpu_affinity) {
+        cpu_set_t set;
+
+        CPU_ZERO(&set);
+        CPU_SET(cpu_affinity, &set);
+
+        if (::sched_setaffinity(0, sizeof(set), &set) < 0) {
+            raise_system_error("Failed to set cpu affinity");
+        }
     }
 
 }

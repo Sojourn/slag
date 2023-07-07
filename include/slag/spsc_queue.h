@@ -2,6 +2,7 @@
 
 #include <span>
 #include <array>
+#include <vector>
 #include <atomic>
 #include <utility>
 #include <cstdint>
@@ -54,16 +55,19 @@ namespace slag {
         alignas(64) std::atomic<SpscQueueProducer<T>*> producer_;
     };
 
+    // TODO: make a wrapper for this that can backlog failed insertions
     template<typename T>
     class alignas(64) SpscQueueProducer {
-        SpscQueueProducer(SpscQueueProducer&&) = delete;
-        SpscQueueProducer(const SpscQueueProducer&) = delete;
-        SpscQueueProducer& operator=(SpscQueueProducer&&) = delete;
-        SpscQueueProducer& operator=(const SpscQueueProducer&) = delete;
 
     public:
+        SpscQueueProducer();
         explicit SpscQueueProducer(SpscQueue<T>& queue);
+        SpscQueueProducer(SpscQueueProducer&& other);
+        SpscQueueProducer(const SpscQueueProducer&) = delete;
         ~SpscQueueProducer();
+
+        SpscQueueProducer& operator=(SpscQueueProducer&& rhs);
+        SpscQueueProducer& operator=(const SpscQueueProducer&) = delete;
 
         template<typename... Args>
         [[nodiscard]] bool insert(Args&&... args);
@@ -74,13 +78,15 @@ namespace slag {
         // called after a number of inserts to prevent livelocking.
         void flush();
 
+        void reset();
+
     private:
         [[nodiscard]] size_t available_slots(bool synchronize);
 
     private:
         using Slot = typename SpscQueue<T>::Slot;
 
-        SpscQueue<T>&                    queue_;
+        SpscQueue<T>*                    queue_;
         Slot*                            slots_;
         uint32_t                         capacity_;
         uint32_t                         mask_;
@@ -88,20 +94,27 @@ namespace slag {
         uint32_t                         max_pending_insert_count_;
         uint32_t                         cached_head_;
         uint32_t                         cached_tail_;
-        const std::atomic_uint32_t&      head_;
-        std::atomic_uint32_t&            tail_;
+        const std::atomic_uint32_t*      head_;
+        std::atomic_uint32_t*            tail_;
     };
 
     template<typename T>
     class alignas(64) SpscQueueConsumer {
-        SpscQueueConsumer(SpscQueueConsumer&&) = delete;
+    public:
+        SpscQueueConsumer();
+        explicit SpscQueueConsumer(SpscQueue<T>& queue);
+        SpscQueueConsumer(SpscQueueConsumer&& other);
         SpscQueueConsumer(const SpscQueueConsumer&) = delete;
-        SpscQueueConsumer& operator=(SpscQueueConsumer&&) = delete;
+        ~SpscQueueConsumer();
+
+        SpscQueueConsumer& operator=(SpscQueueConsumer&& rhs);
         SpscQueueConsumer& operator=(const SpscQueueConsumer&) = delete;
 
-    public:
-        explicit SpscQueueConsumer(SpscQueue<T>& queue);
-        ~SpscQueueConsumer();
+        template<size_t N>
+        [[nodiscard]] size_t poll(T* (&items)[N]);
+
+        template<size_t N>
+        [[nodiscard]] size_t poll(std::array<T*, N>& items);
 
         [[nodiscard]] size_t poll(std::span<T*> items);
 
@@ -112,13 +125,15 @@ namespace slag {
         // called after a number of removals to prevent livelocking.
         void flush();
 
+        void reset();
+
     private:
         [[nodiscard]] size_t available_slots(bool synchronize);
 
     private:
         using Slot = typename SpscQueue<T>::Slot;
 
-        SpscQueue<T>&                    queue_;
+        SpscQueue<T>*                    queue_;
         Slot*                            slots_;
         uint32_t                         capacity_;
         uint32_t                         mask_;
@@ -126,8 +141,8 @@ namespace slag {
         uint32_t                         max_pending_remove_count_;
         uint32_t                         cached_head_;
         uint32_t                         cached_tail_;
-        std::atomic_uint32_t&            head_;
-        const std::atomic_uint32_t&      tail_;
+        std::atomic_uint32_t*            head_;
+        const std::atomic_uint32_t*      tail_;
     };
 
 }

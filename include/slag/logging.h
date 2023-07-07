@@ -14,6 +14,11 @@ namespace slag {
     }
 
     template<typename... Args>
+    inline void fatal(const char* format, Args&&... args) {
+        std::cout << fmt::format(fmt::runtime(format), std::forward<Args>(args)...) << std::endl;
+    }
+
+    template<typename... Args>
     inline void trace(const char* format, Args&&... args) {
         (void)format;
         ((void)args, ...);
