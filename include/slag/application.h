@@ -97,9 +97,7 @@ namespace slag {
 
         using ControllerConnection = SpscConnection<WorkerThreadRequest, WorkerThreadReply>;
 
-        [[nodiscard]] ControllerConnection& controller_connection() {
-            return controller_connection_;
-        }
+        [[nodiscard]] ControllerConnection& controller_connection();
 
     private:
         const WorkerThreadConfig&              config_;
@@ -117,26 +115,20 @@ namespace slag {
 
         [[nodiscard]] std::future<void> run();
 
-        void add_worker_thread(WorkerThread& worker_thread) {
-            worker_threads_.push_back(
-                WorkerThreadContext {
-                    worker_thread.controller_connection()
-                }
-            );
-        }
+        void add_worker_thread(WorkerThread& worker_thread);
 
     private:
-        struct WorkerThreadContext {
-            SpscQueueProducer<WorkerThreadRequest> producer;
-            SpscQueueConsumer<WorkerThreadReply>   consumer;
+        class WorkerThreadContext {
+        public:
+            explicit WorkerThreadContext(WorkerThreadConnection& connection);
 
-            explicit WorkerThreadContext(WorkerThreadConnection& connection)
-                : producer{connection.make_producer<WorkerThreadRequest>()}
-                , consumer{connection.make_consumer<WorkerThreadReply>()}
-            {
-            }
+        private:
+            SpscQueueProducer<WorkerThreadRequest> producer_;
+            SpscQueueConsumer<WorkerThreadReply>   consumer_;
+
         };
 
+    private:
         const ControllerThreadConfig&    config_;
         std::thread                      thread_;
         std::promise<void>               completion_;
@@ -159,8 +151,8 @@ namespace slag {
 
     private:
         const Config&                              config_;
-        std::unique_ptr<ControllerThread>          controller_thread_;
         std::vector<std::unique_ptr<WorkerThread>> worker_threads_;
+        std::unique_ptr<ControllerThread>          controller_thread_;
     };
 
 }

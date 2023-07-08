@@ -36,6 +36,20 @@ namespace slag {
         return result;
     }
 
+    void ControllerThread::add_worker_thread(WorkerThread& worker_thread) {
+        worker_threads_.push_back(
+            WorkerThreadContext {
+                worker_thread.controller_connection()
+            }
+        );
+    }
+
+    ControllerThread::WorkerThreadContext::WorkerThreadContext(WorkerThreadConnection& connection)
+        : producer_{connection.make_producer<WorkerThreadRequest>()}
+        , consumer_{connection.make_consumer<WorkerThreadReply>()}
+    {
+    }
+
     WorkerThread::WorkerThread(const WorkerThreadConfig& config)
         : config_{config}
         , controller_connection_{config_.request_queue_capacity, config_.reply_queue_capacity}
@@ -70,19 +84,22 @@ namespace slag {
         return result;
     }
 
+    auto WorkerThread::controller_connection() -> ControllerConnection& {
+        return controller_connection_;
+    }
+
     Application::Application(const Config& config)
         : config_{config}
     {
-        controller_thread_ = std::make_unique<ControllerThread>(
-            config_.controller_thread
-        );
-
         for (const WorkerThreadConfig& worker_thread_config: config_.worker_threads) {
             worker_threads_.push_back(
                 std::make_unique<WorkerThread>(worker_thread_config)
             );
         }
 
+        controller_thread_ = std::make_unique<ControllerThread>(
+            config_.controller_thread
+        );
         for (auto&& worker_thread: worker_threads_) {
             controller_thread_->add_worker_thread(*worker_thread);
         }
