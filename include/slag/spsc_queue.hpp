@@ -35,7 +35,8 @@ namespace slag {
         uint32_t tail = tail_.load();
         for (uint32_t i = head; i != tail; ++i) {
             slots_[i & (slots_.size() - 1)].destroy();
-        } }
+        }
+    }
 
     template<typename T>
     inline size_t SpscQueue<T>::capacity() const {

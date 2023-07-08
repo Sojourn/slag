@@ -69,6 +69,8 @@ namespace slag {
         SpscQueueProducer& operator=(SpscQueueProducer&& rhs);
         SpscQueueProducer& operator=(const SpscQueueProducer&) = delete;
 
+        // Attempt to add a new item to the back of the queue. This may not be immediatly visible
+        // to the consumer until flush/reset is called.
         template<typename... Args>
         [[nodiscard]] bool insert(Args&&... args);
         [[nodiscard]] bool insert(std::span<T> items);
@@ -78,6 +80,7 @@ namespace slag {
         // called after a number of inserts to prevent livelocking.
         void flush();
 
+        // Flushes any unsynchronized insertions and detaches this from the queue.
         void reset();
 
     private:
@@ -110,6 +113,8 @@ namespace slag {
         SpscQueueConsumer& operator=(SpscQueueConsumer&& rhs);
         SpscQueueConsumer& operator=(const SpscQueueConsumer&) = delete;
 
+        // Polls the queue and sets pointers to items that are ready to be consumed. Multiple calls to
+        // poll without interleaved remove calls will yield the same items.
         template<size_t N>
         [[nodiscard]] size_t poll(T* (&items)[N]);
 
@@ -118,13 +123,15 @@ namespace slag {
 
         [[nodiscard]] size_t poll(std::span<T*> items);
 
-        // Destroys items returned by pool and advances the consumer.
+        // Destroys items returned by pool and advances the consumer. The space occupied by the removed
+        // items may not be visible to the producer until flush/reset is called.
         void remove(size_t count);
 
         // This will make removals visible to the producer. It will be automatically
         // called after a number of removals to prevent livelocking.
         void flush();
 
+        // Flushes any unsynchronized removes and detaches this from the queue.
         void reset();
 
     private:
