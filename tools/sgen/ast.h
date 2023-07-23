@@ -268,16 +268,6 @@ namespace ast {
             return false;
         }
 
-        template<>
-        struct SpoolerModule<1> {
-            enum class Foo : uint8_t {
-                COOL,
-                STUFF,
-            };
-        };
-
-        void add_decl()
-
         template<typename Visitor>
         void accept(Visitor& visitor) {
             visit(visitor, body_);

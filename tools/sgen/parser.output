@@ -1,0 +1,862 @@
+Terminals unused in grammar
+
+    TSTRING
+    TPLUS
+    TMINUS
+    TMULTIPLY
+    TDIVIDE
+
+
+State 7 conflicts: 2 shift/reduce
+State 23 conflicts: 2 shift/reduce
+State 24 conflicts: 1 shift/reduce
+State 25 conflicts: 1 shift/reduce
+State 56 conflicts: 1 shift/reduce
+
+
+Grammar
+
+    0 $accept: unit $end
+
+    1 unit: module_decl
+
+    2 module_decl: TMODULE TIDENT '[' TINTEGER ']' '{' stmts '}' ';'
+    3            | TMODULE TIDENT '{' stmts '}' ';'
+
+    4 stmts: stmts stmt
+    5      | stmt
+    6      | ε
+
+    7 stmt: decl_stmt ';'
+
+    8 decl_stmt: decl
+
+    9 decl: struct_decl
+   10     | enum_decl
+
+   11 struct_decl: TSTRUCT TIDENT '{' struct_fields '}'
+
+   12 struct_fields: struct_fields struct_field
+   13              | struct_field
+   14              | ε
+
+   15 struct_field: TIDENT ':' type ';'
+
+   16 enum_decl: TENUM TIDENT '{' enum_values '}'
+   17          | TENUM TIDENT ':' type '{' enum_values '}'
+
+   18 enum_values: enum_values TIDENT ','
+   19            | TIDENT ','
+   20            | ε
+
+   21 type: named_type
+   22     | union_type
+   23     | tuple_type
+   24     | list_type
+   25     | map_type
+
+   26 named_type: TIDENT
+
+   27 type_list: type_list ',' type
+   28          | type
+   29          | ε
+
+   30 union_type: TUNION '[' type_list ']'
+
+   31 tuple_type: TTUPLE '[' type_list ']'
+
+   32 list_type: TLIST '[' type ']'
+
+   33 map_type: TMAP '[' type ',' type ']'
+
+
+Terminals, with rules where they appear
+
+    $end (0) 0
+    ',' (44) 18 19 27 33
+    ':' (58) 15 17
+    ';' (59) 2 3 7 15
+    '[' (91) 2 30 31 32 33
+    ']' (93) 2 30 31 32 33
+    '{' (123) 2 3 11 16 17
+    '}' (125) 2 3 11 16 17
+    error (256)
+    TIDENT <string> (258) 2 3 11 15 16 17 18 19 26
+    TSTRING <string> (259)
+    TINTEGER <string> (260) 2
+    TPLUS <token> (261)
+    TMINUS <token> (262)
+    TMULTIPLY <token> (263)
+    TDIVIDE <token> (264)
+    TMODULE <token> (265) 2 3
+    TSTRUCT <token> (266) 11
+    TENUM <token> (267) 16 17
+    TUNION <token> (268) 30
+    TTUPLE <token> (269) 31
+    TLIST <token> (270) 32
+    TMAP <token> (271) 33
+
+
+Nonterminals, with rules where they appear
+
+    $accept (24)
+        on left: 0
+    unit <stmt> (25)
+        on left: 1
+        on right: 0
+    module_decl <decl> (26)
+        on left: 2 3
+        on right: 1
+    stmts <stmts> (27)
+        on left: 4 5 6
+        on right: 2 3 4
+    stmt <stmt> (28)
+        on left: 7
+        on right: 4 5
+    decl_stmt <stmt> (29)
+        on left: 8
+        on right: 7
+    decl <decl> (30)
+        on left: 9 10
+        on right: 8
+    struct_decl <decl> (31)
+        on left: 11
+        on right: 9
+    struct_fields <stmts> (32)
+        on left: 12 13 14
+        on right: 11 12
+    struct_field <stmt> (33)
+        on left: 15
+        on right: 12 13
+    enum_decl <decl> (34)
+        on left: 16 17
+        on right: 10
+    enum_values <strings> (35)
+        on left: 18 19 20
+        on right: 16 17 18
+    type <type> (36)
+        on left: 21 22 23 24 25
+        on right: 15 17 27 28 32 33
+    named_type <type> (37)
+        on left: 26
+        on right: 21
+    type_list <types> (38)
+        on left: 27 28 29
+        on right: 27 30 31
+    union_type <type> (39)
+        on left: 30
+        on right: 22
+    tuple_type <type> (40)
+        on left: 31
+        on right: 23
+    list_type <type> (41)
+        on left: 32
+        on right: 24
+    map_type <type> (42)
+        on left: 33
+        on right: 25
+
+
+State 0
+
+    0 $accept: • unit $end
+
+    TMODULE  shift, and go to state 1
+
+    unit         go to state 2
+    module_decl  go to state 3
+
+
+State 1
+
+    2 module_decl: TMODULE • TIDENT '[' TINTEGER ']' '{' stmts '}' ';'
+    3            | TMODULE • TIDENT '{' stmts '}' ';'
+
+    TIDENT  shift, and go to state 4
+
+
+State 2
+
+    0 $accept: unit • $end
+
+    $end  shift, and go to state 5
+
+
+State 3
+
+    1 unit: module_decl •
+
+    $default  reduce using rule 1 (unit)
+
+
+State 4
+
+    2 module_decl: TMODULE TIDENT • '[' TINTEGER ']' '{' stmts '}' ';'
+    3            | TMODULE TIDENT • '{' stmts '}' ';'
+
+    '['  shift, and go to state 6
+    '{'  shift, and go to state 7
+
+
+State 5
+
+    0 $accept: unit $end •
+
+    $default  accept
+
+
+State 6
+
+    2 module_decl: TMODULE TIDENT '[' • TINTEGER ']' '{' stmts '}' ';'
+
+    TINTEGER  shift, and go to state 8
+
+
+State 7
+
+    3 module_decl: TMODULE TIDENT '{' • stmts '}' ';'
+
+    TSTRUCT  shift, and go to state 9
+    TENUM    shift, and go to state 10
+
+    TSTRUCT   [reduce using rule 6 (stmts)]
+    TENUM     [reduce using rule 6 (stmts)]
+    $default  reduce using rule 6 (stmts)
+
+    stmts        go to state 11
+    stmt         go to state 12
+    decl_stmt    go to state 13
+    decl         go to state 14
+    struct_decl  go to state 15
+    enum_decl    go to state 16
+
+
+State 8
+
+    2 module_decl: TMODULE TIDENT '[' TINTEGER • ']' '{' stmts '}' ';'
+
+    ']'  shift, and go to state 17
+
+
+State 9
+
+   11 struct_decl: TSTRUCT • TIDENT '{' struct_fields '}'
+
+    TIDENT  shift, and go to state 18
+
+
+State 10
+
+   16 enum_decl: TENUM • TIDENT '{' enum_values '}'
+   17          | TENUM • TIDENT ':' type '{' enum_values '}'
+
+    TIDENT  shift, and go to state 19
+
+
+State 11
+
+    3 module_decl: TMODULE TIDENT '{' stmts • '}' ';'
+    4 stmts: stmts • stmt
+
+    TSTRUCT  shift, and go to state 9
+    TENUM    shift, and go to state 10
+    '}'      shift, and go to state 20
+
+    stmt         go to state 21
+    decl_stmt    go to state 13
+    decl         go to state 14
+    struct_decl  go to state 15
+    enum_decl    go to state 16
+
+
+State 12
+
+    5 stmts: stmt •
+
+    $default  reduce using rule 5 (stmts)
+
+
+State 13
+
+    7 stmt: decl_stmt • ';'
+
+    ';'  shift, and go to state 22
+
+
+State 14
+
+    8 decl_stmt: decl •
+
+    $default  reduce using rule 8 (decl_stmt)
+
+
+State 15
+
+    9 decl: struct_decl •
+
+    $default  reduce using rule 9 (decl)
+
+
+State 16
+
+   10 decl: enum_decl •
+
+    $default  reduce using rule 10 (decl)
+
+
+State 17
+
+    2 module_decl: TMODULE TIDENT '[' TINTEGER ']' • '{' stmts '}' ';'
+
+    '{'  shift, and go to state 23
+
+
+State 18
+
+   11 struct_decl: TSTRUCT TIDENT • '{' struct_fields '}'
+
+    '{'  shift, and go to state 24
+
+
+State 19
+
+   16 enum_decl: TENUM TIDENT • '{' enum_values '}'
+   17          | TENUM TIDENT • ':' type '{' enum_values '}'
+
+    '{'  shift, and go to state 25
+    ':'  shift, and go to state 26
+
+
+State 20
+
+    3 module_decl: TMODULE TIDENT '{' stmts '}' • ';'
+
+    ';'  shift, and go to state 27
+
+
+State 21
+
+    4 stmts: stmts stmt •
+
+    $default  reduce using rule 4 (stmts)
+
+
+State 22
+
+    7 stmt: decl_stmt ';' •
+
+    $default  reduce using rule 7 (stmt)
+
+
+State 23
+
+    2 module_decl: TMODULE TIDENT '[' TINTEGER ']' '{' • stmts '}' ';'
+
+    TSTRUCT  shift, and go to state 9
+    TENUM    shift, and go to state 10
+
+    TSTRUCT   [reduce using rule 6 (stmts)]
+    TENUM     [reduce using rule 6 (stmts)]
+    $default  reduce using rule 6 (stmts)
+
+    stmts        go to state 28
+    stmt         go to state 12
+    decl_stmt    go to state 13
+    decl         go to state 14
+    struct_decl  go to state 15
+    enum_decl    go to state 16
+
+
+State 24
+
+   11 struct_decl: TSTRUCT TIDENT '{' • struct_fields '}'
+
+    TIDENT  shift, and go to state 29
+
+    TIDENT    [reduce using rule 14 (struct_fields)]
+    $default  reduce using rule 14 (struct_fields)
+
+    struct_fields  go to state 30
+    struct_field   go to state 31
+
+
+State 25
+
+   16 enum_decl: TENUM TIDENT '{' • enum_values '}'
+
+    TIDENT  shift, and go to state 32
+
+    TIDENT    [reduce using rule 20 (enum_values)]
+    $default  reduce using rule 20 (enum_values)
+
+    enum_values  go to state 33
+
+
+State 26
+
+   17 enum_decl: TENUM TIDENT ':' • type '{' enum_values '}'
+
+    TIDENT  shift, and go to state 34
+    TUNION  shift, and go to state 35
+    TTUPLE  shift, and go to state 36
+    TLIST   shift, and go to state 37
+    TMAP    shift, and go to state 38
+
+    type        go to state 39
+    named_type  go to state 40
+    union_type  go to state 41
+    tuple_type  go to state 42
+    list_type   go to state 43
+    map_type    go to state 44
+
+
+State 27
+
+    3 module_decl: TMODULE TIDENT '{' stmts '}' ';' •
+
+    $default  reduce using rule 3 (module_decl)
+
+
+State 28
+
+    2 module_decl: TMODULE TIDENT '[' TINTEGER ']' '{' stmts • '}' ';'
+    4 stmts: stmts • stmt
+
+    TSTRUCT  shift, and go to state 9
+    TENUM    shift, and go to state 10
+    '}'      shift, and go to state 45
+
+    stmt         go to state 21
+    decl_stmt    go to state 13
+    decl         go to state 14
+    struct_decl  go to state 15
+    enum_decl    go to state 16
+
+
+State 29
+
+   15 struct_field: TIDENT • ':' type ';'
+
+    ':'  shift, and go to state 46
+
+
+State 30
+
+   11 struct_decl: TSTRUCT TIDENT '{' struct_fields • '}'
+   12 struct_fields: struct_fields • struct_field
+
+    TIDENT  shift, and go to state 29
+    '}'     shift, and go to state 47
+
+    struct_field  go to state 48
+
+
+State 31
+
+   13 struct_fields: struct_field •
+
+    $default  reduce using rule 13 (struct_fields)
+
+
+State 32
+
+   19 enum_values: TIDENT • ','
+
+    ','  shift, and go to state 49
+
+
+State 33
+
+   16 enum_decl: TENUM TIDENT '{' enum_values • '}'
+   18 enum_values: enum_values • TIDENT ','
+
+    TIDENT  shift, and go to state 50
+    '}'     shift, and go to state 51
+
+
+State 34
+
+   26 named_type: TIDENT •
+
+    $default  reduce using rule 26 (named_type)
+
+
+State 35
+
+   30 union_type: TUNION • '[' type_list ']'
+
+    '['  shift, and go to state 52
+
+
+State 36
+
+   31 tuple_type: TTUPLE • '[' type_list ']'
+
+    '['  shift, and go to state 53
+
+
+State 37
+
+   32 list_type: TLIST • '[' type ']'
+
+    '['  shift, and go to state 54
+
+
+State 38
+
+   33 map_type: TMAP • '[' type ',' type ']'
+
+    '['  shift, and go to state 55
+
+
+State 39
+
+   17 enum_decl: TENUM TIDENT ':' type • '{' enum_values '}'
+
+    '{'  shift, and go to state 56
+
+
+State 40
+
+   21 type: named_type •
+
+    $default  reduce using rule 21 (type)
+
+
+State 41
+
+   22 type: union_type •
+
+    $default  reduce using rule 22 (type)
+
+
+State 42
+
+   23 type: tuple_type •
+
+    $default  reduce using rule 23 (type)
+
+
+State 43
+
+   24 type: list_type •
+
+    $default  reduce using rule 24 (type)
+
+
+State 44
+
+   25 type: map_type •
+
+    $default  reduce using rule 25 (type)
+
+
+State 45
+
+    2 module_decl: TMODULE TIDENT '[' TINTEGER ']' '{' stmts '}' • ';'
+
+    ';'  shift, and go to state 57
+
+
+State 46
+
+   15 struct_field: TIDENT ':' • type ';'
+
+    TIDENT  shift, and go to state 34
+    TUNION  shift, and go to state 35
+    TTUPLE  shift, and go to state 36
+    TLIST   shift, and go to state 37
+    TMAP    shift, and go to state 38
+
+    type        go to state 58
+    named_type  go to state 40
+    union_type  go to state 41
+    tuple_type  go to state 42
+    list_type   go to state 43
+    map_type    go to state 44
+
+
+State 47
+
+   11 struct_decl: TSTRUCT TIDENT '{' struct_fields '}' •
+
+    $default  reduce using rule 11 (struct_decl)
+
+
+State 48
+
+   12 struct_fields: struct_fields struct_field •
+
+    $default  reduce using rule 12 (struct_fields)
+
+
+State 49
+
+   19 enum_values: TIDENT ',' •
+
+    $default  reduce using rule 19 (enum_values)
+
+
+State 50
+
+   18 enum_values: enum_values TIDENT • ','
+
+    ','  shift, and go to state 59
+
+
+State 51
+
+   16 enum_decl: TENUM TIDENT '{' enum_values '}' •
+
+    $default  reduce using rule 16 (enum_decl)
+
+
+State 52
+
+   30 union_type: TUNION '[' • type_list ']'
+
+    TIDENT  shift, and go to state 34
+    TUNION  shift, and go to state 35
+    TTUPLE  shift, and go to state 36
+    TLIST   shift, and go to state 37
+    TMAP    shift, and go to state 38
+
+    $default  reduce using rule 29 (type_list)
+
+    type        go to state 60
+    named_type  go to state 40
+    type_list   go to state 61
+    union_type  go to state 41
+    tuple_type  go to state 42
+    list_type   go to state 43
+    map_type    go to state 44
+
+
+State 53
+
+   31 tuple_type: TTUPLE '[' • type_list ']'
+
+    TIDENT  shift, and go to state 34
+    TUNION  shift, and go to state 35
+    TTUPLE  shift, and go to state 36
+    TLIST   shift, and go to state 37
+    TMAP    shift, and go to state 38
+
+    $default  reduce using rule 29 (type_list)
+
+    type        go to state 60
+    named_type  go to state 40
+    type_list   go to state 62
+    union_type  go to state 41
+    tuple_type  go to state 42
+    list_type   go to state 43
+    map_type    go to state 44
+
+
+State 54
+
+   32 list_type: TLIST '[' • type ']'
+
+    TIDENT  shift, and go to state 34
+    TUNION  shift, and go to state 35
+    TTUPLE  shift, and go to state 36
+    TLIST   shift, and go to state 37
+    TMAP    shift, and go to state 38
+
+    type        go to state 63
+    named_type  go to state 40
+    union_type  go to state 41
+    tuple_type  go to state 42
+    list_type   go to state 43
+    map_type    go to state 44
+
+
+State 55
+
+   33 map_type: TMAP '[' • type ',' type ']'
+
+    TIDENT  shift, and go to state 34
+    TUNION  shift, and go to state 35
+    TTUPLE  shift, and go to state 36
+    TLIST   shift, and go to state 37
+    TMAP    shift, and go to state 38
+
+    type        go to state 64
+    named_type  go to state 40
+    union_type  go to state 41
+    tuple_type  go to state 42
+    list_type   go to state 43
+    map_type    go to state 44
+
+
+State 56
+
+   17 enum_decl: TENUM TIDENT ':' type '{' • enum_values '}'
+
+    TIDENT  shift, and go to state 32
+
+    TIDENT    [reduce using rule 20 (enum_values)]
+    $default  reduce using rule 20 (enum_values)
+
+    enum_values  go to state 65
+
+
+State 57
+
+    2 module_decl: TMODULE TIDENT '[' TINTEGER ']' '{' stmts '}' ';' •
+
+    $default  reduce using rule 2 (module_decl)
+
+
+State 58
+
+   15 struct_field: TIDENT ':' type • ';'
+
+    ';'  shift, and go to state 66
+
+
+State 59
+
+   18 enum_values: enum_values TIDENT ',' •
+
+    $default  reduce using rule 18 (enum_values)
+
+
+State 60
+
+   28 type_list: type •
+
+    $default  reduce using rule 28 (type_list)
+
+
+State 61
+
+   27 type_list: type_list • ',' type
+   30 union_type: TUNION '[' type_list • ']'
+
+    ']'  shift, and go to state 67
+    ','  shift, and go to state 68
+
+
+State 62
+
+   27 type_list: type_list • ',' type
+   31 tuple_type: TTUPLE '[' type_list • ']'
+
+    ']'  shift, and go to state 69
+    ','  shift, and go to state 68
+
+
+State 63
+
+   32 list_type: TLIST '[' type • ']'
+
+    ']'  shift, and go to state 70
+
+
+State 64
+
+   33 map_type: TMAP '[' type • ',' type ']'
+
+    ','  shift, and go to state 71
+
+
+State 65
+
+   17 enum_decl: TENUM TIDENT ':' type '{' enum_values • '}'
+   18 enum_values: enum_values • TIDENT ','
+
+    TIDENT  shift, and go to state 50
+    '}'     shift, and go to state 72
+
+
+State 66
+
+   15 struct_field: TIDENT ':' type ';' •
+
+    $default  reduce using rule 15 (struct_field)
+
+
+State 67
+
+   30 union_type: TUNION '[' type_list ']' •
+
+    $default  reduce using rule 30 (union_type)
+
+
+State 68
+
+   27 type_list: type_list ',' • type
+
+    TIDENT  shift, and go to state 34
+    TUNION  shift, and go to state 35
+    TTUPLE  shift, and go to state 36
+    TLIST   shift, and go to state 37
+    TMAP    shift, and go to state 38
+
+    type        go to state 73
+    named_type  go to state 40
+    union_type  go to state 41
+    tuple_type  go to state 42
+    list_type   go to state 43
+    map_type    go to state 44
+
+
+State 69
+
+   31 tuple_type: TTUPLE '[' type_list ']' •
+
+    $default  reduce using rule 31 (tuple_type)
+
+
+State 70
+
+   32 list_type: TLIST '[' type ']' •
+
+    $default  reduce using rule 32 (list_type)
+
+
+State 71
+
+   33 map_type: TMAP '[' type ',' • type ']'
+
+    TIDENT  shift, and go to state 34
+    TUNION  shift, and go to state 35
+    TTUPLE  shift, and go to state 36
+    TLIST   shift, and go to state 37
+    TMAP    shift, and go to state 38
+
+    type        go to state 74
+    named_type  go to state 40
+    union_type  go to state 41
+    tuple_type  go to state 42
+    list_type   go to state 43
+    map_type    go to state 44
+
+
+State 72
+
+   17 enum_decl: TENUM TIDENT ':' type '{' enum_values '}' •
+
+    $default  reduce using rule 17 (enum_decl)
+
+
+State 73
+
+   27 type_list: type_list ',' type •
+
+    $default  reduce using rule 27 (type_list)
+
+
+State 74
+
+   33 map_type: TMAP '[' type ',' type • ']'
+
+    ']'  shift, and go to state 75
+
+
+State 75
+
+   33 map_type: TMAP '[' type ',' type ']' •
+
+    $default  reduce using rule 33 (map_type)

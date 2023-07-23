@@ -9,7 +9,7 @@
 #define SLAG_POLLABLE_EVENTS(X) \
     X(READABLE)                 \
     X(WRITABLE)                 \
-    X(CLOSED)
+    X(CLOSED)                   \
 
 namespace slag {
 

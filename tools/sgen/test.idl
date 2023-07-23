@@ -23,29 +23,47 @@ module Test[1] {
         f: blob;
     };
 
-    module Spooler[0] {
+    enum WorkerThreadState : u8 {
+        IDLE,
+        RUNNING,
+        STOPPED,
     };
 
-    module Spooler[1] {
-        struct TestStruct {
-            a: i8;
-        };
+    enum WorkerThreadEvent : u8 {
+        START,
+        STOP,
     };
 
-    module Spooler[2] {
-        struct TestStruct {
-            a: u8;
-        };
+    struct TransitionRequest {
+        event: WorkerThreadEvent;
     };
 
-    template<>
-    struct Record<RecordType::TEST_STRUCT, Module::SPOOLER, 1> {
-        int8_t a = {};
+    struct TransitionReply {
+        old_state: WorkerThreadState;
+        new_state: WorkerThreadState;
     };
 
-    template<>
-    struct Record<RecordType::TEST_STRUCT, Module::SPOOLER, 2> {
-        uint8_t a = {};
+    struct TickRequest {
+        epoch: u64;
+    };
+
+    struct TickReply {
+    };
+
+    struct WorkerThreadRequest {
+        request_id: u64;
+        content: union[
+            TransitionRequest,
+            TickRequest
+        ];
+    };
+
+    struct WorkerThreadReply {
+        request_id: u64;
+        content: union[
+            TransitionReply,
+            TickReply
+        ];
     };
 
 };

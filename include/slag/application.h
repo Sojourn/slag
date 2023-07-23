@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <cstddef>
 #include "slag/spsc_queue.h"
+#include "../generated/record.h"
 
 namespace slag {
 
@@ -29,14 +30,6 @@ namespace slag {
     struct ApplicationConfig {
         ControllerThreadConfig          controller_thread;
         std::vector<WorkerThreadConfig> worker_threads;
-    };
-
-    struct WorkerThreadRequest {
-        uint64_t sequence_number = 0;
-    };
-
-    struct WorkerThreadReply {
-        uint64_t sequence_number = 0;
     };
 
     template<typename T1, typename T2>
@@ -122,10 +115,28 @@ namespace slag {
         public:
             explicit WorkerThreadContext(WorkerThreadConnection& connection);
 
+            [[nodiscard]] WorkerThreadState desired_state() const;
+            [[nodiscard]] WorkerThreadState effective_state() const;
+            [[nodiscard]] uint64_t effective_epoch() const;
+
+            void set_desired_state(WorkerThreadState state);
+
+            void step(uint64_t epoch);
+
+        private:
+            [[nodiscard]] void handle_reply(uint64_t request_id, const TransitionReply& request);
+            [[nodiscard]] void handle_reply(uint64_t request_id, const TickReply& request);
+
         private:
             SpscQueueProducer<WorkerThreadRequest> producer_;
             SpscQueueConsumer<WorkerThreadReply>   consumer_;
 
+            WorkerThreadState                      desired_state_;
+            WorkerThreadState                      effective_state_;
+            uint64_t                               effective_epoch_;
+
+            std::optional<uint64_t>                transition_request_id_;
+            std::optional<uint64_t>                tick_request_id_;
         };
 
     private:
