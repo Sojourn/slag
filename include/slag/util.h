@@ -5,8 +5,22 @@
 #include <concepts>
 #include <type_traits>
 #include <cstddef>
+#include <cstdint>
 
 namespace slag {
+
+    // size_bytes_v?
+    template<typename T>
+    constexpr inline size_t SIZE_BYTES = sizeof(T) / sizeof(std::byte);
+
+    // size_bits_v?
+    template<typename T>
+    constexpr inline size_t SIZE_BITS = SIZE_BYTES<T> * 8;
+
+    // TODO: remove once the standard library includes an integer version of this
+    inline uint64_t log2(uint64_t value) {
+        return 64 - __builtin_clzll(value) - 1;
+    }
 
     template<typename T>
     struct TypeWrapper {

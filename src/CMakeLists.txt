@@ -49,6 +49,8 @@ set(SLAG_HEADER_FILES
     ../include/slag/reactor.h
     ../include/slag/io_uring_reactor.h
     ../include/slag/io_uring_resource_context.h
+    ../include/slag/bit_set.h
+    ../include/slag/bit_set.hpp
     ../include/slag/error.h
     ../include/slag/event_loop.h
     ../include/slag/task.h

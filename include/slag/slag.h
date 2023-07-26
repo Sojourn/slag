@@ -4,6 +4,7 @@
 #include "visit.h"
 #include "error.h"
 #include "result.h"
+#include "bit_set.h"
 #include "event_loop.h"
 #include "future.h"
 #include "coroutine.h"
@@ -29,4 +30,5 @@
 #include "record_decoder.h"
 #include "stack.h"
 #include "layer.h"
+#include "postal/postal.h"
 #include "../../generated/record.h"
