@@ -151,19 +151,22 @@ namespace slag {
         // iterate over blocks until we find one that has set bits
         while (block_popcount_ == 0) {
             if (!fetch_block()) {
-                return std::nullopt;
+                return std::nullopt; // reached the end
             }
         }
+
+        // updating block_popcount_ has a much shorter data dependency chain than block_,
+        // which is why we use it as the loop invariant
+        block_popcount_ -= 1;
 
         // find the next bit and calculate offsets
         auto current_block_offset = next_block_index_ - 1;
         auto block_offset = current_block_offset * BLOCK_SIZE_BITS;
         auto bit_offset = static_cast<size_t>(__builtin_ctzll(block_));
-        auto bit_mask = 1ull << bit_offset;
 
         // remove this bit from our internal state
+        auto bit_mask = 1ull << bit_offset;
         block_ &= ~bit_mask;
-        block_popcount_ -= 1;
 
         return block_offset + bit_offset;
     }
