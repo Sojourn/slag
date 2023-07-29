@@ -151,7 +151,7 @@ namespace slag {
         // iterate over blocks until we find one that has set bits
         while (block_popcount_ == 0) {
             if (!fetch_block()) {
-                return std::nullopt; // reached the end
+                return std::nullopt; // failed to fetch the next block, must have reached the end
             }
         }
 
