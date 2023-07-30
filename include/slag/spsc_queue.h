@@ -10,6 +10,9 @@
 
 namespace slag {
 
+    using SpscQueueSequence       = uint32_t;
+    using AtomicSpscQueueSequence = std::atomic_uint32_t;
+
     template<typename U>
     class SpscQueueProducer;
 
@@ -49,9 +52,9 @@ namespace slag {
         };
 
         std::vector<Slot>                              slots_;
-        alignas(64) std::atomic_uint32_t               head_; // sequence of the next slot to be consumed (front)
+        alignas(64) AtomicSpscQueueSequence            head_; // sequence of the next slot to be consumed (front)
         alignas(64) std::atomic<SpscQueueConsumer<T>*> consumer_;
-        alignas(64) std::atomic_uint32_t               tail_; // sequence of the next slot to be produced (back)
+        alignas(64) AtomicSpscQueueSequence            tail_; // sequence of the next slot to be produced (back)
         alignas(64) std::atomic<SpscQueueProducer<T>*> producer_;
     };
 
@@ -89,16 +92,16 @@ namespace slag {
     private:
         using Slot = typename SpscQueue<T>::Slot;
 
-        SpscQueue<T>*                    queue_;
-        Slot*                            slots_;
-        uint32_t                         capacity_;
-        uint32_t                         mask_;
-        uint32_t                         pending_insert_count_;
-        uint32_t                         max_pending_insert_count_;
-        uint32_t                         cached_head_;
-        uint32_t                         cached_tail_;
-        const std::atomic_uint32_t*      head_;
-        std::atomic_uint32_t*            tail_;
+        SpscQueue<T>*                  queue_;
+        Slot*                          slots_;
+        SpscQueueSequence              capacity_;
+        SpscQueueSequence              mask_;
+        SpscQueueSequence              pending_insert_count_;
+        SpscQueueSequence              max_pending_insert_count_;
+        SpscQueueSequence              cached_head_;
+        SpscQueueSequence              cached_tail_;
+        const AtomicSpscQueueSequence* head_;
+        AtomicSpscQueueSequence*       tail_;
     };
 
     template<typename T>
@@ -140,16 +143,16 @@ namespace slag {
     private:
         using Slot = typename SpscQueue<T>::Slot;
 
-        SpscQueue<T>*                    queue_;
-        Slot*                            slots_;
-        uint32_t                         capacity_;
-        uint32_t                         mask_;
-        uint32_t                         pending_remove_count_;
-        uint32_t                         max_pending_remove_count_;
-        uint32_t                         cached_head_;
-        uint32_t                         cached_tail_;
-        std::atomic_uint32_t*            head_;
-        const std::atomic_uint32_t*      tail_;
+        SpscQueue<T>*                  queue_;
+        Slot*                          slots_;
+        SpscQueueSequence              capacity_;
+        SpscQueueSequence              mask_;
+        SpscQueueSequence              pending_remove_count_;
+        SpscQueueSequence              max_pending_remove_count_;
+        SpscQueueSequence              cached_head_;
+        SpscQueueSequence              cached_tail_;
+        AtomicSpscQueueSequence*       head_;
+        const AtomicSpscQueueSequence* tail_;
     };
 
 }

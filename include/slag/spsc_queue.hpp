@@ -17,7 +17,7 @@ namespace slag {
         while (capacity < minimum_capacity) {
             capacity *= 2;
         }
-        if (capacity > std::numeric_limits<uint32_t>::max()) {
+        if (capacity > std::numeric_limits<SpscQueueSequence>::max()) {
             throw std::runtime_error("SpscQueue capacity overflow");
         }
 
@@ -31,9 +31,9 @@ namespace slag {
         assert(!consumer_);
 
         // drain slots that weren't consumed
-        uint32_t head = head_.load();
-        uint32_t tail = tail_.load();
-        for (uint32_t i = head; i != tail; ++i) {
+        SpscQueueSequence head = head_.load();
+        SpscQueueSequence tail = tail_.load();
+        for (SpscQueueSequence i = head; i != tail; ++i) {
             slots_[i & (slots_.size() - 1)].destroy();
         }
     }
@@ -78,7 +78,7 @@ namespace slag {
     inline SpscQueueProducer<T>::SpscQueueProducer(SpscQueue<T>& queue)
         : queue_{&queue}
         , slots_{queue.slots_.data()}
-        , capacity_{static_cast<uint32_t>(queue.slots_.size())}
+        , capacity_{static_cast<SpscQueueSequence>(queue.slots_.size())}
         , mask_{capacity_ - 1}
         , pending_insert_count_{0}
         , max_pending_insert_count_{capacity_ / 4}
@@ -305,7 +305,7 @@ namespace slag {
     inline SpscQueueConsumer<T>::SpscQueueConsumer(SpscQueue<T>& queue)
         : queue_{&queue}
         , slots_{queue.slots_.data()}
-        , capacity_{static_cast<uint32_t>(queue.slots_.size())}
+        , capacity_{static_cast<SpscQueueSequence>(queue.slots_.size())}
         , mask_{capacity_ - 1}
         , pending_remove_count_{0}
         , max_pending_remove_count_{capacity_ / 4}
