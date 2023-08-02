@@ -1,90 +1,60 @@
 #pragma once
 
+#include <span>
 #include <cstdint>
 #include <cstddef>
 #include "slag/postal/types.h"
 
 namespace slag::postal {
 
+    class BufferTable;
+
+    // TODO: rename the header/source files to match the class name
     class BufferHandle {
+    private:
+        friend class BufferTable;
+        friend class BufferCustodian;
+
+        explicit BufferHandle(BufferDescriptor descriptor);
+
     public:
-        BufferHandle();
-        BufferHandle(BufferHandle&& other);
-        BufferHandle(const BufferHandle&) = delete;
+        BufferHandle() = default;
         ~BufferHandle();
 
-        BufferHandle& operator=(BufferHandle&& other);
+        BufferHandle(BufferHandle&& other);
+        BufferHandle(const BufferHandle&) = delete;
+        BufferHandle& operator=(BufferHandle&& rhs);
         BufferHandle& operator=(const BufferHandle&) = delete;
 
-        size_t capacity() const;
-        size_t size() const;
+        explicit operator bool() const;
 
-        bool is_empty() const;
-        bool is_pinned() const;
-        bool is_frozen() const;
+        bool is_valid() const;
         bool is_shared() const;
+        bool is_global() const;
+        bool is_frozen() const;
 
-        void pin();
-        void unpin();
-        void freeze();
+        const BufferIdentity& identity() const;
+        const BufferProperties& properties() const;
+        const BufferDescriptor& descriptor() const;
 
-        // Allocate a new underlying buffer with the same contents of this.
-        // It will initially not be shared/pinned/frozen.
+        // Returns a new handle to a copy of the data.
         BufferHandle clone();
 
-        // Return a new handle to the same underlying buffer. A shared
-        // buffer is implicitly pinned and frozen.
+        // Returns a new handle to the same underlying data.
+        // Falls back to clone if the underlying data isn't frozen.
         BufferHandle share();
 
-        // Return a descriptor for the underlying buffer.
-        BufferDescriptor descriptor() const;
-
+        // Releases our reference to the underlying data.
         void reset();
 
     private:
-        friend class BufferManager;
-
-        explicit BufferHandle(BufferDescriptor descriptor);
+        BufferTable& table();
 
     private:
         BufferDescriptor descriptor_;
     };
 
-    enum class BufferAllocationPolicy {
-        ARENA,
-        POOL,
-    };
-
-    class BufferManager {
-    public:
-        BufferManager();
-
-    private:
-        struct BufferGroupMember {
-            std::span<std::byte> buffer;
-            BufferDescriptor     descriptor;
-
-            BufferHandle*        handle = nullptr;
-            uint32_t             counter_index = 0;
-        };
-
-        // Each buffer group will have an allocation policy. Buffers
-        // within a group may have different lengths (bump pointer) or
-        // the same (pooled).
-        struct BufferGroup {
-            std::vector<BufferGroupMember> members;
-            std::vector<uint32_t>          unused_members;
-        };
-
-        std::array<BufferGroup, BUFFER_GROUP_COUNT> groups_;
-    };
-
-    constexpr inline uint16_t to_scaled_capacity(size_t capacity) {
-        return static_cast<uint16_t>(capacity - BUFFER_CAPACITY_STRIDE) / BUFFER_CAPACITY_STRIDE;
-    }
-
-    constexpr inline size_t from_scaled_capacity(uint16_t scaled_capacity) {
-        return (static_cast<size_t>(scaled_capacity) * BUFFER_CAPACITY_STRIDE) + BUFFER_CAPACITY_STRIDE;
-    }
+    uint16_t to_scaled_capacity(size_t capacity);
+    size_t from_scaled_capacity(uint16_t scaled_capacity);
 
 }

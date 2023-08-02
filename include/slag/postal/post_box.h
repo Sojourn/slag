@@ -1,6 +1,8 @@
 #pragma once
 
+#include "slag/queue.h"
 #include "slag/postal/types.h"
+#include "slag/postal/envelope.h"
 
 namespace slag::postal {
 
@@ -18,14 +20,23 @@ namespace slag::postal {
         PostArea post_area() const;
         PostCode post_code() const;
 
+        // send an envelope with these contents to a mailbox
+        void send(Envelope envelope);
+
+        // get the next incoming envelope from the mailbox
+        std::optional<Envelope> receive();
+
     private:
         friend class PostMaster;
 
-        // TODO: functions that do last mile pickup+delivery for the post master to use
+        Queue<Envelope>& incoming();
+        Queue<Envelope>& outgoing();
 
     private:
-        PostOffice& post_office_;
-        PostCode    post_code_;
+        PostOffice&     post_office_;
+        PostCode        post_code_;
+        Queue<Envelope> incoming_;
+        Queue<Envelope> outgoing_;
     };
 
 }

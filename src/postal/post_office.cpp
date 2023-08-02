@@ -33,9 +33,8 @@ namespace slag::postal {
         PostCode post_code;
         static_cast<PostArea&>(post_code) = post_area_;
 
-        if (!unused_post_box_numbers_.empty()) {
-            post_code.number = unused_post_box_numbers_.back();
-            unused_post_box_numbers_.pop_back();
+        if (auto number = unused_post_box_numbers_.pop_front()) {
+            post_code.number = *number;
         }
         else {
             post_code.number = static_cast<uint32_t>(post_boxes_.size());

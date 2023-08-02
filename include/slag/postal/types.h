@@ -3,8 +3,11 @@
 #include <compare>
 #include <cstdint>
 #include <cstddef>
+#include <cstring>
 
 namespace slag::postal {
+
+    class Envelope;
 
     // send/receive queue of envelopes
     class PostBox;
@@ -27,28 +30,35 @@ namespace slag::postal {
     constexpr size_t BUFFER_CAPACITY_MIN    = 1 << (BUFFER_CAPACITY_SHIFT +  0);               // 64B
     constexpr size_t BUFFER_CAPACITY_MAX    = 1 << (BUFFER_CAPACITY_SHIFT + sizeof(uint16_t)); // 4MB
 
+    // TODO: constructor, operator bool, comparison operators, hashing
+    // TODO: think about reuse within an epoch
     struct BufferIdentity {
         uint32_t index : 28;
         uint32_t group : 3;  // 8 groups
         uint32_t valid : 1;  // does this point to a buffer?
     };
 
+    // TODO: constructor
     struct BufferProperties {
-        uint16_t scaled_capacity; // = capacity / BUFFER_CAPACITY_STRIDE
+        uint16_t scaled_capacity;
 
-        // flags
-        uint8_t doomed : 1;
-        uint8_t frozen : 1;
-        uint8_t locked : 1; // mlocked?
-        uint8_t pinned : 1;
-        uint8_t shared : 1; // reference counted
-        uint8_t global : 1; // shared & global -> atomic reference counted
-        uint8_t hashed : 1; // is there a hash value for this?
-        uint8_t policy : 1;
+        uint8_t frozen : 1; // buffer contents cannot be changed
+        uint8_t shared : 1; // buffer is locally reference counted
+        uint8_t global : 1; // buffer has been shared with other threads
+
+        // uint8_t doomed : 1; // set by the table when it can be deleted
+        // uint8_t frozen : 1;
+        // uint8_t locked : 1; // mlocked?
+        // uint8_t pinned : 1;
+        // uint8_t hashed : 1; // is there a hash value for this?
+        // uint8_t policy : 1;
+        // uint8_t remote : 1; // another thread owns the buffer
+        // uint8_t active : 1;
         // uint8_t parity : 1;
+        // uint8_t public : 1;
 
         // user data
-        uint8_t label;
+        // uint8_t label;
     };
 
     struct BufferDescriptor {
@@ -57,31 +67,26 @@ namespace slag::postal {
     };
 
     struct PostArea {
-        uint16_t service; // which process (should have the same ordering as IP addresses)
-        uint16_t office;  // which worker thread in the process
+        uint16_t service = 0; // which postal service (one per process)
+        uint16_t office = 0;  // which post office (one per thread)
 
-        constexpr inline auto operator<=>(const PostArea&) const = default;
+        constexpr auto operator<=>(const PostArea&) const = default;
     };
 
     struct PostCode : PostArea {
-        uint32_t number; // local post-box number
+        uint32_t number = 0; // local post-box number
 
-        constexpr inline auto operator<=>(const PostCode&) const = default;
+        constexpr auto operator<=>(const PostCode&) const = default;
     };
 
-    struct Stamp {
-        uint64_t sequence     : 56; // wraps
-        uint64_t time_to_live : 5;
-        uint64_t acknowlege   : 1;
-        uint64_t delivered    : 1;
-        uint64_t returning    : 1;
-    };
-
-    struct Parcel {
-        PostCode         to;
-        PostCode         from;
-        Stamp            stamp;
-        BufferDescriptor contents;
+    struct PostageStamp {
+        uint64_t sequence = 0; // unique per-PostOffice
+        // uint64_t purchased_value : ?;
+        // uint64_t depreciated_value : ?;
+        // uint64_t time_to_live : 5;
+        // uint64_t acknowlege   : 1;
+        // uint64_t delivered    : 1;
+        // uint64_t returning    : 1;
     };
 
     static_assert(sizeof(BufferIdentity) == sizeof(uint32_t));

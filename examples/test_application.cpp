@@ -30,5 +30,14 @@ int main(int argc, char** argv) {
         application_config
     };
 
+    Queue<int> queue;
+    queue.push_back(1);
+    queue.push_back(2);
+    queue.push_back(3);
+
+    while (auto element = queue.pop_front()) {
+        std::cout << *element << std::endl;
+    }
+
     return application.run();
 }

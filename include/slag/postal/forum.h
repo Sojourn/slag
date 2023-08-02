@@ -7,18 +7,22 @@
 #include "slag/bit_set.h"
 #include "slag/spsc_queue.h"
 #include "slag/postal/types.h"
+#include "slag/postal/buffer.h"
 
 namespace slag::postal {
 
     struct alignas(64) ForumStatement {
+        // How much we've consumed of the spsc queues from other participants
         std::vector<SpscQueueSequence>         consumer_sequences;
-        std::array<BitSet, BUFFER_GROUP_COUNT> borrowed_buffers;
+
+        // Changes in global buffers referenced by this Participant
+        std::array<BitSet, BUFFER_GROUP_COUNT> changes;
     };
 
+    // TODO: think about making this a template parameter on the forum,
+    //       or possibly an interface
     struct ForumParticipant {
-        // TODO: think about if we need 2 or 3 of these, which
-        //       should be rounded up to the next power of 2 for
-        //       efficient modulus'ing
+        // TODO: think about how much history we need
         std::array<ForumStatement, 4> statements;
     };
 

@@ -1,5 +1,5 @@
 add_executable(example
-        network_stack.cpp
+        test_application.cpp
         )
 
 target_link_libraries(example PUBLIC slag)

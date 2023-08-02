@@ -10,7 +10,8 @@ namespace slag {
 
     class Executor;
 
-     // TODO: support moving
+    // TODO: support moving
+    // TODO: think about having this templated on a member function pointer
     class Task {
     public:
         Task(Executor& executor=local_executor());

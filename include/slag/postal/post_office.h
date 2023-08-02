@@ -3,6 +3,7 @@
 #include <vector>
 #include <cstdint>
 #include <cstddef>
+#include "slag/queue.h"
 #include "slag/postal/types.h"
 
 namespace slag::postal {
@@ -25,14 +26,13 @@ namespace slag::postal {
 
         PostCode attach(PostBox& post_box);
         void detach(PostBox& post_box);
+        // void relocate(PostBox& old_post_box, PostBox& new_post_box);
 
     private:
         PostalService&        postal_service_;
         PostArea              post_area_;
         std::vector<PostBox*> post_boxes_;
-
-        // TODO: think about using a queue instead of a stack for these
-        std::vector<uint32_t> unused_post_box_numbers_;
+        Queue<uint32_t>       unused_post_box_numbers_;
     };
 
 }

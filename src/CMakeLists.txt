@@ -34,6 +34,8 @@ set(SLAG_SOURCE_FILES
     record_encoder.cpp
     record_decoder.cpp
     ../generated/record.cpp
+    postal/buffer.cpp
+    postal/buffer_table.cpp
     postal/post_box.cpp
     postal/post_office.cpp
     postal/postal_service.cpp
