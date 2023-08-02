@@ -24,7 +24,6 @@ namespace slag::postal {
     // in charge of the PostalService in a region
     class PostMasterGeneral;
 
-    constexpr size_t BUFFER_GROUP_COUNT     = 8;
     constexpr size_t BUFFER_CAPACITY_STRIDE = 64;
     constexpr size_t BUFFER_CAPACITY_SHIFT  = 6;
     constexpr size_t BUFFER_CAPACITY_MIN    = 1 << (BUFFER_CAPACITY_SHIFT +  0);               // 64B
@@ -33,9 +32,8 @@ namespace slag::postal {
     // TODO: constructor, operator bool, comparison operators, hashing
     // TODO: think about reuse within an epoch
     struct BufferIdentity {
-        uint32_t index : 28;
-        uint32_t group : 3;  // 8 groups
-        uint32_t valid : 1;  // does this point to a buffer?
+        uint32_t index : 31;
+        uint32_t valid : 1;
     };
 
     // TODO: constructor

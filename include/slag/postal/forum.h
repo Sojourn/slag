@@ -9,38 +9,91 @@
 #include "slag/postal/types.h"
 #include "slag/postal/buffer.h"
 
+#define SLAG_POSTAL_FORUM_PARICIPANT_TYPES(X) \
+    X(POST_MASTER_GENERAL)                    \
+    X(POST_MASTER)                            \
+    X(CUSTODIAN)                              \
+
 namespace slag::postal {
 
-    struct alignas(64) ForumStatement {
-        // How much we've consumed of the spsc queues from other participants
-        std::vector<SpscQueueSequence>         consumer_sequences;
+    enum class ForumParticipantType {
+#define X(SLAG_POSTAL_FORUM_PARICIPANT_TYPE) SLAG_POSTAL_FORUM_PARICIPANT_TYPE,
+    SLAG_POSTAL_FORUM_PARICIPANT_TYPES(X)
 
-        // Changes in global buffers referenced by this Participant
-        std::array<BitSet, BUFFER_GROUP_COUNT> changes;
+#undef X
     };
 
-    // TODO: think about making this a template parameter on the forum,
-    //       or possibly an interface
-    struct ForumParticipant {
-        // TODO: think about how much history we need
-        std::array<ForumStatement, 4> statements;
+    constexpr size_t FORUM_PARTICIPANT_TYPE_COUNT = 0
+#define X(SLAG_POSTAL_FORUM_PARICIPANT_TYPE) + 1
+    SLAG_POSTAL_FORUM_PARICIPANT_TYPES(X)
+#undef X
+    ;
+
+    template<ForumParticipantType participant_type>
+    struct ForumStatement;
+
+    template<>
+    struct alignas(64) ForumStatement<ForumParticipantType::POST_MASTER_GENERAL> {
+    };
+
+    template<>
+    struct alignas(64) ForumStatement<ForumParticipantType::POST_MASTER> {
+        std::vector<SpscQueueSequence> sequences;
+        BitSet                         global_buffer_ownership_delta;
+        BitSet                         global_buffer_reference_delta;
+    };
+
+    template<>
+    struct alignas(64) ForumStatement<ForumParticipantType::CUSTODIAN> {
+    };
+
+    class ForumCensus {
+    public:
+        ForumCensus();
+
+        size_t participant_count(ForumParticipantType participant_type) const;
+        void set_participant_count(ForumParticipantType participant_type, size_t count);
+
+    private:
+        size_t participant_counts_[FORUM_PARTICIPANT_TYPE_COUNT];
     };
 
     // used by participants (postmasters) to gossip about progress/resources
     class Forum {
     public:
-        explicit Forum(size_t participant_count);
+        static constexpr size_t HISTORY      = 4;
+        static constexpr size_t HISTORY_MASK = HISTORY - 1;
 
-        // get the participant from this area
-        ForumParticipant& participant(PostArea area);
-        const ForumParticipant& participant(PostArea area) const;
+        explicit Forum(const ForumCensus& census);
 
-        // get the statement made by the participant from this area in this epoch
-        ForumStatement& statement(PostArea area, uint64_t epoch);
-        const ForumStatement& statement(PostArea area, uint64_t epoch) const;
+        const ForumCensus& census() const;
+        size_t participant_count(ForumParticipantType participant_type) const;
+
+        template<ForumParticipantType type>
+        ForumStatement<type>& statement(size_t participant_index, uint64_t epoch);
+
+        template<ForumParticipantType type>
+        const ForumStatement<type>& statement(size_t participant_index, uint64_t epoch) const;
 
     private:
-        std::vector<ForumParticipant> participants_;
+        using RecentStatements = std::tuple<
+#define X(SLAG_POSTAL_FORUM_PARICIPANT_TYPE)                                  \
+            std::vector<                                                      \
+                std::array<ForumStatement<                                    \
+                    ForumParticipantType::SLAG_POSTAL_FORUM_PARICIPANT_TYPE>, \
+                    FORUM_PARTICIPANT_TYPE_COUNT                              \
+                >                                                             \
+            >,                                                                \
+
+            SLAG_POSTAL_FORUM_PARICIPANT_TYPES(X)
+#undef X
+            int
+        >;
+
+        ForumCensus      census_;
+        RecentStatements recent_statements_;
     };
 
 }
+
+#include "forum.hpp"
