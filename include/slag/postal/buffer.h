@@ -1,18 +1,29 @@
 #pragma once
 
 #include <span>
+#include <compare>
 #include <cstdint>
 #include <cstddef>
 #include "slag/postal/types.h"
 
 namespace slag::postal {
 
-    class BufferTable;
+    struct BufferDescriptor {
+        uint32_t index  : 30; // TODO: calculate the region from this
+        uint32_t shared :  1;
+        uint32_t global :  1;
 
-    // TODO: rename the header/source files to match the class name
+        BufferDescriptor();
+
+        constexpr auto operator<=>(const BufferDescriptor&) const = default;
+
+        constexpr explicit operator bool() const {
+            return index != 0;
+        }
+    };
+
     class BufferHandle {
     private:
-        friend class BufferTable;
         friend class BufferCustodian;
 
         explicit BufferHandle(BufferDescriptor descriptor);
@@ -31,11 +42,8 @@ namespace slag::postal {
         bool is_valid() const;
         bool is_shared() const;
         bool is_global() const;
-        bool is_frozen() const;
 
-        const BufferIdentity& identity() const;
-        const BufferProperties& properties() const;
-        const BufferDescriptor& descriptor() const;
+        BufferDescriptor descriptor() const;
 
         // Returns a new handle to a copy of the data.
         BufferHandle clone();
@@ -48,13 +56,7 @@ namespace slag::postal {
         void reset();
 
     private:
-        BufferTable& table();
-
-    private:
         BufferDescriptor descriptor_;
     };
-
-    uint16_t to_scaled_capacity(size_t capacity);
-    size_t from_scaled_capacity(uint16_t scaled_capacity);
 
 }

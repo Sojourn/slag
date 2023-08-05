@@ -3,6 +3,7 @@
 #include "slag/slag.h"
 
 using namespace slag;
+using namespace slag::postal;
 
 int main(int argc, char** argv) {
     (void)argc;

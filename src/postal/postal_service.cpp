@@ -22,24 +22,24 @@ namespace slag::postal {
     }
 
     PostOffice& PostalService::post_office(PostArea area) {
-        assert(area.service == identity_);
-        assert(area.office < post_offices_.size());
-        return *post_offices_[area.office];
+        assert(area.nation == identity_);
+        assert(area.region < post_offices_.size());
+        return *post_offices_[area.region];
     }
 
     PostArea PostalService::attach(PostOffice& post_office) {
         assert(post_offices_.size() <= std::numeric_limits<uint16_t>::max());
 
         PostArea area;
-        area.service = identity_;
-        area.office = static_cast<uint16_t>(post_offices_.size());
+        area.nation = identity_;
+        area.region = static_cast<uint16_t>(post_offices_.size());
         post_offices_.push_back(&post_office);
 
         return area;
     }
 
     void PostalService::detach(PostOffice& post_office) {
-        post_offices_[post_office.post_area().office] = nullptr;
+        post_offices_[post_office.post_area().region] = nullptr;
     }
 
 }

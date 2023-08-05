@@ -1,16 +1,20 @@
 #include "slag/postal/buffer.h"
-#include "slag/postal/buffer_table.h"
+#include <cassert>
 
 namespace slag::postal {
+
+    BufferDescriptor::BufferDescriptor() {
+        memset(this, 0, sizeof(*this));
+    }
 
     BufferHandle::BufferHandle(BufferDescriptor descriptor)
         : descriptor_{descriptor}
     {
         if (is_shared()) {
-            table().attach_shared(*this);
+            // table().attach_shared(*this);
         }
         else {
-            table().attach_unique(*this);
+            // table().attach_unique(*this);
         }
     }
 
@@ -24,7 +28,7 @@ namespace slag::postal {
         other.descriptor_ = BufferDescriptor{};
 
         if (is_valid() && !is_shared()) {
-            table().reattach_unique(*this);
+            // table().reattach_unique(*this);
         }
     }
 
@@ -35,7 +39,7 @@ namespace slag::postal {
             std::swap(descriptor_, rhs.descriptor_);
 
             if (is_valid() && !is_shared()) {
-                table().reattach_unique(*this);
+                // table().reattach_unique(*this);
             }
         }
 
@@ -47,30 +51,18 @@ namespace slag::postal {
     }
 
     bool BufferHandle::is_valid() const {
-        return descriptor_.identity.valid;
+        return static_cast<bool>(descriptor_);
     }
 
     bool BufferHandle::is_shared() const {
-        return descriptor_.properties.shared;
+        return descriptor_.shared;
     }
 
     bool BufferHandle::is_global() const {
-        return descriptor_.properties.global;
+        return descriptor_.global;
     }
 
-    bool BufferHandle::is_frozen() const {
-        return descriptor_.properties.frozen;
-    }
-
-    const BufferIdentity& BufferHandle::identity() const {
-        return descriptor_.identity;
-    }
-
-    const BufferProperties& BufferHandle::properties() const {
-        return descriptor_.properties;
-    }
-
-    const BufferDescriptor& BufferHandle::descriptor() const {
+    BufferDescriptor BufferHandle::descriptor() const {
         return descriptor_;
     }
 
@@ -86,13 +78,9 @@ namespace slag::postal {
             assert(false);
             return BufferHandle{};
         }
-        if (!is_frozen()) {
-            assert(false);
-            return clone(); // copy-on-write
-        }
 
         if (!is_shared()) {
-            table().set_shared(*this);
+            // table().set_shared(*this);
 
             assert(is_shared()); // post-condition of BufferTable::set_shared
         }
@@ -106,25 +94,13 @@ namespace slag::postal {
         }
 
         if (is_shared()) {
-            table().detach_shared(*this);
+            // table().detach_shared(*this);
         }
         else {
-            table().detach_unique(*this);
+            // table().detach_unique(*this);
         }
 
         descriptor_ = BufferDescriptor{};
-    }
-
-    BufferTable& BufferHandle::table() {
-        abort(); // TODO: thread_local accessor
-    }
-
-    uint16_t to_scaled_capacity(size_t capacity) {
-        return static_cast<uint16_t>(capacity - BUFFER_CAPACITY_STRIDE) / BUFFER_CAPACITY_STRIDE;
-    }
-
-    size_t from_scaled_capacity(uint16_t scaled_capacity) {
-        return (static_cast<size_t>(scaled_capacity) * BUFFER_CAPACITY_STRIDE) + BUFFER_CAPACITY_STRIDE;
     }
 
 }
