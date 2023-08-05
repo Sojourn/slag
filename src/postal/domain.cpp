@@ -1,30 +1,76 @@
 #include "slag/postal/domain.h"
+#include <cassert>
 
 namespace slag::postal {
 
-    static Domain<DomainType::EMPIRE>* empire_instance = nullptr;
-    static Domain<DomainType::NATION>* nation_instance = nullptr;
-    thread_local Domain<DomainType::REGION>* region_instance = nullptr;
+    static Domain* empire_instance = nullptr;
+    static Domain* nation_instance = nullptr;
+    thread_local Domain* region_instance = nullptr;
 
-    template<>
-    Domain<DomainType::EMPIRE>& domain() {
-        return *empire_instance;
+    // Returns a pointer to the instance pointer of this type.
+    Domain** domain_instance_pointer(DomainType type) {
+        switch (type) {
+            case DomainType::EMPIRE: return &empire_instance;
+            case DomainType::NATION: return &nation_instance;
+            case DomainType::REGION: return &region_instance;
+        }
+
+        abort();
     }
 
-    template<>
-    Domain<DomainType::NATION>& domain() {
-        return *nation_instance;
+    Empire& empire() {
+        assert(empire_instance);
+        return static_cast<Empire&>(*empire_instance);
     }
 
-    template<>
-    Domain<DomainType::REGION>& domain() {
-        return *region_instance;
+    Nation& nation() {
+        assert(nation_instance);
+        return static_cast<Nation&>(*nation_instance);
     }
 
-    template<DomainType type>
-    void attach_domain(Domain<type>& domain);
+    Region& region() {
+        assert(region_instance);
+        return static_cast<Region&>(*region_instance);
+    }
 
-    template<DomainType type>
-    void detach_domain(Domain<type>& domain);
+    Domain::Domain(DomainType type, uint16_t identity)
+        : type_{type}
+        , identity_{identity}
+    {
+        Domain** instance = domain_instance_pointer(type_);
+        assert(!*instance);
+        *instance = this;
+    }
+
+    Domain::~Domain() {
+        Domain** instance = domain_instance_pointer(type_);
+        assert(*instance == this);
+        *instance = nullptr;
+    }
+
+    DomainType Domain::type() const {
+        return type_;
+    }
+
+    uint16_t Domain::identity() const {
+        return identity_;
+    }
+
+    Empire::Empire(uint16_t identity)
+        : Domain{DomainType::EMPIRE, identity}
+    {
+    }
+
+    Nation::Nation(uint16_t identity)
+        : Domain{DomainType::NATION, identity}
+        , empire_{empire()}
+    {
+    }
+
+    Region::Region(uint16_t identity)
+        : Domain{DomainType::REGION, identity}
+        , nation_{nation()}
+    {
+    }
 
 }

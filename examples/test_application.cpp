@@ -40,5 +40,13 @@ int main(int argc, char** argv) {
         std::cout << *element << std::endl;
     }
 
+    Empire empire_{0};
+    Nation nation_{1};
+    Region region_{2};
+
+    std::cout << empire().identity() << std::endl;
+    std::cout << nation().identity() << std::endl;
+    std::cout << region().identity() << std::endl;
+
     return application.run();
 }

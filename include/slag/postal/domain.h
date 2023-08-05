@@ -1,80 +1,63 @@
 #pragma once
 
-#define SLAG_POSTAL_DOMAIN_TYPES(X) \
-    X(EMPIRE)                       \
-    X(NATION)                       \
-    X(REGION)                       \
+#include <vector>
+#include <cstdint>
+#include <cstddef>
 
 namespace slag::postal {
 
+    class Empire;
+    class Nation;
+    class Region;
+
     enum class DomainType {
-#define X(SLAG_POSTAL_DOMAIN_TYPE) SLAG_POSTAL_DOMAIN_TYPE,
-        SLAG_POSTAL_DOMAIN_TYPES(X)
-
-#undef X
+        EMPIRE,
+        NATION,
+        REGION,
     };
 
-    template<DomainType type>
-    class Domain;
+    Empire& empire();
+    Nation& nation();
+    Region& region();
 
-    template<DomainType type>
-    Domain<type>& domain();
-
-    template<DomainType type>
-    void attach_domain(Domain<type>& domain);
-
-    template<DomainType type>
-    void detach_domain(Domain<type>& domain);
-
-    template<>
-    class Domain<DomainType::EMPIRE> {
+    class Domain {
         Domain(Domain&&) = delete;
         Domain(const Domain&) = delete;
         Domain& operator=(Domain&&) = delete;
         Domain& operator=(const Domain&) = delete;
 
-    public:
-        Domain() {
-            attach_domain(*this);
-        }
+    protected:
+        Domain(DomainType type, uint16_t identity);
+        ~Domain();
 
-        ~Domain() {
-            detach_domain(*this);
-        }
+    public:
+        DomainType type() const;
+        uint16_t identity() const;
+
+    private:
+        DomainType type_;
+        uint16_t   identity_;
     };
 
-    template<>
-    class Domain<DomainType::NATION> {
-        Domain(Domain&&) = delete;
-        Domain(const Domain&) = delete;
-        Domain& operator=(Domain&&) = delete;
-        Domain& operator=(const Domain&) = delete;
-
+    class Empire : public Domain {
     public:
-        Domain() {
-            attach_domain(*this);
-        }
-
-        ~Domain() {
-            detach_domain(*this);
-        }
+        explicit Empire(uint16_t identity);
     };
 
-    template<>
-    class Domain<DomainType::REGION> {
-        Domain(Domain&&) = delete;
-        Domain(const Domain&) = delete;
-        Domain& operator=(Domain&&) = delete;
-        Domain& operator=(const Domain&) = delete;
-
+    class Nation : public Domain {
     public:
-        Domain() {
-            attach_domain(*this);
-        }
+        explicit Nation(uint16_t identity);
 
-        ~Domain() {
-            detach_domain(*this);
-        }
+    private:
+        Empire& empire_;
+    };
+
+    class Region : public Domain {
+    public:
+        explicit Region(uint16_t identity);
+
+    private:
+        Nation& nation_;
     };
 
 }
