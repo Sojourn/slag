@@ -238,15 +238,18 @@ namespace slag {
     }
 
     template<typename T>
-    inline void SpscQueueProducer<T>::flush() {
+    inline SpscQueueSequence SpscQueueProducer<T>::flush() {
         assert(queue_);
 
-        if (!pending_insert_count_) {
-            return; // fast path; nothing to flush
+        if (pending_insert_count_) {
+            tail_->store(cached_tail_);
+            pending_insert_count_ = 0;
+        }
+        else {
+            // fast-path; nothing to flush
         }
 
-        tail_->store(cached_tail_);
-        pending_insert_count_ = 0;
+        return cached_tail_;
     }
 
     template<typename T>
@@ -437,15 +440,18 @@ namespace slag {
     }
 
     template<typename T>
-    inline void SpscQueueConsumer<T>::flush() {
+    inline SpscQueueSequence SpscQueueConsumer<T>::flush() {
         assert(queue_);
 
-        if (!pending_remove_count_) {
-            return; // fast path; nothing to flush
+        if (pending_remove_count_) {
+            head_->store(cached_head_);
+            pending_remove_count_ = 0;
+        }
+        else {
+            // nothing to flush
         }
 
-        head_->store(cached_head_);
-        pending_remove_count_ = 0;
+        return cached_head_;
     }
 
 

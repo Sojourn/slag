@@ -7,6 +7,26 @@
 
 namespace slag::postal {
 
+    // Budget
+    // Leader
+    // Worker
+    // Policy
+    // Corpus
+    // Bureau
+    // Agency
+    // Broker
+    // Dealer
+    // Module
+    // Survey
+    // Mirror
+    // Portal
+    // Fabric
+    // Runway
+    // Stream
+    // County (if we need another domain type)
+
+    // mirror mirror on the wall, who is the most contiguous buffer of them all
+
     class Envelope;
 
     // send/receive queue of envelopes
@@ -23,6 +43,12 @@ namespace slag::postal {
 
     // in charge of the PostalService in a region
     class PostMasterGeneral;
+
+    enum class DomainType {
+        EMPIRE,
+        NATION,
+        REGION,
+    };
 
     // this tells us what thread to route an envelope to
     struct PostArea {

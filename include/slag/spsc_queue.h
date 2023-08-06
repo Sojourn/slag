@@ -81,7 +81,7 @@ namespace slag {
 
         // This will make insertions visible to the consumer. It will be automatically
         // called after a number of inserts to prevent livelocking.
-        void flush();
+        SpscQueueSequence flush();
 
         // Flushes any unsynchronized insertions and detaches this from the queue.
         void reset();
@@ -132,7 +132,7 @@ namespace slag {
 
         // This will make removals visible to the producer. It will be automatically
         // called after a number of removals to prevent livelocking.
-        void flush();
+        SpscQueueSequence flush();
 
         // Flushes any unsynchronized removes and detaches this from the queue.
         void reset();

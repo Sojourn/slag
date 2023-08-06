@@ -40,13 +40,26 @@ int main(int argc, char** argv) {
         std::cout << *element << std::endl;
     }
 
-    Empire empire_{0};
-    Nation nation_{1};
-    Region region_{2};
+    Empire::Config empire_config;
+    empire_config.index = 0;
 
-    std::cout << empire().identity() << std::endl;
-    std::cout << nation().identity() << std::endl;
-    std::cout << region().identity() << std::endl;
+    Nation::Config nation_config;
+    nation_config.index                 = 0;
+    nation_config.buffer_count          = 1024;
+    nation_config.region_count          = 1;
+    nation_config.region_route_capacity = 512;
+
+    Region::Config region_config;
+    region_config.index        = 0;
+    region_config.buffer_count = 1024;
+
+    Empire empire_{empire_config};
+    Nation nation_{nation_config};
+    Region region_{region_config};
+
+    std::cout << empire().index() << std::endl;
+    std::cout << nation().index() << std::endl;
+    std::cout << region().index() << std::endl;
 
     return application.run();
 }
