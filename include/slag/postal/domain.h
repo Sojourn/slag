@@ -67,14 +67,14 @@ namespace slag::postal {
     private:
         friend class Region;
 
-        using RegionalRoute = SpscQueue<Parcel>;
+        using ParcelQueue = SpscQueue<Parcel>;
 
-        RegionalRoute& regional_route(PostArea to, PostArea from);
+        ParcelQueue& parcel_queue(PostArea to, PostArea from);
 
     private:
-        Empire&                                     empire_;
-        Config                                      config_;
-        std::vector<std::unique_ptr<RegionalRoute>> regional_routes_;
+        Empire&                                   empire_;
+        Config                                    config_;
+        std::vector<std::unique_ptr<ParcelQueue>> parcel_queues_;
     };
 
     // allocate buffers out of the sorted stack of recycled buffers; they
@@ -88,6 +88,7 @@ namespace slag::postal {
         using Census = DomainCensus<DomainType::REGION>;
 
         explicit Region(const Config& config);
+        ~Region();
 
         const Config& config() const;
         const Season& season() const;
@@ -104,23 +105,24 @@ namespace slag::postal {
         void leave_season(Season season);
 
     private:
-        void setup_routes();
         void setup_history();
-
-        // Record details about imports and exports to the Census for the current Season.
-        void survey_imports();
-        void survey_exports();
+        void attach_parcel_queues();
+        void detach_parcel_queues();
+        void survey_parcel_queues();
 
         PostArea make_post_area(size_t region_index) const;
 
     private:
-        Nation&                                nation_;
-        Config                                 config_;
-        Season                                 season_;
-        Census*                                census_cursor_;
-        std::array<Census, SEASON_COUNT>       history_;
-        std::vector<SpscQueueConsumer<Parcel>> imports_;
-        std::vector<SpscQueueProducer<Parcel>> exports_;
+        using ParcelQueueConsumer = SpscQueueConsumer<Parcel>;
+        using ParcelQueueProducer = SpscQueueProducer<Parcel>;
+
+        Nation&                          nation_;
+        Config                           config_;
+        Season                           season_;
+        Census*                          census_cursor_;
+        std::array<Census, SEASON_COUNT> history_;
+        std::vector<ParcelQueueConsumer> imports_;
+        std::vector<ParcelQueueProducer> exports_;
     };
 
 }

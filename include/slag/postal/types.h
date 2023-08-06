@@ -23,6 +23,12 @@ namespace slag::postal {
     // Fabric
     // Runway
     // Stream
+    // Layout
+    // Format
+    // System
+    // Device
+    // Devise
+    // Tenure
     // County (if we need another domain type)
 
     // mirror mirror on the wall, who is the most contiguous buffer of them all

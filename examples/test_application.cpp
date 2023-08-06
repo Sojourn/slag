@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
     nation_config.index                 = 0;
     nation_config.buffer_count          = 1024;
     nation_config.region_count          = 1;
-    nation_config.region_route_capacity = 512;
+    nation_config.parcel_queue_capacity = 512;
 
     Region::Config region_config;
     region_config.index        = 0;

@@ -74,11 +74,10 @@ namespace slag::postal {
         size_t region_count = config_.region_count;
 
         // O(n^2) routes since regions within a nation are fully connected
-        regional_routes_.resize(region_count * region_count);
-
-        for (std::unique_ptr<RegionalRoute>& regional_route: regional_routes_) {
-            regional_route = std::make_unique<RegionalRoute>(
-                config_.region_route_capacity
+        parcel_queues_.resize(region_count * region_count);
+        for (auto&& parcel_queue: parcel_queues_) {
+            parcel_queue = std::make_unique<ParcelQueue>(
+                config_.parcel_queue_capacity
             );
         }
     }
@@ -87,13 +86,13 @@ namespace slag::postal {
         return config_;
     }
 
-    auto Nation::regional_route(PostArea to, PostArea from) -> RegionalRoute& {
+    auto Nation::parcel_queue(PostArea to, PostArea from) -> ParcelQueue& {
         assert(to.nation == from.nation);
         assert(to.region != from.region);
 
         size_t index = (to.region * config_.region_count) + from.region;
-        assert(index < regional_routes_.size());
-        return *regional_routes_[index];
+        assert(index < parcel_queues_.size());
+        return *parcel_queues_[index];
     }
 
     Region::Region(const Config& config)
@@ -103,8 +102,12 @@ namespace slag::postal {
         , season_{Season::WINTER}
         , census_cursor_{nullptr}
     {
-        setup_routes();
         setup_history();
+        attach_parcel_queues();
+    }
+
+    Region::~Region() {
+        detach_parcel_queues();
     }
 
     auto Region::census() const -> const Census& {
@@ -133,34 +136,9 @@ namespace slag::postal {
     void Region::leave_season(Season season) {
         assert(season_ == season);
 
-        survey_imports();
-        survey_exports();
+        survey_parcel_queues();
 
         census_cursor_ = nullptr;
-    }
-
-    void Region::setup_routes() {
-        size_t region_count = nation_.config().region_count;
-
-        imports_.resize(region_count);
-        exports_.resize(region_count);
-
-        for (size_t region_index = 0; region_index < region_count; ++region_index) {
-            PostArea self = make_post_area(config_.index);
-            PostArea peer = make_post_area(region_index);
-
-            if (self.region == peer.region) {
-                // this would be silly
-            }
-            else {
-                imports_[region_index] = SpscQueueConsumer(
-                    nation_.regional_route(self, peer) // self <- peer
-                );
-                exports_[region_index] = SpscQueueProducer(
-                    nation_.regional_route(peer, self) // self -> peer
-                );
-            }
-        }
     }
 
     void Region::setup_history() {
@@ -178,7 +156,41 @@ namespace slag::postal {
         }
     }
 
-    void Region::survey_imports() {
+    void Region::attach_parcel_queues() {
+        size_t region_count = nation_.config().region_count;
+
+        imports_.resize(region_count);
+        exports_.resize(region_count);
+
+        for (size_t region_index = 0; region_index < region_count; ++region_index) {
+            PostArea self = make_post_area(config_.index);
+            PostArea peer = make_post_area(region_index);
+
+            if (self.region == peer.region) {
+                // this would be silly
+            }
+            else {
+                imports_[region_index] = ParcelQueueConsumer(
+                    nation_.parcel_queue(self, peer) // self <- peer
+                );
+                exports_[region_index] = ParcelQueueProducer(
+                    nation_.parcel_queue(peer, self) // self -> peer
+                );
+            }
+        }
+    }
+
+    void Region::detach_parcel_queues() {
+        for (auto&& consumer: imports_) {
+            consumer.reset();
+        }
+
+        for (auto&& producer: exports_) {
+            producer.reset();
+        }
+    }
+
+    void Region::survey_parcel_queues() {
         for (size_t import_index = 0; import_index < imports_.size(); ++import_index) {
             if (import_index == index()) {
                 census_cursor_->import_sequences[import_index] = 0;
@@ -187,9 +199,7 @@ namespace slag::postal {
 
             census_cursor_->import_sequences[import_index] = imports_[import_index].flush();
         }
-    }
 
-    void Region::survey_exports() {
         for (size_t export_index = 0; export_index < exports_.size(); ++export_index) {
             if (export_index == index()) {
                 census_cursor_->export_sequences[export_index] = 0;

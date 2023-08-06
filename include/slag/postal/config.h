@@ -21,7 +21,7 @@ namespace slag::postal {
         size_t index                 = 0;
         size_t buffer_count          = 0;
         size_t region_count          = 0;
-        size_t region_route_capacity = 0;
+        size_t parcel_queue_capacity = 0;
     };
 
     template<>
