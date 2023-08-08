@@ -114,8 +114,9 @@ namespace slag::postal {
         , config_{config}
         , season_{Season::WINTER}
         , census_cursor_{nullptr}
+        , post_office_{*this}
     {
-        setup_history();
+        make_history();
 
         attach_parcel_queues();
     }
@@ -130,6 +131,20 @@ namespace slag::postal {
 
     auto Region::census(Season season) const -> const Census& {
         return history_[to_index(season)];
+    }
+
+    auto Region::imports() -> std::span<ParcelQueueConsumer> {
+        return {
+            imports_.data(),
+            imports_.size(),
+        };
+    }
+
+    auto Region::exports() -> std::span<ParcelQueueProducer> {
+        return {
+            exports_.data(),
+            exports_.size(),
+        };
     }
 
     PostArea Region::post_area() const {
@@ -155,7 +170,14 @@ namespace slag::postal {
         census_cursor_ = nullptr;
     }
 
-    void Region::setup_history() {
+    PostArea Region::make_post_area(size_t region_index) const {
+        return {
+            .nation = static_cast<uint16_t>(nation_.index()),
+            .region = static_cast<uint16_t>(region_index),
+        };
+    }
+
+    void Region::make_history() {
         size_t buffer_count = nation_.config().buffer_count;
         size_t region_count = nation_.config().region_count;
 
@@ -222,13 +244,6 @@ namespace slag::postal {
 
             census_cursor_->export_sequences[export_index] = exports_[export_index].flush();
         }
-    }
-
-    PostArea Region::make_post_area(size_t region_index) const {
-        return {
-            .nation = static_cast<uint16_t>(nation_.index()),
-            .region = static_cast<uint16_t>(region_index),
-        };
     }
 
 }

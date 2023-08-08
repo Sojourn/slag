@@ -8,6 +8,8 @@
 
 namespace slag::postal {
 
+    class Region;
+
     class PostOffice {
         PostOffice(PostOffice&&) = delete;
         PostOffice(const PostOffice&) = delete;
@@ -15,7 +17,7 @@ namespace slag::postal {
         PostOffice& operator=(const PostOffice&) = delete;
 
     public:
-        explicit PostOffice(PostalService& postal_service);
+        explicit PostOffice(Region& region);
         ~PostOffice();
 
         PostArea post_area() const;
@@ -26,10 +28,9 @@ namespace slag::postal {
 
         PostCode attach(PostBox& post_box);
         void detach(PostBox& post_box);
-        // void relocate(PostBox& old_post_box, PostBox& new_post_box);
 
     private:
-        PostalService&        postal_service_;
+        Region&               region_;
         PostArea              post_area_;
         std::vector<PostBox*> post_boxes_;
         Queue<uint32_t>       unused_post_box_numbers_;

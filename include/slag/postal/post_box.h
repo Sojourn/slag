@@ -1,6 +1,7 @@
 #pragma once
 
 #include "slag/queue.h"
+#include "slag/intrusive_list.h"
 #include "slag/postal/types.h"
 #include "slag/postal/envelope.h"
 
@@ -28,6 +29,7 @@ namespace slag::postal {
 
     private:
         friend class PostMaster;
+        friend class PostWorker;
 
         Queue<Envelope>& incoming();
         Queue<Envelope>& outgoing();

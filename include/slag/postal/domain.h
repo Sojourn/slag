@@ -13,6 +13,7 @@
 #include "slag/postal/census.h"
 #include "slag/postal/buffer.h"
 #include "slag/postal/parcel.h"
+#include "slag/postal/post_office.h"
 
 namespace slag::postal {
 
@@ -68,8 +69,6 @@ namespace slag::postal {
     private:
         friend class Region;
 
-        using ParcelQueue = SpscQueue<Parcel>;
-
         ParcelQueue& parcel_queue(PostArea to, PostArea from);
 
         void attach(Region& region);
@@ -101,6 +100,7 @@ namespace slag::postal {
         const Census& census(Season season) const;
 
         PostArea post_area() const;
+        PostOffice& post_office();
 
     public:
         // Return a cursor that always points at the Census for the current Season.
@@ -110,22 +110,25 @@ namespace slag::postal {
         void leave_season(Season season);
 
     private:
-        void setup_history();
+        std::span<ParcelQueueConsumer> imports();
+        std::span<ParcelQueueProducer> exports();
+
+    private:
+        PostArea make_post_area(size_t region_index) const;
+        void make_history();
+
         void attach_parcel_queues();
         void detach_parcel_queues();
         void survey_parcel_queues();
 
-        PostArea make_post_area(size_t region_index) const;
-
     private:
-        using ParcelQueueConsumer = SpscQueueConsumer<Parcel>;
-        using ParcelQueueProducer = SpscQueueProducer<Parcel>;
-
         Nation&                          nation_;
         Config                           config_;
         Season                           season_;
         Census*                          census_cursor_;
         std::array<Census, SEASON_COUNT> history_;
+
+        PostOffice                       post_office_;
         std::vector<ParcelQueueConsumer> imports_;
         std::vector<ParcelQueueProducer> exports_;
     };

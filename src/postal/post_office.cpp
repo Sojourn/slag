@@ -1,21 +1,19 @@
 #include "slag/postal/post_office.h"
 #include "slag/postal/post_box.h"
-#include "slag/postal/postal_service.h"
+#include "slag/postal/domain.h"
 #include <cassert>
 
 namespace slag::postal {
 
-    PostOffice::PostOffice(PostalService& postal_service)
-        : postal_service_{postal_service}
-        , post_area_{postal_service.attach(*this)}
+    PostOffice::PostOffice(Region& region)
+        : region_{region}
+        , post_area_{region.post_area()}
     {
     }
 
     PostOffice::~PostOffice() {
         // sanity check that we outlived all of the local post boxes
         assert(post_boxes_.size() == unused_post_box_numbers_.size());
-
-        postal_service_.detach(*this);
     }
 
     PostBox* PostOffice::post_box(PostCode post_code) {
