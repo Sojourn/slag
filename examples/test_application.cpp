@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
 
     Region::Config region_config;
     region_config.index        = 0;
-    region_config.buffer_count = 1024;
+    region_config.buffer_range = std::make_pair(0, 1024);
 
     Empire empire_{empire_config};
     Nation nation_{nation_config};

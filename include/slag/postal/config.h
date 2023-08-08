@@ -12,8 +12,8 @@ namespace slag::postal {
 
     template<>
     struct DomainConfig<DomainType::REGION> {
-        size_t index        = 0;
-        size_t buffer_count = 0;
+        size_t                    index = 0;
+        std::pair<size_t, size_t> buffer_range;
     };
 
     template<>

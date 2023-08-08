@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <atomic>
 #include <memory>
 #include <vector>
 #include <cstdint>
@@ -71,14 +72,18 @@ namespace slag::postal {
 
         ParcelQueue& parcel_queue(PostArea to, PostArea from);
 
+        void attach(Region& region);
+        void detach(Region& region);
+
     private:
         Empire&                                   empire_;
         Config                                    config_;
+        std::vector<Region*>                      regions_; // atomic/locking?
         std::vector<std::unique_ptr<ParcelQueue>> parcel_queues_;
     };
 
     // allocate buffers out of the sorted stack of recycled buffers; they
-    // still have some temporal locallity since they were recently touched
+    // still have some temporal locality since they were recently touched/zeroed
     //
     // TODO: prefetch the next buffer entry on allocation
     //

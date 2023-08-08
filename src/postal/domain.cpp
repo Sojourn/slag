@@ -73,6 +73,11 @@ namespace slag::postal {
     {
         size_t region_count = config_.region_count;
 
+        regions_.resize(region_count);
+        for (auto&& region: regions_) {
+            region = nullptr;
+        }
+
         // O(n^2) routes since regions within a nation are fully connected
         parcel_queues_.resize(region_count * region_count);
         for (auto&& parcel_queue: parcel_queues_) {
@@ -95,6 +100,14 @@ namespace slag::postal {
         return *parcel_queues_[index];
     }
 
+    void Nation::attach(Region& region) {
+        regions_[region.index()] = &region;
+    }
+
+    void Nation::detach(Region& region) {
+        regions_[region.index()] = nullptr;
+    }
+
     Region::Region(const Config& config)
         : Domain{DomainType::REGION, config.index}
         , nation_{nation()}
@@ -103,6 +116,7 @@ namespace slag::postal {
         , census_cursor_{nullptr}
     {
         setup_history();
+
         attach_parcel_queues();
     }
 
