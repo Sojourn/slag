@@ -57,6 +57,7 @@ namespace slag::postal {
     };
 
     // this tells us what thread to route an envelope to
+    // TODO: rename to PostalArea
     struct PostArea {
         uint16_t nation = 0; // which postal service (one per process)
         uint16_t region = 0; // which post office (one per thread)
@@ -65,6 +66,7 @@ namespace slag::postal {
     };
 
     // this tells us what PostBox on that thread
+    // TODO: rename to PostalAddress
     struct PostCode : PostArea {
         uint32_t number = 0; // local post-box number
 
