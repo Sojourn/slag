@@ -42,20 +42,20 @@ namespace slag {
         return static_cast<bool>(queue_);
     }
 
-    inline auto IntrusiveQueueNode::sequence() const -> std::optional<Sequence> {
-        if (!is_linked()) {
-            return std::nullopt;
-        }
-
-        return sequence_;
-    }
-
     inline void IntrusiveQueueNode::unlink() {
         if (!is_linked()) {
             return;
         }
 
         queue_->erase(*this);
+    }
+
+    inline auto IntrusiveQueueNode::sequence() const -> std::optional<Sequence> {
+        if (!is_linked()) {
+            return std::nullopt;
+        }
+
+        return sequence_;
     }
 
     inline void IntrusiveQueueNode::attach(IntrusiveQueueBase& queue, Sequence sequence) {
@@ -107,7 +107,7 @@ namespace slag {
         std::swap(tombstone_count_, other.tombstone_count_);
 
         for (Sequence sequence = head_; sequence != tail_; ++sequence) {
-            if (Node* node = get_slot(sequence)) {
+            if (Node* node = *get_slot(sequence)) {
                 node->set_queue(*this);
             }
         }
@@ -125,21 +125,18 @@ namespace slag {
             std::swap(tombstone_count_, that.tombstone_count_);
 
             for (Sequence sequence = head_; sequence != tail_; ++sequence) {
-                if (Node* node = get_slot(sequence)) {
+                if (Node* node = *get_slot(sequence)) {
                     node->set_queue(*this);
                 }
             }
-        }
-
-        return *this;
-    }
+        } return *this; }
 
     inline bool IntrusiveQueueBase::is_empty() const {
         return head_ == tail_;
     }
 
     inline size_t IntrusiveQueueBase::size() const {
-        return head_ - tail_;
+        return tail_ - head_;
     }
 
     inline size_t IntrusiveQueueBase::capacity() const {
@@ -154,11 +151,11 @@ namespace slag {
         assert(!node.is_linked());
 
         if (size() == capacity_) {
-            reserve(capacity_ * 2); // grow
+            reserve(std::max(size_t{16}, capacity_ * 2)); // grow
         }
 
         Sequence sequence = --head_;
-        get_slot(sequence) = &node;
+        *get_slot(sequence) = &node;
         node.attach(*this, sequence);
         return sequence;
     }
@@ -167,11 +164,11 @@ namespace slag {
         assert(!node.is_linked());
 
         if (size() == capacity_) {
-            reserve(capacity_ * 2); // grow
+            reserve(std::max(size_t{16}, capacity_ * 2)); // grow
         }
 
         Sequence sequence = tail_++;
-        get_slot(sequence) = &node;
+        *get_slot(sequence) = &node;
         node.attach(*this, sequence);
         return sequence;
     }
@@ -181,16 +178,18 @@ namespace slag {
             return nullptr;
         }
 
-        Slot& slot = get_slot(head_++);
-        if (slot) {
-            slot->detach(*this);
+        Node** slot = get_slot(head_++);
+        Node* node = *slot;
+        if (node) {
+            node->detach(*this);
+            *slot = nullptr;
         }
         else {
             assert(tombstone_count_ > 0);
-            tombstone_count_ -= 1; // popped a tombstone
+            tombstone_count_ -= 1; // Popped a tombstone.
         }
 
-        return std::exchange(slot, nullptr);
+        return node;
     }
 
     inline IntrusiveQueueNode* IntrusiveQueueBase::pop_back() {
@@ -198,16 +197,18 @@ namespace slag {
             return nullptr;
         }
 
-        Slot& slot = get_slot(--tail_);
-        if (slot) {
-            slot->detach(*this);
+        Node** slot = get_slot(--tail_);
+        Node* node = *slot;
+        if (node) {
+            node->detach(*this);
+            *slot = nullptr;
         }
         else {
             assert(tombstone_count_ > 0);
-            tombstone_count_ -= 1; // popped a tombstone
+            tombstone_count_ -= 1; // Popped a tombstone.
         }
 
-        return std::exchange(slot, nullptr);
+        return node;
     }
 
     inline IntrusiveQueueNode* IntrusiveQueueBase::peek_front(size_t relative_offset) {
@@ -215,7 +216,7 @@ namespace slag {
             return nullptr;
         }
 
-        return get_slot(head_ + relative_offset);
+        return *get_slot(head_ + relative_offset);
     }
 
     inline IntrusiveQueueNode* IntrusiveQueueBase::peek_back(size_t relative_offset) {
@@ -223,7 +224,7 @@ namespace slag {
             return nullptr;
         }
 
-        return get_slot(tail_ - relative_offset - 1);
+        return *get_slot(tail_ - relative_offset - 1);
     }
 
     inline void IntrusiveQueueBase::erase(IntrusiveQueueNode& node) {
@@ -232,18 +233,22 @@ namespace slag {
     }
 
     inline void IntrusiveQueueBase::erase(Sequence sequence) {
-        Slot& slot = get_slot(sequence);
-        if (slot) {
-            if (slot->sequence() == sequence) {
-                slot = nullptr;
+        Node** slot = get_slot(sequence);
+        Node* node = *slot;
+
+        if (node) {
+            if (node->sequence() == sequence) {
+                node->detach(*this);
+
+                *slot = nullptr;
                 tombstone_count_ += 1;
             }
             else {
-                assert(false); // something else lives here now
+                assert(false); // Something else lives here now?
             }
         }
         else {
-            assert(false); // potentially a double free
+            assert(false); // Double free?
         }
 
         assert(tombstone_count_ <= size());
@@ -251,8 +256,10 @@ namespace slag {
 
     inline void IntrusiveQueueBase::clear() {
         for (Sequence sequence = head_; sequence != tail_; ++sequence) {
-            if (Slot& slot = get_slot(sequence)) {
-                std::exchange(slot, nullptr)->detach(*this);
+            Node** slot = get_slot(sequence);
+            if (Node* node = *slot) {
+                node->detach(*this);
+                *slot = nullptr;
             }
         }
 
@@ -280,13 +287,13 @@ namespace slag {
         size_t capacity = make_capacity(minimum_capacity);
         size_t mask     = capacity - 1;
 
-        // copy everything (including tombstones) into a new, larger array
-        std::unique_ptr<Slot[]> nodes{new Slot[capacity]};
+        // Copy everything (including tombstones) into a new, larger array.
+        std::unique_ptr<Node*[]> slots{new Node*[capacity]};
         for (Sequence sequence = head_; sequence != tail_; ++sequence) {
-            get_slot(&nodes[0], sequence) = get_slot(&slots_[0], sequence);
+            *get_slot(slots.get(), mask, sequence) = *get_slot(sequence);
         }
 
-        slots_    = std::move(nodes);
+        slots_    = std::move(slots);
         capacity_ = capacity;
         mask_     = mask;
         // head_ and tail_ are preserved to avoid invalidating sequences
@@ -294,7 +301,7 @@ namespace slag {
 
     inline void IntrusiveQueueBase::relocated(IntrusiveQueueNode& node) {
         assert(node.is_linked());
-        get_slot(*node.sequence()) = &node;
+        *get_slot(*node.sequence()) = &node;
     }
 
     // TODO: extract [find the next power-of-2 that is >= number] into a utility function
@@ -307,40 +314,34 @@ namespace slag {
         return capacity;
     }
 
-    inline auto IntrusiveQueueBase::get_slot(Sequence sequence) -> Slot& {
-        return slots_[mask_ & sequence];
+    inline auto IntrusiveQueueBase::get_slot(Sequence sequence) -> Node** {
+        return get_slot(slots_.get(), mask_, sequence);
     }
 
-    inline auto IntrusiveQueueBase::get_slot(Slot* slots, Sequence sequence) -> Slot& {
-        // Node** nodes = slots;
-        // Node*& result;
-
-        return *(*slots)[mask_ & sequence];
+    inline auto IntrusiveQueueBase::get_slot(Node** nodes, Sequence mask, Sequence sequence) -> Node** {
+        return &nodes[mask & sequence];
     }
 
     template<typename T, IntrusiveQueueNode T::*node_>
     inline IntrusiveQueue<T, node_>::IntrusiveQueue(size_t minimum_capacity) {
-        base_.resize(minimum_capacity);
+        if (minimum_capacity > 0) {
+            base_.reserve(minimum_capacity);
+        }
     }
 
     template<typename T, IntrusiveQueueNode T::*node_>
     inline bool IntrusiveQueue<T, node_>::is_empty() const {
-        return base_.is_empty();
+        return size() == 0;
     }
 
     template<typename T, IntrusiveQueueNode T::*node_>
     inline size_t IntrusiveQueue<T, node_>::size() const {
-        return base_.size();
+        return base_.size() - base_.tombstone_count();
     }
 
     template<typename T, IntrusiveQueueNode T::*node_>
     inline size_t IntrusiveQueue<T, node_>::capacity() const {
         return base_.capacity();
-    }
-
-    template<typename T, IntrusiveQueueNode T::*node_>
-    inline size_t IntrusiveQueue<T, node_>::tombstone_count() const {
-        return queue_.tombstone_count();
     }
 
     template<typename T, IntrusiveQueueNode T::*node_>
@@ -355,42 +356,57 @@ namespace slag {
 
     template<typename T, IntrusiveQueueNode T::*node_>
     inline T* IntrusiveQueue<T, node_>::pop_front() {
-        return from_node(base_.pop_front());
+        while (!is_empty()) {
+            if (IntrusiveQueueNode* node = base_.pop_front()) {
+                if (IntrusiveQueueNode* next_node = base_.peek_front()) {
+                    __builtin_prefetch(next_node);
+                }
+
+                return from_node(node);
+            }
+        }
+
+        return nullptr;
     }
 
     template<typename T, IntrusiveQueueNode T::*node_>
     inline T* IntrusiveQueue<T, node_>::pop_back() {
-        return from_node(base_.pop_back());
-    }
+        while (!is_empty()) {
+            if (IntrusiveQueueNode* node = base_.pop_back()) {
+                if (IntrusiveQueueNode* prev_node = base_.peek_back()) {
+                    __builtin_prefetch(prev_node);
+                }
 
-    template<typename T, IntrusiveQueueNode T::*node_>
-    inline T* IntrusiveQueue<T, node_>::peek_front(size_t relative_offset) {
-        return from_node(base_.peek_front());
-    }
+                return from_node(node);
+            }
+        }
 
-    template<typename T, IntrusiveQueueNode T::*node_>
-    inline T* IntrusiveQueue<T, node_>::peek_back(size_t relative_offset) {
-        return from_node(base_.peek_back());
+        return nullptr;
     }
 
     template<typename T, IntrusiveQueueNode T::*node_>
     inline void IntrusiveQueue<T, node_>::erase(T& element) {
-        base_.erase(element);
+        base_.erase(to_node(element));
+
+        // The erase inserted a tombstone; check if we should do something about that.
+        if (too_many_tombstones()) {
+            base_.clear_tombstones();
+        }
     }
 
     template<typename T, IntrusiveQueueNode T::*node_>
     inline void IntrusiveQueue<T, node_>::erase(Sequence sequence) {
         base_.erase(sequence);
+
+        // The erase inserted a tombstone; check if we should do something about that.
+        if (too_many_tombstones()) {
+            base_.clear_tombstones();
+        }
     }
 
     template<typename T, IntrusiveQueueNode T::*node_>
     inline void IntrusiveQueue<T, node_>::clear() {
         base_.clear();
-    }
-
-    template<typename T, IntrusiveQueueNode T::*node_>
-    inline void IntrusiveQueue<T, node_>::clear_tombstones() {
-        base_.clear_tombstones();
     }
 
     template<typename T, IntrusiveQueueNode T::*node_>
@@ -401,7 +417,7 @@ namespace slag {
     template<typename T, IntrusiveQueueNode T::*node_>
     inline T& IntrusiveQueue<T, node_>::from_node(IntrusiveQueueNode& node) {
         static const ptrdiff_t node_offset = reinterpret_cast<ptrdiff_t>(
-            &to_node<T, node_>(*reinterpret_cast<T*>(NULL))
+            &to_node(*reinterpret_cast<T*>(NULL))
         );
 
         return *reinterpret_cast<T*>(reinterpret_cast<std::byte*>(&node) - node_offset);
@@ -409,6 +425,10 @@ namespace slag {
 
     template<typename T, IntrusiveQueueNode T::*node_>
     inline T* IntrusiveQueue<T, node_>::from_node(IntrusiveQueueNode* node) {
+        if (!node) {
+            return nullptr;
+        }
+
         return &from_node(*node);
     }
 
@@ -418,8 +438,24 @@ namespace slag {
     }
 
     template<typename T, IntrusiveQueueNode T::*node_>
-    inline IntrusiveQueueNode& IntrusiveQueue<T, node_>::to_node(T& element) {
+    inline IntrusiveQueueNode* IntrusiveQueue<T, node_>::to_node(T* element) {
+        if (!element) {
+            return nullptr;
+        }
+
         return &to_node(*element);
+    }
+
+    template<typename T, IntrusiveQueueNode T::*node_>
+    inline bool IntrusiveQueue<T, node_>::too_many_tombstones() const {
+        if (base_.tombstone_count() < 32) {
+            return false; // A small number of tombstones can be ignored.
+        }
+        if (base_.tombstone_count() < (size() / 4)) {
+            return false; // A small ratio of tombstones can be ignored.
+        }
+
+        return true;
     }
 
 }

@@ -18,6 +18,7 @@
 #include "io_uring_reactor.h"
 #include "logging.h"
 #include "intrusive_list.h"
+#include "intrusive_queue.h"
 #include "socket.h"
 #include "awaitable.h"
 #include "stream.h"
