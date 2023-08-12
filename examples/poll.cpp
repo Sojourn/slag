@@ -19,17 +19,23 @@ public:
     Pollable& operator=(const Pollable&) = delete;
 
 private:
-    Selector* selector_;
-    bool      set_;
+    IntrusiveQueueNode selector_hook_;
+    bool               is_set_;
 };
 
 class Selector : public Pollable {
 public:
-    void insert();
-    void remove();
-    Pollable* select();
+    void insert(Pollable& pollable) {
+        (void)pollable;
+    }
+
+    Pollable* select() {
+        return nullptr;
+    }
 
 private:
+    IntrusiveQueue<Pollable, &Pollable::selector_hook_> ready_pollables_;
+    IntrusiveQueue<Pollable, &Pollable::selector_hook_> pending_pollables_;
 };
 
 struct Foo {
