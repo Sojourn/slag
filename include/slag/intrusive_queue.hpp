@@ -370,6 +370,20 @@ namespace slag {
     }
 
     template<typename T, IntrusiveQueueNode T::*node_>
+    inline size_t IntrusiveQueue<T, node_>::pop_front(std::span<T*> elements) {
+        size_t count = std::min(size(), elements.size());
+        size_t index = 0;
+
+        while (index < count) {
+            if (IntrusiveQueueNode* node = base_.pop_front()) {
+                elements[index++] = from_node(node);
+            }
+        }
+
+        return count;
+    }
+
+    template<typename T, IntrusiveQueueNode T::*node_>
     inline T* IntrusiveQueue<T, node_>::pop_back() {
         while (!is_empty()) {
             if (IntrusiveQueueNode* node = base_.pop_back()) {
@@ -382,6 +396,20 @@ namespace slag {
         }
 
         return nullptr;
+    }
+
+    template<typename T, IntrusiveQueueNode T::*node_>
+    inline size_t IntrusiveQueue<T, node_>::pop_back(std::span<T*> elements) {
+        size_t count = std::min(size(), elements.size());
+        size_t index = 0;
+
+        while (index < count) {
+            if (IntrusiveQueueNode* node = base_.pop_back()) {
+                elements[index++] = from_node(node);
+            }
+        }
+
+        return count;
     }
 
     template<typename T, IntrusiveQueueNode T::*node_>
@@ -448,6 +476,7 @@ namespace slag {
 
     template<typename T, IntrusiveQueueNode T::*node_>
     inline bool IntrusiveQueue<T, node_>::too_many_tombstones() const {
+        // TODO: profile and find (better?) parameters for these heuristics.
         if (base_.tombstone_count() < 32) {
             return false; // A small number of tombstones can be ignored.
         }
