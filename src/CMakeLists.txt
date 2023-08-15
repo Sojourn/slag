@@ -1,29 +1,29 @@
 set(SLAG_SOURCE_FILES
-    operation_state_machine.cpp
-    operation_types.cpp
-    operation_flags.cpp
-    operation.cpp
-    resource.cpp
-    resource_context.cpp
-    resource_context_index.cpp
-    reactor.cpp
-    io_uring_reactor.cpp
-    io_uring_resource_context.cpp
+    # operation_state_machine.cpp
+    # operation_types.cpp
+    # operation_flags.cpp
+    # operation.cpp
+    # resource.cpp
+    # resource_context.cpp
+    # resource_context_index.cpp
+    # reactor.cpp
+    # io_uring_reactor.cpp
+    # io_uring_resource_context.cpp
     error.cpp
-    event_loop.cpp
-    task.cpp
+    # event_loop.cpp
+    # task.cpp
     platform.cpp
     file_descriptor.cpp
     address.cpp
     util.cpp
-    task_queue.cpp
-    executor.cpp
-    fiber_base.cpp
-    awaitable.cpp
+    # task_queue.cpp
+    # executor.cpp
+    # fiber_base.cpp
+    # awaitable.cpp
     # socket.cpp
-    buffer.cpp
-    buffer_slice.cpp
-    pollable.cpp
+    # buffer.cpp
+    # buffer_slice.cpp
+    # pollable.cpp
     trace.cpp
     application.cpp
     message_fragment.cpp
@@ -47,22 +47,22 @@ set(SLAG_SOURCE_FILES
 
 set(SLAG_HEADER_FILES
     ../include/slag/slag.h
-    ../include/slag/operation_state_machine.h
-    ../include/slag/operation_parameters.h
-    ../include/slag/operation_types.h
-    ../include/slag/operation_flags.h
-    ../include/slag/operation.h
-    ../include/slag/resource.h
-    ../include/slag/resource_context.h
-    ../include/slag/resource_context_index.h
-    ../include/slag/reactor.h
-    ../include/slag/io_uring_reactor.h
-    ../include/slag/io_uring_resource_context.h
+    # ../include/slag/operation_state_machine.h
+    # ../include/slag/operation_parameters.h
+    # ../include/slag/operation_types.h
+    # ../include/slag/operation_flags.h
+    # ../include/slag/operation.h
+    # ../include/slag/resource.h
+    # ../include/slag/resource_context.h
+    # ../include/slag/resource_context_index.h
+    # ../include/slag/reactor.h
+    # ../include/slag/io_uring_reactor.h
+    # ../include/slag/io_uring_resource_context.h
     ../include/slag/bit_set.h
     ../include/slag/bit_set.hpp
     ../include/slag/error.h
-    ../include/slag/event_loop.h
-    ../include/slag/task.h
+    # ../include/slag/event_loop.h
+    # ../include/slag/task.h
     ../include/slag/platform.h
     ../include/slag/file_descriptor.h
     ../include/slag/address.h
@@ -77,15 +77,15 @@ set(SLAG_HEADER_FILES
     ../include/slag/visit.h
     ../include/slag/visit.hpp
     ../include/slag/task_queue.h
-    ../include/slag/fiber_base.h
-    ../include/slag/fiber.h
-    ../include/slag/fiber.hpp
-    ../include/slag/coroutine.h
-    ../include/slag/coroutine.hpp
-    ../include/slag/socket.h
-    ../include/slag/pollable.h
-    ../include/slag/selector.h
-    ../include/slag/selector.hpp
+    # ../include/slag/fiber_base.h
+    # ../include/slag/fiber.h
+    # ../include/slag/fiber.hpp
+    # ../include/slag/coroutine.h
+    # ../include/slag/coroutine.hpp
+    # ../include/slag/socket.h
+    # ../include/slag/pollable.h
+    # ../include/slag/selector.h
+    # ../include/slag/selector.hpp
     ../include/slag/trace.h
     ../include/slag/stack.h
     ../include/slag/stack.hpp

@@ -1,18 +1,17 @@
 #include "slag/postal/executor.h"
-#include <chrono>
 
 namespace slag::postal {
 
-    Executor::Executor(const std::chrono::duration& quantum)
+    Executor::Executor(const Quantum& quantum)
         : quantum_{quantum}
     {
     }
 
-    const std::chrono::duration& Executor::quantum() const {
+    auto Executor::quantum() const -> const Quantum& {
         return quantum_;
     }
 
-    void Executor::set_quantum(const std::chrono::duration& quantum) {
+    void Executor::set_quantum(const Quantum& quantum) {
         quantum_ = quantum;
     }
 

@@ -1,59 +1,45 @@
+#include <array>
 #include "catch.hpp"
 #include "slag/slag.h"
 
-using namespace slag;
+using namespace slag::postal;
 
-class TestTask : public Task {
-public:
-    using Task::Task;
+struct MockTask : Task {
+    int                  state = 0;
+    std::array<Event, 4> events;
 
     void run() override {
-        ++activations;
+        assert(events[state].is_set());
+        state += 1;
     }
 
-    size_t activations = 0;
+    Event& runnable_event() override {
+        return events[state];
+    }
 };
 
-TEST_CASE("basic", "[Executor]") {
-    Executor executor;
-    TestTask task1{executor};
-    TestTask task2{executor};
+TEST_CASE("Executor") {
+    SECTION("Runnyness") {
+        Executor executor;
 
-    SECTION("recursive scheduling") {
-        // TODO
-    }
+        // The executor should have nothing to do.
+        CHECK(!executor.runnable_event().is_set());
 
-    SECTION("cancelation") {
-        task1.schedule();
-        task1.cancel();
+        MockTask mock_task;
+        executor.insert(mock_task);
 
-        executor.run(1);
-        CHECK(executor.is_idle());
-        CHECK(task1.activations == 0);
-    }
+        while (mock_task.state < 3) {
+            // The executor should not be runnable 
+            CHECK(!executor.runnable_event().is_set());
 
-    SECTION("reprioritization") {
-        task1.schedule(TaskPriority::NORMAL); // 1
-        task2.schedule(TaskPriority::NORMAL); // 1 2
-        task2.schedule(TaskPriority::HIGH);   // 2 1 X
+            // Set the event and ensure the executor is runnable now.
+            mock_task.events[mock_task.state].set();
+            CHECK(executor.runnable_event().is_set());
 
-        // run task2
-        executor.run(1);
-        CHECK(task1.activations == 0);
-        CHECK(task2.activations == 1);
+            // Progress.
+            executor.run();
+        }
 
-        CHECK(!executor.is_idle());
-
-        // run task1
-        executor.run(1);
-        CHECK(task1.activations == 1);
-        CHECK(task2.activations == 1);
-
-        CHECK(!executor.is_idle());
-
-        // discard the tombstone
-        executor.run(1);
-        CHECK(task1.activations == 1);
-        CHECK(task2.activations == 1);
+        asm("int $3");
     }
 }

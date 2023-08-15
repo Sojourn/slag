@@ -10,11 +10,13 @@ namespace slag::postal {
 
     class Executor : public Task {
     public:
-        explicit Executor(const std::chrono::duration& quantum = std::chrono::microseconds(10));
+        using Quantum = std::chrono::microseconds;
+
+        explicit Executor(const Quantum& quantum = std::chrono::microseconds(10));
 
         // TODO: extract this into a Scheduler/Interrupt
-        const std::chrono::duration& quantum() const;
-        void set_quantum(const std::chrono::duration& quantum);
+        const Quantum& quantum() const;
+        void set_quantum(const Quantum& quantum);
 
         void insert(Task& task);
         void remove(Task& task);
@@ -26,8 +28,8 @@ namespace slag::postal {
         void run() override;
 
     private:
-        std::chrono::duration quantum_;
-        Selector              selector_;
+        Quantum  quantum_;
+        Selector selector_;
     };
 
 }

@@ -3,6 +3,10 @@
 
 namespace slag::postal {
 
+    Event& Selector::readable_event() {
+        return ready_event_;
+    }
+
     void Selector::insert(Event& event) {
         Event* pointer = &event;
         insert(std::span{&pointer, 1});
@@ -17,7 +21,7 @@ namespace slag::postal {
             event->attach(*this);
 
             if (event->is_set()) {
-                queue_.push_back(*event);
+                ready_queue_.push_back(*event);
             }
         }
 
@@ -36,7 +40,7 @@ namespace slag::postal {
             }
 
             if (event->is_set()) {
-                queue_.erase(*event);
+                ready_queue_.erase(*event);
             }
 
             event->detach(*this);
@@ -46,7 +50,7 @@ namespace slag::postal {
     }
 
     Event* Selector::select() {
-        Event* event = queue_.pop_front();
+        Event* event = ready_queue_.pop_front();
         if (event) {
             event->detach(*this);
         }
@@ -57,7 +61,7 @@ namespace slag::postal {
     }
 
     size_t Selector::select(std::span<Event*> events) {
-        size_t count = queue_.pop_front(events);
+        size_t count = ready_queue_.pop_front(events);
         for (size_t index = 0; index < count; ++index) {
             events[index]->detach(*this);
         }
@@ -69,10 +73,10 @@ namespace slag::postal {
 
     void Selector::handle_readiness_change(Event& event) {
         if (event.is_set()) {
-            queue_.push_back(event);
+            ready_queue_.push_back(event);
         }
         else {
-            queue_.erase(event);
+            ready_queue_.erase(event);
         }
 
         update_readiness();
@@ -80,7 +84,7 @@ namespace slag::postal {
 
     void Selector::update_readiness() {
         // We are ready (readable) when the queue is not empty.
-        event_.set(
+        ready_event_.set(
             !ready_queue_.is_empty()
         );
     }

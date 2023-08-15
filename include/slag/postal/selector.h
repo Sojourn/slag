@@ -4,11 +4,14 @@
 #include <cstddef>
 #include "slag/intrusive_queue.h"
 #include "slag/postal/event.h"
+#include "slag/postal/pollable.h"
 
 namespace slag::postal {
 
-    class Selector {
+    class Selector : public Readable {
     public:
+        Event& readable_event() override;
+
         void insert(Event& event);
         void insert(std::span<Event*> events);
 
@@ -27,8 +30,8 @@ namespace slag::postal {
     private:
         using ReadyQueue = IntrusiveQueue<Event, &Event::selector_hook_>;
 
-        Event      event_;
-        ReadyQueue queue_;
+        Event      ready_event_;
+        ReadyQueue ready_queue_;
     };
 
 }

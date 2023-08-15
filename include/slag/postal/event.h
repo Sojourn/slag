@@ -10,7 +10,7 @@
     X(RUNNABLE)             \
     X(REAPABLE)             \
 
-namespace slag {
+namespace slag::postal {
 
     class Selector;
 

@@ -123,10 +123,8 @@ namespace slag {
         size_t pop_front(std::span<T*> elements);
         T* pop_back();
         size_t pop_back(std::span<T*> elements);
-        T* peek_front(size_t relative_offset = 0); // to support prefetching
-        T* peek_back(size_t relative_offset = 0); // to support prefetching
-        void erase(T& element); // replaces the value with a tombstone
-        void erase(Sequence sequence); // replaces the value at this sequence with a tombstone
+        void erase(T& element);
+        void erase(Sequence sequence);
         void clear();
         void reserve(size_t minimum_capacity);
 
