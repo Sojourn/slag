@@ -40,6 +40,9 @@ set(SLAG_SOURCE_FILES
     postal/post_box.cpp
     postal/post_office.cpp
     postal/postal_service.cpp
+    postal/event.cpp
+    postal/selector.cpp
+    postal/executor.cpp
 )
 
 set(SLAG_HEADER_FILES

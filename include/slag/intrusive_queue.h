@@ -2,6 +2,7 @@
 
 #include <optional>
 #include <iterator>
+#include <span>
 #include <array>
 #include <memory>
 #include <cstdint>

@@ -6,30 +6,57 @@
 
 using namespace slag;
 
+#if 0
+
 class Pollable;
 class Selector;
 
-// TODO: think about polling multiple events.
-//
-// is_readable
-// is_writable
-// is_runnable
-// is_complete
-// is_canceled
-// is_pollable = is_readable||is_writable||is_complete||...;
-//
-class Pollable {
+enum class EventType {
+    READABLE,
+    WRITABLE,
+    POLLABLE,
+    RUNNABLE,
+    COMPLETE,
+    CANCELED,
+};
+
+template<EventType event_type>
+class Awaitable;
+
+template<>
+class Awaitable<EventType::READABLE> {
+protected:
+    ~Awaitable() = default;
+
 public:
-    Pollable();
-    Pollable(Pollable&& other);
-    Pollable(const Pollable&) = delete;
+    // Interfaces need a unique function name to prevent
+    // things from getting weird.
+    virtual Event& is_readable() = 0;
+};
 
-    Pollable& operator=(Pollable&& other);
-    Pollable& operator=(const Pollable&) = delete;
+// Helper functions to treat these generically
+template<EventType event_type>
+Event& get_event(Awaitable<event_type>& awaitable) {
+    if constexpr (event_type == EventType::READABLE) {
+        return awaitable.readable_event();
+    }
+    // ...
 
-    bool is_ready() const;
-    void set_ready(bool value = true);
-    void reset_ready();
+    abort();
+}
+
+class Event {
+public:
+    Event();
+    Event(Event&& other);
+    Event(const Event&) = delete;
+
+    Event& operator=(Event&& other);
+    Event& operator=(const Event&) = delete;
+
+    bool is_set() const;
+    void set(bool value = true);
+    void reset();
 
     void* user_data();
     const void* user_data() const;
@@ -51,6 +78,21 @@ private:
 // Transform events (rate limiting)
 
 class Selector : public Pollable {
+    friend class Event;
+
+public:
+    void insert(Event& event);
+
+    template<size_t EXTENT>
+    size_t select(std::span<Event*, EXTENT> events);
+
+    void remove(Event& event);
+    Event* select();
+
+    Event& pollable_event() override;
+};
+
+class Selector {
     friend class Pollable;
 
 public:
@@ -87,7 +129,7 @@ public:
             }
 
             // The pollable cannot be linked when it is detached.
-            if (pollable->is_ready()) {
+            if (pollable->is_set()) {
                 ready_queue_.erase(*pollable);
             }
 
@@ -137,7 +179,7 @@ private:
 
     // Handle a readiness change of one of the pollables we are tracking.
     void handle_readiness_change(Pollable& pollable) {
-        if (pollable.is_ready()) {
+        if (pollable.is_set()) {
             ready_queue_.push_back(pollable);
         }
         else {
@@ -148,7 +190,7 @@ private:
     // Update our own readiness. We are considered ready as long as
     // our internal ready queue is not empty.
     void update_readiness() {
-        set_ready(!ready_queue_.is_empty());
+        set(!ready_queue_.is_empty());
     }
 
 private:
@@ -185,11 +227,11 @@ Pollable& Pollable::operator=(Pollable&& that) {
     return *this;
 }
 
-bool Pollable::is_ready() const {
+bool Pollable::is_set() const {
     return is_ready_;
 }
 
-void Pollable::set_ready(bool value) {
+void Pollable::set(bool value) {
     if (is_ready_ == value) {
         return; // no-op
     }
@@ -238,8 +280,6 @@ public:
     virtual Pollable& runnable() = 0;
     virtual void run() = 0;
 };
-
-#if 0
 
 class Event;
 
