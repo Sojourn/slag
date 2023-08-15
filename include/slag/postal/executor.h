@@ -8,6 +8,8 @@
 
 namespace slag::postal {
 
+    class Region;
+
     class Executor : public Task {
     public:
         using Quantum = std::chrono::microseconds;
@@ -28,6 +30,12 @@ namespace slag::postal {
         void run() override;
 
     private:
+        using Deadline = std::chrono::time_point<std::chrono::steady_clock>;
+
+        Event& run_until(Task& task, const Deadline& deadline);
+
+    private:
+        Region&  region_;
         Quantum  quantum_;
         Selector selector_;
     };

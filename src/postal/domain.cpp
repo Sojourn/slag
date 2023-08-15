@@ -1,4 +1,5 @@
 #include "slag/postal/domain.h"
+#include <stdexcept>
 #include <cassert>
 
 namespace slag::postal {
@@ -151,6 +152,18 @@ namespace slag::postal {
         return make_post_area(config_.index);
     }
 
+    PostOffice& Region::post_office() {
+        return post_office_;
+    }
+
+    Executor& Region::current_executor() {
+        if (executor_stack_.empty()) {
+            throw std::runtime_error("There are no running executors in this region.");
+        }
+
+        return *executor_stack_.back();
+    }
+
     auto Region::census_cursor() -> Census** {
         return &census_cursor_;
     }
@@ -244,6 +257,16 @@ namespace slag::postal {
 
             census_cursor_->export_sequences[export_index] = exports_[export_index].flush();
         }
+    }
+
+    void Region::enter_executor(Executor& executor) {
+        executor_stack_.push_back(&executor);
+    }
+
+    void Region::leave_executor(Executor& executor) {
+        assert(!executor_stack_.empty());
+        assert(executor_stack_.back() == &executor);
+        executor_stack_.pop_back();
     }
 
 }

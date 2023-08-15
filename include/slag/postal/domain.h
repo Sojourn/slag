@@ -14,6 +14,7 @@
 #include "slag/postal/buffer.h"
 #include "slag/postal/parcel.h"
 #include "slag/postal/post_office.h"
+#include "slag/postal/executor.h"
 
 namespace slag::postal {
 
@@ -101,6 +102,7 @@ namespace slag::postal {
 
         PostArea post_area() const;
         PostOffice& post_office();
+        Executor& current_executor();
 
     public:
         // Return a cursor that always points at the Census for the current Season.
@@ -122,6 +124,13 @@ namespace slag::postal {
         void survey_parcel_queues();
 
     private:
+        friend class Executor;
+
+        // Push and pop the currently running executor.
+        void enter_executor(Executor& executor);
+        void leave_executor(Executor& executor);
+
+    private:
         Nation&                          nation_;
         Config                           config_;
         Season                           season_;
@@ -131,6 +140,8 @@ namespace slag::postal {
         PostOffice                       post_office_;
         std::vector<ParcelQueueConsumer> imports_;
         std::vector<ParcelQueueProducer> exports_;
+
+        std::vector<Executor*>           executor_stack_;
     };
 
 }

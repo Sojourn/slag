@@ -4,10 +4,13 @@
 #include <cstddef>
 #include "slag/intrusive_queue.h"
 
+// Rename these to PollableType?
 #define SLAG_EVENT_TYPES(X) \
     X(READABLE)             \
     X(WRITABLE)             \
     X(RUNNABLE)             \
+    X(COMPLETE)             \
+    X(CANCELED)             \
     X(REAPABLE)             \
 
 namespace slag::postal {

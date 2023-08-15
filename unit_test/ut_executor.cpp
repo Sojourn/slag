@@ -39,7 +39,5 @@ TEST_CASE("Executor") {
             // Progress.
             executor.run();
         }
-
-        asm("int $3");
     }
 }

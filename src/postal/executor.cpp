@@ -1,9 +1,13 @@
 #include "slag/postal/executor.h"
+#include "slag/postal/domain.h"
+#include "slag/logging.h"
+#include <stdexcept>
 
 namespace slag::postal {
 
     Executor::Executor(const Quantum& quantum)
-        : quantum_{quantum}
+        : region_{region()}
+        , quantum_{quantum}
     {
     }
 
@@ -44,15 +48,46 @@ namespace slag::postal {
         Task* task = static_cast<Task*>(event->user_data());
         assert(task);
 
-        // Compute when the task should be interrupted. This cannot be changed
-        // after the task has started running (set_quantum will not impact this task).
-        auto deadline = std::chrono::steady_clock::now() + quantum_;
+        // Run the task until the quantum has elapsed or it starts waiting for something.
+        // This will return the event that the task is currently waiting for.
+        event = &run_until(*task, std::chrono::steady_clock::now() + quantum_);
+
+        // Schedule the task to run once the event it is waiting on is ready.
+        event->set_user_data(task);
+        selector_.insert(*event);
+    }
+
+    Event& Executor::run_until(Task& task, const Deadline& deadline) {
+        Event* event = nullptr;
+        region_.enter_executor(*this);
 
         while (true) {
-            task->run();
+            try {
+                task.run();
+            }
+            catch (const std::exception& ex) {
+                fatal(
+                    "[Executor] task:{} threw:'{}' while running. Evicting it."
+                    , static_cast<const void*>(&task)
+                    , ex.what()
+                );
+
+                // Options:
+                //   1: Penalize the task.
+                //        - Cancel the rest of the quantum by returning early. The task is
+                //          probably borked (since it threw) and may tell us to wait on the
+                //          wrong event and get stuck.
+                //   2: Evict it.
+                //        - Don't run it again. This is likely to cause something to get stuck.
+                //   3: Boom.
+                //        - Catch bugs early by aborting the program to generate a core dump.
+                //   4: Add a status to the task.
+                //
+                abort(); // Boom.
+            }
 
             // Refresh the event that the task is waiting for. It may have changed.
-            event = &task->runnable_event();
+            event = &task.runnable_event();
             if (!event->is_set()) {
                 break; // The task is waiting.
             }
@@ -63,9 +98,8 @@ namespace slag::postal {
             }
         }
 
-        // Schedule the task to run once the event it is waiting on is ready.
-        event->set_user_data(task);
-        selector_.insert(*event);
+        region_.leave_executor(*this);
+        return *event;
     }
 
 }

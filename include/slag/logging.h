@@ -10,12 +10,17 @@
 namespace slag {
     template<typename... Args>
     inline void info(const char* format, Args&&... args) {
-        std::cout << fmt::format(fmt::runtime(format), std::forward<Args>(args)...) << std::endl;
+        std::cout << "[Info]  " << fmt::format(fmt::runtime(format), std::forward<Args>(args)...) << std::endl;
+    }
+
+    template<typename... Args>
+    inline void error(const char* format, Args&&... args) {
+        std::cout << "[Error] " << fmt::format(fmt::runtime(format), std::forward<Args>(args)...) << std::endl;
     }
 
     template<typename... Args>
     inline void fatal(const char* format, Args&&... args) {
-        std::cout << fmt::format(fmt::runtime(format), std::forward<Args>(args)...) << std::endl;
+        std::cout << "[Fatal] " << fmt::format(fmt::runtime(format), std::forward<Args>(args)...) << std::endl;
     }
 
     template<typename... Args>
