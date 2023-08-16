@@ -32,7 +32,7 @@ namespace slag::postal {
     private:
         using Deadline = std::chrono::time_point<std::chrono::steady_clock>;
 
-        Event& run_until(Task& task, const Deadline& deadline);
+        void run_until(Task& task, const Deadline& deadline);
 
     private:
         Region&  region_;

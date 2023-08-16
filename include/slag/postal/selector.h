@@ -8,7 +8,7 @@
 
 namespace slag::postal {
 
-    class Selector : public Readable {
+    class Selector : public Pollable<PollableType::READABLE> {
     public:
         Event& readable_event() override;
 

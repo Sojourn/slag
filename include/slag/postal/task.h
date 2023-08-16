@@ -5,15 +5,60 @@
 
 namespace slag::postal {
 
-    // TODO: think about having a priority system that works
-    //       across multiple services (io, scheduling, etc.)
+    enum class TaskState {
+        WAITING, // The task is waiting on an event, or to be scheduled.
+        RUNNING, // The task is actively running.
+        SUCCESS, // The task has completed succesfully.
+        FAILURE, // The task has completed with an unspecified error.
+    };
 
-    class Task : public Runnable {
+    class Task
+        : public Pollable<PollableType::RUNNABLE>
+        , public Pollable<PollableType::COMPLETE>
+    {
+        // The Executor needs the address of this to be fixed.
+        Task(Task&&) = delete;
+        Task(const Task&) = delete;
+        Task& operator=(Task&&) = delete;
+        Task& operator=(const Task&) = delete;
+
     public:
+        Task();
+        virtual ~Task() = default;
+
+        // Returns the current state of the task.
+        TaskState state() const;
+
+        // This will become set when the task has completed (success/failure).
+        Event& complete_event() override final;
+
         // This should execute a small, but meaningful amount of work. It will
         // be periodically called by an executor when the task indicates
         // that it is runnable (the runnable event is set).
+        //
+        // Propagating exceptions out of this will cause the task to fail.
+        //
         virtual void run() = 0;
+
+    protected:
+        void set_success();
+        void set_failure();
+
+    private:
+        friend class Executor;
+
+        void set_state(TaskState state, bool force = false);
+
+    private:
+        // stuff for priority/epochs
+
+    private:
+        TaskState state_;
+        Event     complete_event_;
     };
+
+    constexpr bool is_terminal(TaskState state) {
+        return (state == TaskState::SUCCESS) || (state == TaskState::FAILURE);
+    }
 
 }

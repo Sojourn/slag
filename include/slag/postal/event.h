@@ -4,26 +4,9 @@
 #include <cstddef>
 #include "slag/intrusive_queue.h"
 
-// Rename these to PollableType?
-#define SLAG_EVENT_TYPES(X) \
-    X(READABLE)             \
-    X(WRITABLE)             \
-    X(RUNNABLE)             \
-    X(COMPLETE)             \
-    X(CANCELED)             \
-    X(REAPABLE)             \
-
 namespace slag::postal {
 
     class Selector;
-
-    enum class EventType : uint8_t {
-#define X(SLAG_EVENT_TYPE) \
-        SLAG_EVENT_TYPE,   \
-
-        SLAG_EVENT_TYPES(X)
-#undef X
-    };
 
     class Event {
     public:

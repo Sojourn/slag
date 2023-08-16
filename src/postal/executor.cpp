@@ -35,30 +35,31 @@ namespace slag::postal {
     }
 
     void Executor::run() {
-        // The way we are using the selector will cause us to prefetch the next
-        // ready event. It would be nice if we could peek with different offsets to
-        // prefetch the event, and the task in staggered run calls.
+        // Check if any of the events tasks are waiting on have become ready.
         Event* event = selector_.select();
         if (!event) {
-            return; // Nothing is currently runnable.
+            return;
         }
 
-        // Grab a pointer to the task that we stashed in the user data of
-        // the event it was waiting for.
+        // Fetch our stashed task pointer.
         Task* task = static_cast<Task*>(event->user_data());
         assert(task);
 
-        // Run the task until the quantum has elapsed or it starts waiting for something.
-        // This will return the event that the task is currently waiting for.
-        event = &run_until(*task, std::chrono::steady_clock::now() + quantum_);
+        // Run the task, and if it completes, we're done.
+        run_until(*task, std::chrono::steady_clock::now() + quantum_);
+        if (is_terminal(task->state())) {
+            return;
+        }
 
-        // Schedule the task to run once the event it is waiting on is ready.
+        // Fetch the event again in case it has changed (task is waiting on something new).
+        event = &task->runnable_event();
         event->set_user_data(task);
+
         selector_.insert(*event);
     }
 
-    Event& Executor::run_until(Task& task, const Deadline& deadline) {
-        Event* event = nullptr;
+    void Executor::run_until(Task& task, const Deadline& deadline) {
+        task.set_state(TaskState::RUNNING, true);
         region_.enter_executor(*this);
 
         while (true) {
@@ -66,40 +67,31 @@ namespace slag::postal {
                 task.run();
             }
             catch (const std::exception& ex) {
-                fatal(
-                    "[Executor] task:{} threw:'{}' while running. Evicting it."
+                task.set_state(TaskState::FAILURE, true);
+
+                error(
+                    "[Executor] task:{} threw:'{}' while running."
                     , static_cast<const void*>(&task)
                     , ex.what()
                 );
-
-                // Options:
-                //   1: Penalize the task.
-                //        - Cancel the rest of the quantum by returning early. The task is
-                //          probably borked (since it threw) and may tell us to wait on the
-                //          wrong event and get stuck.
-                //   2: Evict it.
-                //        - Don't run it again. This is likely to cause something to get stuck.
-                //   3: Boom.
-                //        - Catch bugs early by aborting the program to generate a core dump.
-                //   4: Add a status to the task.
-                //
-                abort(); // Boom.
             }
 
-            // Refresh the event that the task is waiting for. It may have changed.
-            event = &task.runnable_event();
-            if (!event->is_set()) {
-                break; // The task is waiting.
+            if (is_terminal(task.state())) {
+                break; // Task is complete.
             }
-
-            // Check if we need to interrupt the task.
-            if (deadline <= std::chrono::steady_clock::now()) {
-                break; // The quantum has elapsed, stop scheduling it.
+            else {
+                bool should_yield = false;
+                should_yield |= !task.runnable_event().is_set();
+                should_yield |= deadline <= std::chrono::steady_clock::now();
+                if (should_yield) {
+                    task.set_state(TaskState::WAITING, true);
+                    break;
+                }
             }
         }
 
         region_.leave_executor(*this);
-        return *event;
+        assert(task.state() != TaskState::RUNNING);
     }
 
 }

@@ -3,18 +3,29 @@
 #include <cassert>
 #include "slag/postal/event.h"
 
+// CANCELED?
+// REAPABLE?
+#define SLAG_POLLABLE_TYPES(X) \
+    X(READABLE)                \
+    X(WRITABLE)                \
+    X(RUNNABLE)                \
+    X(COMPLETE)                \
+
 namespace slag::postal {
 
-    template<EventType event_type>
+    enum class PollableType {
+#define X(SLAG_POLLABLE_TYPE) \
+        SLAG_POLLABLE_TYPE,
+
+        SLAG_POLLABLE_TYPES(X)
+#undef X
+    };
+
+    template<PollableType type>
     class Pollable;
 
-    using Readable = Pollable<EventType::READABLE>;
-    using Writable = Pollable<EventType::WRITABLE>;
-    using Runnable = Pollable<EventType::RUNNABLE>;
-    using Reapable = Pollable<EventType::REAPABLE>;
-
     template<>
-    class Pollable<EventType::READABLE> {
+    class Pollable<PollableType::READABLE> {
     public:
         virtual ~Pollable() = default;
 
@@ -22,7 +33,7 @@ namespace slag::postal {
     };
 
     template<>
-    class Pollable<EventType::WRITABLE> {
+    class Pollable<PollableType::WRITABLE> {
     public:
         virtual ~Pollable() = default;
 
@@ -30,7 +41,7 @@ namespace slag::postal {
     };
 
     template<>
-    class Pollable<EventType::RUNNABLE> {
+    class Pollable<PollableType::RUNNABLE> {
     public:
         virtual ~Pollable() = default;
 
@@ -38,26 +49,26 @@ namespace slag::postal {
     };
 
     template<>
-    class Pollable<EventType::REAPABLE> {
+    class Pollable<PollableType::COMPLETE> {
     public:
         virtual ~Pollable() = default;
 
-        virtual Event& reapable_event() = 0;
+        virtual Event& complete_event() = 0;
     };
 
-    template<EventType event_type>
-    inline Event& get_pollable_event(Pollable<event_type>& pollable) {
-        if constexpr (event_type == EventType::READABLE) {
+    template<PollableType type>
+    inline Event& get_pollable_event(Pollable<type>& pollable) {
+        if constexpr (type == PollableType::READABLE) {
             return pollable.readable_event();
         }
-        if constexpr (event_type == EventType::WRITABLE) {
+        if constexpr (type == PollableType::WRITABLE) {
             return pollable.writable_event();
         }
-        if constexpr (event_type == EventType::RUNNABLE) {
+        if constexpr (type == PollableType::RUNNABLE) {
             return pollable.runnable_event();
         }
-        if constexpr (event_type == EventType::REAPABLE) {
-            return pollable.reapable_event();
+        if constexpr (type == PollableType::COMPLETE) {
+            return pollable.complete_event();
         }
 
         abort(); // internal error
