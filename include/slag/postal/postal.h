@@ -14,5 +14,6 @@
 #include "task.h"
 #include "event.h"
 #include "pollable.h"
+#include "pollable_queue.h"
 #include "selector.h"
 #include "executor.h"

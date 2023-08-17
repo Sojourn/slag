@@ -25,4 +25,20 @@ namespace slag::postal {
         return post_code_;
     }
 
+    PollableQueue<Envelope>& PostBox::incoming_queue() {
+        return incoming_queue_;
+    }
+
+    PollableQueue<Envelope>& PostBox::outgoing_queue() {
+        return outgoing_queue_;
+    }
+
+    void PostBox::send(Envelope envelope) {
+        outgoing_queue_.push_back(std::move(envelope));
+    }
+
+    std::optional<Envelope> PostBox::receive() {
+        return incoming_queue_.pop_front();
+    }
+
 }

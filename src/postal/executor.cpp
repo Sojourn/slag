@@ -44,6 +44,7 @@ namespace slag::postal {
         // Fetch our stashed task pointer.
         Task* task = static_cast<Task*>(event->user_data());
         assert(task);
+        assert(task->is_waiting());
 
         // Run the task, and if it completes, we're done.
         run_until(*task, std::chrono::steady_clock::now() + quantum_);
@@ -51,7 +52,8 @@ namespace slag::postal {
             return;
         }
 
-        // Fetch the event again in case it has changed (task is waiting on something new).
+        // Fetch the event again in case it has changed. It could be
+        // waiting on something new.
         event = &task->runnable_event();
         event->set_user_data(task);
 
@@ -59,7 +61,7 @@ namespace slag::postal {
     }
 
     void Executor::run_until(Task& task, const Deadline& deadline) {
-        task.set_state(TaskState::RUNNING, true);
+        task.set_state(TaskState::RUNNING);
         region_.enter_executor(*this);
 
         while (true) {
@@ -67,7 +69,7 @@ namespace slag::postal {
                 task.run();
             }
             catch (const std::exception& ex) {
-                task.set_state(TaskState::FAILURE, true);
+                task.set_state(TaskState::FAILURE);
 
                 error(
                     "[Executor] task:{} threw:'{}' while running."
@@ -81,17 +83,17 @@ namespace slag::postal {
             }
             else {
                 bool should_yield = false;
-                should_yield |= !task.runnable_event().is_set();
+                should_yield |= !task.is_runnable();
                 should_yield |= deadline <= std::chrono::steady_clock::now();
                 if (should_yield) {
-                    task.set_state(TaskState::WAITING, true);
+                    task.set_state(TaskState::WAITING);
                     break;
                 }
             }
         }
 
         region_.leave_executor(*this);
-        assert(task.state() != TaskState::RUNNING);
+        assert(!task.is_running());
     }
 
 }

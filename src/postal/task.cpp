@@ -33,6 +33,22 @@ namespace slag::postal {
         return state_;
     }
 
+    bool Task::is_waiting() const {
+        return state_ == TaskState::WAITING;
+    }
+
+    bool Task::is_running() const {
+        return state_ == TaskState::RUNNING;
+    }
+
+    bool Task::is_success() const {
+        return state_ == TaskState::SUCCESS;
+    }
+
+    bool Task::is_failure() const {
+        return state_ == TaskState::FAILURE;
+    }
+
     void Task::set_success() {
         set_state(TaskState::SUCCESS);
     }
@@ -41,13 +57,14 @@ namespace slag::postal {
         set_state(TaskState::FAILURE);
     }
 
-    void Task::set_state(TaskState state, bool force) {
-        if (!force && !is_valid_transition(state_, state)) {
-            throw std::runtime_error("Invalid transition");
+    void Task::set_state(TaskState state) {
+        if (!is_valid_transition(state_, state)) {
+            assert(false);
+            throw std::runtime_error("Invalid task state transition");
         }
 
         state_ = state;
-        if (is_terminal(state_)) {
+        if (is_terminal(state)) {
             complete_event_.set();
         }
     }

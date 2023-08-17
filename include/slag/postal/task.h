@@ -26,8 +26,11 @@ namespace slag::postal {
         Task();
         virtual ~Task() = default;
 
-        // Returns the current state of the task.
         TaskState state() const;
+        bool is_waiting() const;
+        bool is_running() const;
+        bool is_success() const;
+        bool is_failure() const;
 
         // This will become set when the task has completed (success/failure).
         Event& complete_event() override final;
@@ -47,7 +50,7 @@ namespace slag::postal {
     private:
         friend class Executor;
 
-        void set_state(TaskState state, bool force = false);
+        void set_state(TaskState state);
 
     private:
         // stuff for priority/epochs

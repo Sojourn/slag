@@ -9,8 +9,10 @@ namespace slag::postal {
     struct Parcel {
         PostCode         to;
         PostCode         from;
+        PostageStamp     stamp;
         BufferDescriptor content;
     };
+    static_assert(sizeof(Parcel) <= 64);
 
     using ParcelQueue         = SpscQueue<Parcel>;
     using ParcelQueueConsumer = SpscQueueConsumer<Parcel>;

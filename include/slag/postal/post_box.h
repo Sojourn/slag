@@ -3,7 +3,10 @@
 #include "slag/queue.h"
 #include "slag/intrusive_list.h"
 #include "slag/postal/types.h"
+#include "slag/postal/domain.h"
 #include "slag/postal/envelope.h"
+#include "slag/postal/pollable.h"
+#include "slag/postal/pollable_queue.h"
 
 namespace slag::postal {
 
@@ -14,12 +17,14 @@ namespace slag::postal {
         PostBox& operator=(const PostBox&) = delete;
 
     public:
-        explicit PostBox(PostOffice& post_office);
+        explicit PostBox(PostOffice& post_office = region().post_office());
         ~PostBox();
 
         PostOffice& post_office();
         PostArea post_area() const;
         PostCode post_code() const;
+        PollableQueue<Envelope>& incoming_queue();
+        PollableQueue<Envelope>& outgoing_queue();
 
         // send an envelope with these contents to a mailbox
         void send(Envelope envelope);
@@ -28,17 +33,10 @@ namespace slag::postal {
         std::optional<Envelope> receive();
 
     private:
-        friend class PostMaster;
-        friend class PostWorker;
-
-        Queue<Envelope>& incoming();
-        Queue<Envelope>& outgoing();
-
-    private:
-        PostOffice&     post_office_;
-        PostCode        post_code_;
-        Queue<Envelope> incoming_;
-        Queue<Envelope> outgoing_;
+        PostOffice&             post_office_;
+        PostCode                post_code_;
+        PollableQueue<Envelope> incoming_queue_;
+        PollableQueue<Envelope> outgoing_queue_;
     };
 
 }

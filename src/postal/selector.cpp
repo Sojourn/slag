@@ -42,6 +42,10 @@ namespace slag::postal {
             if (event->is_set()) {
                 ready_queue_.erase(*event);
             }
+            else {
+                // The event is not in our ready queue and does not need to be unlinked,
+                // just told that it is dead to us.
+            }
 
             event->detach(*this);
         }

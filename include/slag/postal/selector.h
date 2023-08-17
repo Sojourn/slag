@@ -13,10 +13,10 @@ namespace slag::postal {
         Event& readable_event() override;
 
         void insert(Event& event);
-        void insert(std::span<Event*> events);
+        void insert(std::span<Event*> events); // Can be sparse.
 
         void remove(Event& event);
-        void remove(std::span<Event*> events);
+        void remove(std::span<Event*> events); // Can be sparse.
 
         Event* select();
         size_t select(std::span<Event*> events);

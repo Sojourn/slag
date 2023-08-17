@@ -18,6 +18,75 @@ struct MockTask : Task {
     }
 };
 
+struct SpinTask : Task {
+    Event event;
+    int   count = 100;
+    int   index = 0;
+
+    SpinTask() {
+        event.set();
+    }
+
+    void run() override {
+        index += 1;
+        if (index == count) {
+            set_success();
+        }
+    }
+
+    Event& runnable_event() override {
+        return event;
+    }
+};
+
+using Connection = std::array<PollableQueue<int>, 2>;
+
+struct PingTask : Task {
+    PollableQueue<int>& rx_queue;
+    PollableQueue<int>& tx_queue;
+    int                 result;
+
+    explicit PingTask(Connection& connection)
+        : rx_queue{connection[0]}
+        , tx_queue{connection[1]}
+        , result{-1}
+    {
+    }
+
+    void ping(int number) {
+        tx_queue.push_back(number);
+    }
+
+    void run() override {
+        result = *rx_queue.pop_front();
+        set_success();
+    }
+
+    Event& runnable_event() override {
+        return rx_queue.readable_event();
+    }
+};
+
+struct PongTask : Task {
+    PollableQueue<int>& rx_queue;
+    PollableQueue<int>& tx_queue;
+
+    explicit PongTask(Connection& connection)
+        : rx_queue{connection[1]}
+        , tx_queue{connection[0]}
+    {
+    }
+
+    void run() override {
+        tx_queue.push_back(*rx_queue.pop_front());
+        set_success();
+    }
+
+    Event& runnable_event() override {
+        return rx_queue.readable_event();
+    }
+};
+
 TEST_CASE("Executor") {
     Empire::Config empire_config;
     empire_config.index = 0;
@@ -56,5 +125,40 @@ TEST_CASE("Executor") {
             // Progress.
             executor.run();
         }
+    }
+
+    SECTION("Spinning") {
+        SpinTask spin_task;
+
+        Executor executor;
+        executor.insert(spin_task);
+        while (executor.is_runnable()) {
+            executor.run();
+        }
+
+        CHECK(spin_task.state() == TaskState::SUCCESS);
+    }
+
+    SECTION("PingPong") {
+        Executor executor;
+
+        Connection connection;
+        PingTask ping_task{connection};
+        PongTask pong_task{connection};
+
+        executor.insert(ping_task);
+        executor.insert(pong_task);
+
+        CHECK(!executor.is_runnable());
+        ping_task.ping(37);
+        CHECK(executor.is_runnable());
+
+        while (executor.is_runnable()) {
+            executor.run();
+        }
+
+        asm("int $3");
+
+        CHECK(ping_task.result == 37);
     }
 }

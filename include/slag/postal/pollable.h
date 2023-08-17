@@ -3,8 +3,13 @@
 #include <cassert>
 #include "slag/postal/event.h"
 
-// CANCELED?
-// REAPABLE?
+// CANCELED
+// REAPABLE
+// UNPACKED
+// UNLOADED
+// DEPLETED
+// PRODUCED resource has been produced above a watermark?
+// CONSUMED resource has been consumed below a watermark?
 #define SLAG_POLLABLE_TYPES(X) \
     X(READABLE)                \
     X(WRITABLE)                \
@@ -21,6 +26,10 @@ namespace slag::postal {
 #undef X
     };
 
+    // Wrap classes so that they support being pollable.
+    template<typename T>
+    class PollableAdapter;
+
     template<PollableType type>
     class Pollable;
 
@@ -30,6 +39,11 @@ namespace slag::postal {
         virtual ~Pollable() = default;
 
         virtual Event& readable_event() = 0;
+
+        bool is_readable() const {
+            auto&& self = const_cast<Pollable&>(*this);
+            return self.readable_event().is_set();
+        }
     };
 
     template<>
@@ -38,6 +52,11 @@ namespace slag::postal {
         virtual ~Pollable() = default;
 
         virtual Event& writable_event() = 0;
+
+        bool is_writable() const {
+            auto&& self = const_cast<Pollable&>(*this);
+            return self.writable_event().is_set();
+        }
     };
 
     template<>
@@ -46,6 +65,11 @@ namespace slag::postal {
         virtual ~Pollable() = default;
 
         virtual Event& runnable_event() = 0;
+
+        bool is_runnable() const {
+            auto&& self = const_cast<Pollable&>(*this);
+            return self.runnable_event().is_set();
+        }
     };
 
     template<>
@@ -54,6 +78,11 @@ namespace slag::postal {
         virtual ~Pollable() = default;
 
         virtual Event& complete_event() = 0;
+
+        bool is_complete() const {
+            auto&& self = const_cast<Pollable&>(*this);
+            return self.complete_event().is_set();
+        }
     };
 
     template<PollableType type>
