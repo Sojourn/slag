@@ -125,6 +125,7 @@ namespace slag::postal {
 
     private:
         friend class Executor;
+        friend class ExecutorActivation;
 
         // Push and pop the currently running executor.
         void enter_executor(Executor& executor);

@@ -345,6 +345,28 @@ namespace slag {
     }
 
     template<typename T, IntrusiveQueueNode T::*node_>
+    inline T* IntrusiveQueue<T, node_>::front() {
+        for (size_t i = 0; i < base_.size(); ++i) {
+            if (IntrusiveQueueNode* node = base_.peek_front(i)) {
+                return from_node(node);
+            }
+        }
+
+        return nullptr;
+    }
+
+    template<typename T, IntrusiveQueueNode T::*node_>
+    inline T* IntrusiveQueue<T, node_>::back() {
+        for (size_t i = 0; i < base_.size(); ++i) {
+            if (IntrusiveQueueNode* node = base_.peek_back(i)) {
+                return from_node(node);
+            }
+        }
+
+        return nullptr;
+    }
+
+    template<typename T, IntrusiveQueueNode T::*node_>
     inline auto IntrusiveQueue<T, node_>::push_front(T& element) -> Sequence {
         return base_.push_front(to_node(element));
     }

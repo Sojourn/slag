@@ -26,7 +26,8 @@ namespace slag::postal {
         // Returns an event that is set when we have runnable tasks.
         Event& runnable_event() override;
 
-        // Runs the next runnable task.
+        // Runs tasks until the quantum has elapsed, or there are
+        // no more runnable tasks.
         void run() override;
 
     private:

@@ -16,6 +16,7 @@ add_executable(unit_test
         ut_spsc_queue.cpp
         ut_queue.cpp
         ut_bit_set.cpp
+        ut_task_group.cpp
         )
 
 target_link_libraries(unit_test PUBLIC slag)

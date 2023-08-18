@@ -5,6 +5,29 @@
 
 namespace slag::postal {
 
+    class ExecutorActivation {
+        ExecutorActivation(ExecutorActivation&&) = delete;
+        ExecutorActivation(const ExecutorActivation&) = delete;
+        ExecutorActivation& operator=(ExecutorActivation&&) = delete;
+        ExecutorActivation& operator=(const ExecutorActivation&) = delete;
+
+    public:
+        ExecutorActivation(Region& region, Executor& executor)
+            : region_{region}
+            , executor_{executor}
+        {
+            region_.enter_executor(executor_);
+        }
+
+        ~ExecutorActivation() {
+            region_.leave_executor(executor_);
+        }
+
+    private:
+        Region&   region_;
+        Executor& executor_;
+    };
+
     Executor::Executor(const Quantum& quantum)
         : region_{region()}
         , quantum_{quantum}
@@ -35,40 +58,43 @@ namespace slag::postal {
     }
 
     void Executor::run() {
-        // Check if any of the events tasks are waiting on have become ready.
-        Event* event = selector_.select();
-        if (!event) {
-            return;
+        ExecutorActivation activation{region_, *this};
+        {
+            auto deadline = std::chrono::steady_clock::now() + quantum_;
+
+            while (Event* event = selector_.select()) {
+                // Fetch our stashed task pointer.
+                Task* task = static_cast<Task*>(event->user_data());
+                assert(task);
+                assert(task->is_waiting());
+
+                // Run the task and reschedule if it doesn't complete.
+                run_until(*task, deadline);
+                if (!task->is_complete()) {
+                    insert(*task);
+                }
+
+                // Check if the deadline was reached and we need to yield.
+                if (deadline <= std::chrono::steady_clock::now()) {
+                    break;
+                }
+            }
         }
-
-        // Fetch our stashed task pointer.
-        Task* task = static_cast<Task*>(event->user_data());
-        assert(task);
-        assert(task->is_waiting());
-
-        // Run the task, and if it completes, we're done.
-        run_until(*task, std::chrono::steady_clock::now() + quantum_);
-        if (is_terminal(task->state())) {
-            return;
-        }
-
-        // Fetch the event again in case it has changed. It could be
-        // waiting on something new.
-        event = &task->runnable_event();
-        event->set_user_data(task);
-
-        selector_.insert(*event);
     }
 
     void Executor::run_until(Task& task, const Deadline& deadline) {
         task.set_state(TaskState::RUNNING);
-        region_.enter_executor(*this);
 
+        // A task is allowed to execute for the entire quantum if it
+        // still has work to do.
         while (true) {
             try {
                 task.run();
             }
             catch (const std::exception& ex) {
+                assert(!task.is_complete());
+
+                // Force the task into a failed state.
                 task.set_state(TaskState::FAILURE);
 
                 error(
@@ -83,8 +109,8 @@ namespace slag::postal {
             }
             else {
                 bool should_yield = false;
-                should_yield |= !task.is_runnable();
-                should_yield |= deadline <= std::chrono::steady_clock::now();
+                should_yield = should_yield || !task.is_runnable();
+                should_yield = should_yield || (deadline <= std::chrono::steady_clock::now());
                 if (should_yield) {
                     task.set_state(TaskState::WAITING);
                     break;
@@ -92,7 +118,6 @@ namespace slag::postal {
             }
         }
 
-        region_.leave_executor(*this);
         assert(!task.is_running());
     }
 

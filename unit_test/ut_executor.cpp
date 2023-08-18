@@ -157,8 +157,6 @@ TEST_CASE("Executor") {
             executor.run();
         }
 
-        asm("int $3");
-
         CHECK(ping_task.result == 37);
     }
 }

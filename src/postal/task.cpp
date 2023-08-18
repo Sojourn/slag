@@ -49,6 +49,10 @@ namespace slag::postal {
         return state_ == TaskState::FAILURE;
     }
 
+    void Task::set_success(bool success) {
+        set_state(success ? TaskState::SUCCESS : TaskState::FAILURE);
+    }
+
     void Task::set_success() {
         set_state(TaskState::SUCCESS);
     }

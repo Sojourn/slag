@@ -117,6 +117,8 @@ namespace slag {
         bool is_empty() const;
         size_t size() const;
         size_t capacity() const;
+        T* front();
+        T* back();
         Sequence push_front(T& element);
         Sequence push_back(T& element);
         T* pop_front();

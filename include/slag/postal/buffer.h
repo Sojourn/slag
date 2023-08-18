@@ -8,6 +8,20 @@
 
 namespace slag::postal {
 
+#if 0
+    struct BufferDescriptor {
+        uint32_t offset;
+        uint16_t region;
+
+        struct {
+            bool shared;
+            bool frozen;
+        } flags;
+
+        constexpr auto operator<=>(const BufferDescriptor&) const = default;
+    };
+#endif
+
     struct BufferDescriptor {
         uint32_t index  : 30; // TODO: calculate the region from this
         uint32_t shared :  1;
