@@ -139,20 +139,25 @@ namespace slag {
     }
 
     template<typename T>
-    bool Queue<T>::consume_front() {
-        if (is_empty()) {
+    inline bool Queue<T>::consume_front(size_t count) {
+        if (size() < count) {
             return false;
         }
 
-        Slot& slot = slots_[mask_ & head_++];
-        slot.destroy();
+        for (size_t i = 0; i < count; ++i) {
+            Slot& slot = slots_[mask_ & (head_ + i)];
+            slot.destroy();
+        }
+
+        head_ += count;
 
         return true;
     }
 
     template<typename T>
     inline void Queue<T>::clear() {
-        while (consume_front());
+        bool ok = consume_front(size());
+        assert(ok);
     }
 
     template<typename T>

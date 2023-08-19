@@ -36,7 +36,7 @@ namespace slag {
         void emplace_back(Args&&... args);
         void push_back(T value);
         std::optional<T> pop_front();
-        bool consume_front();
+        bool consume_front(size_t count = 1);
 
         void clear();
         void reserve(size_t minimum_capacity);

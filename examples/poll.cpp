@@ -43,6 +43,16 @@ private:
     size_t max_failure_count_;
 };
 
+// BufferAllocator
+
+// BufferWriter(BufferAllocator)
+//  lazy allocation
+// .write(span, offset?)
+//  publish?commit/rollback/etc.?
+//    BufferHandle is read-only once published
+
+// BufferReader(BufferHandle)
+
 int main(int, char**) {
     Empire::Config empire_config;
     empire_config.index = 0;
