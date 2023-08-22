@@ -5,43 +5,9 @@
 #include "slag/intrusive_queue.h"
 #include "slag/slag.h"
 
+#include <sys/mman.h>
+
 using namespace slag::postal;
-
-template<typename TaskImpl>
-class SupervisedTaskGroup : public TaskGroup<TaskImpl> {
-public:
-    template<typename... Args>
-    SupervisedTaskGroup(Args&&... args)
-        : TaskGroup<TaskImpl>(std::forward<Args>(args)...)
-        , failure_count_{0}
-        , max_failure_count_{std::numeric_limits<size_t>::max()}
-    {
-    }
-
-    void reset_failure_count() {
-        failure_count_ = 0;
-    }
-
-    void set_max_failure_count(size_t max_failure_count) {
-        max_failure_count_ = max_failure_count;
-    }
-
-private:
-    // Reap a task that was destroyed outside of our destructor.
-    void reap(TaskImpl& task) override final {
-        if (task.is_failure()) {
-            failure_count_ += 1;
-            if (failure_count_ == max_failure_count_) {
-                Task::set_failure(); // Suicide the task group.
-                return;
-            }
-        }
-    }
-
-private:
-    size_t failure_count_;
-    size_t max_failure_count_;
-};
 
 int main(int, char**) {
     Empire::Config empire_config;

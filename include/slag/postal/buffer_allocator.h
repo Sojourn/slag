@@ -8,9 +8,16 @@
 
 namespace slag::postal {
 
+    // System: uses the c.r.t. allocator.
+    // Linear: linear allocation 
+    // Cohort: ~fifo allocations.
+
     class NationalBufferLedger;
     class RegionalBufferLedger;
 
+    // NOTE: different implementations can choose different alignments,
+    //       all the way down to single byte alignment (none).
+    //
     class BufferAllocator {
         BufferAllocator(BufferAllocator&&) = delete;
         BufferAllocator(const BufferAllocator&) = delete;
