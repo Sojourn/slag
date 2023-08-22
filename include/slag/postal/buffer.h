@@ -44,7 +44,7 @@ namespace slag::postal {
         BufferDescriptor descriptor_;
     };
 
-    // This only be done once after allocating the buffer. Subsequent handles
+    // This should only be done once after allocating the buffer. Subsequent handles
     // should be created via BufferHandle::share, otherwise reference counts will
     // be messed up.
     //

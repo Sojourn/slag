@@ -122,6 +122,7 @@ namespace slag::postal {
         , census_cursor_{nullptr}
         , post_office_{*this}
         , buffer_ledger_{*this}
+        , buffer_allocator_{*this}
     {
         make_history();
 
@@ -180,6 +181,10 @@ namespace slag::postal {
 
     RegionalBufferLedger& Region::buffer_ledger() {
         return buffer_ledger_;
+    }
+
+    BufferAllocator& Region::buffer_allocator() {
+        return buffer_allocator_;
     }
 
     Executor& Region::current_executor() {

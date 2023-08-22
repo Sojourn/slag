@@ -12,8 +12,8 @@ namespace slag::postal {
     // Allocates storage for buffers using the default system allocator.
     class DefaultBufferAllocator : public BufferAllocator {
     public:
-        DefaultBufferAllocator()
-            : BufferAllocator{region()}
+        DefaultBufferAllocator(Region& region)
+            : BufferAllocator{region}
         {
         }
 

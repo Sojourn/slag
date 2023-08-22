@@ -1,6 +1,7 @@
 #pragma once
 
 #include <span>
+#include <limits>
 #include <cstdint>
 #include <cstddef>
 #include "slag/postal/buffer.h"
@@ -17,7 +18,7 @@ namespace slag::postal {
 
         void seek(size_t position);
         void advance(size_t count);
-        std::span<const std::byte> read(size_t count);
+        std::span<const std::byte> read(size_t count = std::numeric_limits<size_t>::max());
 
     private:
         BufferHandle                     handle_;

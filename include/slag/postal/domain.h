@@ -13,6 +13,8 @@
 #include "slag/postal/census.h"
 #include "slag/postal/buffer.h"
 #include "slag/postal/buffer_ledger.h"
+#include "slag/postal/buffer_allocator.h"
+#include "slag/postal/default_buffer_allocator.h"
 #include "slag/postal/parcel.h"
 #include "slag/postal/post_office.h"
 #include "slag/postal/executor.h"
@@ -108,6 +110,7 @@ namespace slag::postal {
         PostArea post_area() const;
         PostOffice& post_office();
         RegionalBufferLedger& buffer_ledger();
+        BufferAllocator& buffer_allocator();
         Executor& current_executor();
 
     public:
@@ -149,6 +152,8 @@ namespace slag::postal {
         std::vector<ParcelQueueProducer> exports_;
 
         RegionalBufferLedger             buffer_ledger_;
+        DefaultBufferAllocator           buffer_allocator_;
+
         std::vector<Executor*>           executor_stack_;
     };
 

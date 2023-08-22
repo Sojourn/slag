@@ -68,14 +68,18 @@ int main(int, char**) {
 
     char greeting[] = "Hello, World!\0";
 
-    DefaultBufferAllocator allocator;
-    BufferWriter buffer_writer{allocator};
+    BufferWriter buffer_writer;
+    buffer_writer.write(std::as_bytes(std::span{greeting}));
     buffer_writer.write(std::as_bytes(std::span{greeting}));
     BufferHandle handle = buffer_writer.publish();
 
-    BufferReader reader{handle.share()};
+    BufferReader reader{std::move(handle)};
 
-    std::cout << (const char*)reader.read(20).data() << std::endl;
+    size_t size = reader.size();
+    std::cout << (const char*)reader.read(size).data() << std::endl;
+    std::cout << reader.tell() << std::endl;
+    std::cout << (const char*)reader.read(size).data() << std::endl;
+    std::cout << reader.tell() << std::endl;
 
     return 0;
 }
