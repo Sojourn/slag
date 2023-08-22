@@ -5,6 +5,12 @@
 
 namespace slag::postal {
 
+    BufferHandle::BufferHandle(BufferDescriptor descriptor)
+        : descriptor_{descriptor}
+    {
+        // Whoever is constructing us is responsible for our initial reference.
+    }
+
     BufferHandle::BufferHandle() {
         memset(&descriptor_, 0, sizeof(descriptor_));
     }
@@ -21,7 +27,9 @@ namespace slag::postal {
 
     BufferHandle& BufferHandle::operator=(BufferHandle&& that) {
         if (this != &that) {
-            // TODO
+            reset();
+
+            std::swap(descriptor_, that.descriptor_);
         }
 
         return *this;
@@ -31,8 +39,33 @@ namespace slag::postal {
         return descriptor_.index > 0;
     }
 
+    BufferDescriptor BufferHandle::descriptor() const {
+        return descriptor_;
+    }
+
+    BufferHandle BufferHandle::share() {
+        if (*this) {
+            increment_reference_count();
+        }
+
+        return BufferHandle {
+            descriptor_
+        };
+    }
+
     void BufferHandle::reset() {
-        // TODO
+        if (*this) {
+            decrement_reference_count();
+            memset(&descriptor_, 0, sizeof(descriptor_));
+        }
+    }
+
+    void BufferHandle::increment_reference_count() {
+        region().buffer_ledger().increment_reference_count(descriptor_);
+    }
+
+    void BufferHandle::decrement_reference_count() {
+        region().buffer_ledger().decrement_reference_count(descriptor_);
     }
 
 }

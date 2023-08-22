@@ -9,74 +9,64 @@
 #include "slag/pool_allocator.h"
 #include "slag/postal/types.h"
 #include "slag/postal/config.h"
-#include "slag/postal/domain.h"
-#include "slag/postal/buffer.h"
 #include "slag/postal/census.h"
+#include "slag/postal/buffer.h"
+#include "slag/postal/buffer_allocator.h"
 
 namespace slag::postal {
 
-    class BufferAllocator {
-    public:
-        virtual ~BufferAllocator() = default;
-
-        virtual BufferDescriptor allocate_buffer(size_t size) = 0;
-        virtual void reallocate_buffer(BufferDescriptor descriptor, size_t size) = 0;
-        virtual void deallocate_buffer(BufferDescriptor descriptor) = 0;
-    };
+    class NationalBufferLedger;
+    class RegionalBufferLedger;
 
     struct BufferSegment {
-        std::span<std::byte> data;
-        BufferSegment*       next;
+        BufferSegment* next;
+        void*          data;
+        size_t         capacity;
     };
 
-    template<DomainType domain_type>
-    struct BufferLedgerEntry;
-
-    template<DomainType domain_type>
-    struct BufferLedgerEntry<DomainType::NATION> {
+    struct NationalBufferLedgerEntry {
         BufferSegment    head;
-        BufferSegment*   tail;       // For efficient extension.
-        uint32_t         size;       // Combined size of all segments.
-
+        BufferSegment*   tail;          // For efficient extension.
+        size_t           size;          // Potentially != total capacity of segments.
+        uint8_t          segment_count; // Useful for sizing iovecs.
+        uint8_t          pinned : 1;    // Memory layout will not change.
+        uint8_t          frozen : 1;    // Memory contents will not change.
         uint16_t         region;
-        uint16_t         pinned : 1; // Memory layout will not change.
-        uint16_t         frozen : 1; // Memory contents will not change.
-
         BufferAllocator* allocator;
     };
 
-    // This should be kept small, as we need a per-region instance.
-    template<DomainType domain_type>
-    struct BufferLedgerEntry<DomainType::REGION> {
+    struct RegionalBufferLedgerEntry {
+        // NOTE: the reference count is intentionally off-by-one. The buffer is not
+        //       considered to be unreferenced until it would drop below zero.
+        //       This lets us elide reference counting entirely for uniquely owned buffers.
+        //
         uint8_t reference_count;
     };
 
-    template<DomainType domain_type>
-    class BufferLedger;
-
-    template<>
-    class BufferLedger<DomainType::NATION> {
+    class NationalBufferLedger {
     public:
-        using Entry = BufferLedgerEntry<DomainType::NATION>;
+        using NationalEntry = NationalBufferLedgerEntry;
 
-        explicit BufferLedger(const DomainConfig<DomainType::NATION>& config);
+        explicit NationalBufferLedger(Nation& nation);
+
+        NationalEntry& get_national_entry(BufferDescriptor descriptor);
 
     private:
-        std::vector<Entry> entries_;
+        Nation&                    nation_;
+        std::vector<NationalEntry> entries_;
     };
 
-    template<>
-    class BufferLedger<DomainType::REGION> {
+    class RegionalBufferLedger {
     public:
-        using Entry = BufferLedgerEntry<DomainType::REGION>;
+        using NationalEntry = NationalBufferLedgerEntry;
+        using RegionalEntry = RegionalBufferLedgerEntry;
 
-        BufferLedger(BufferLedger<DomainType::NATION>& national_ledger, const DomainConfig<DomainType::REGION>& config);
+        explicit RegionalBufferLedger(Region& region);
 
-        void set_frozen();
-        bool is_frozen() const;
+        NationalBufferLedger& national_buffer_ledger();
 
-        void set_pinned();
-        bool is_pinned() const;
+        NationalEntry& get_national_entry(BufferDescriptor descriptor);
+        RegionalEntry& get_regional_entry(BufferDescriptor descriptor);
 
     private:
         friend class BufferHandle;
@@ -90,7 +80,7 @@ namespace slag::postal {
         BufferDescriptor allocate_descriptor();
         void deallocate_descriptor(BufferDescriptor descriptor);
 
-        BufferSegment allocate_segment();
+        BufferSegment& allocate_segment();
         void deallocate_segment(BufferSegment& segment);
 
     private:
@@ -106,11 +96,13 @@ namespace slag::postal {
             uint64_t            confirmed_sequence = 0;
         };
 
-        BufferLedger<DomainType::NATION>& national_ledger_;
-        std::vector<Entry>                entries_;
-        std::vector<uint32_t>             unused_entries_;
-        std::vector<PendingExportQueue>   pending_export_queues_;
-        PoolAllocator<BufferSegment>      segment_allocator_;
+        Region&                            region_;
+        DomainCensus<DomainType::REGION>*& regional_census_;
+        NationalBufferLedger&              national_buffer_ledger_;
+        std::vector<RegionalEntry>         entries_;
+        std::vector<uint32_t>              unused_entries_;
+        std::vector<PendingExportQueue>    pending_export_queues_;
+        PoolAllocator<BufferSegment>       segment_allocator_;
     };
 
 }

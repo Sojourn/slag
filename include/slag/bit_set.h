@@ -35,6 +35,8 @@ namespace slag {
         void reset();
         void reset(size_t index);
 
+        void flip(size_t index);
+
         void grow_size_bits(size_t new_size_bits);
         void grow_size_bytes(size_t new_size_bytes);
         void grow_size_blocks(size_t new_size_blocks);

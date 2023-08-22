@@ -69,8 +69,9 @@ namespace slag::postal {
 
     Nation::Nation(const Config& config)
         : Domain{DomainType::NATION, config.index}
-        , empire_{empire()}
+        , empire_{slag::postal::empire()}
         , config_{config}
+        , buffer_ledger_{*this}
     {
         size_t region_count = config_.region_count;
 
@@ -92,6 +93,10 @@ namespace slag::postal {
         return config_;
     }
 
+    NationalBufferLedger& Nation::buffer_ledger() {
+        return buffer_ledger_;
+    }
+
     auto Nation::parcel_queue(PostArea to, PostArea from) -> ParcelQueue& {
         assert(to.nation == from.nation);
         assert(to.region != from.region);
@@ -111,11 +116,12 @@ namespace slag::postal {
 
     Region::Region(const Config& config)
         : Domain{DomainType::REGION, config.index}
-        , nation_{nation()}
+        , nation_{slag::postal::nation()}
         , config_{config}
         , season_{Season::WINTER}
         , census_cursor_{nullptr}
         , post_office_{*this}
+        , buffer_ledger_{*this}
     {
         make_history();
 
@@ -124,6 +130,22 @@ namespace slag::postal {
 
     Region::~Region() {
         detach_parcel_queues();
+    }
+
+    Nation& Region::nation() {
+        return nation_;
+    }
+
+    const Nation& Region::nation() const {
+        return nation_;
+    }
+
+    auto Region::config() const -> const Config& {
+        return config_;
+    }
+
+    auto Region::season() const -> const Season& {
+        return season_;
     }
 
     auto Region::census() const -> const Census& {
@@ -154,6 +176,10 @@ namespace slag::postal {
 
     PostOffice& Region::post_office() {
         return post_office_;
+    }
+
+    RegionalBufferLedger& Region::buffer_ledger() {
+        return buffer_ledger_;
     }
 
     Executor& Region::current_executor() {
@@ -197,9 +223,7 @@ namespace slag::postal {
         for (Season season: seasons()) {
             Census& census = history_[to_index(season)];
 
-            census.buffer_ownership_changes.grow_size_bits(buffer_count);
             census.buffer_reference_changes.grow_size_bits(buffer_count);
-
             census.import_sequences.resize(region_count);
             census.export_sequences.resize(region_count);
         }

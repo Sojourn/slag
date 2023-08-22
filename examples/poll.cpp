@@ -43,16 +43,6 @@ private:
     size_t max_failure_count_;
 };
 
-// BufferAllocator
-
-// BufferWriter(BufferAllocator)
-//  lazy allocation
-// .write(span, offset?)
-//  publish?commit/rollback/etc.?
-//    BufferHandle is read-only once published
-
-// BufferReader(BufferHandle)
-
 int main(int, char**) {
     Empire::Config empire_config;
     empire_config.index = 0;
@@ -65,7 +55,7 @@ int main(int, char**) {
 
     Region::Config region_config;
     region_config.index        = 0;
-    region_config.buffer_range = std::make_pair(0, 1024);
+    region_config.buffer_range = std::make_pair(1, 1024);
 
     Empire empire_{empire_config};
     Nation nation_{nation_config};
@@ -75,6 +65,17 @@ int main(int, char**) {
     while (executor.is_runnable()) {
         executor.run();
     }
+
+    char greeting[] = "Hello, World!\0";
+
+    DefaultBufferAllocator allocator;
+    BufferWriter buffer_writer{allocator};
+    buffer_writer.write(std::as_bytes(std::span{greeting}));
+    BufferHandle handle = buffer_writer.publish();
+
+    BufferReader reader{handle.share()};
+
+    std::cout << (const char*)reader.read(20).data() << std::endl;
 
     return 0;
 }

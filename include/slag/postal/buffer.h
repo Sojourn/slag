@@ -13,9 +13,12 @@ namespace slag::postal {
     };
 
     class BufferHandle {
+        friend BufferHandle make_handle(BufferDescriptor descriptor);
+
+        explicit BufferHandle(BufferDescriptor descriptor);
+
     public:
         BufferHandle();
-        explicit BufferHandle(BufferDescriptor descriptor);
         ~BufferHandle();
 
         BufferHandle(BufferHandle&& other);
@@ -27,14 +30,26 @@ namespace slag::postal {
 
         BufferDescriptor descriptor() const;
 
-        // Returns a handle to a copy of this buffer's data.
-        BufferHandle clone() const;
+        // Returns another handle to this buffer's data.
+        BufferHandle share();
 
         // Releases our reference to the underlying data.
         void reset();
 
     private:
+        void increment_reference_count();
+        void decrement_reference_count();
+
+    private:
         BufferDescriptor descriptor_;
     };
+
+    // This only be done once after allocating the buffer. Subsequent handles
+    // should be created via BufferHandle::share, otherwise reference counts will
+    // be messed up.
+    //
+    inline BufferHandle make_handle(BufferDescriptor descriptor) {
+        return BufferHandle{descriptor};
+    }
 
 }

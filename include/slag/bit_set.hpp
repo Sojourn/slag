@@ -64,6 +64,14 @@ namespace slag {
         blocks_[block_offset] &= ~(1ull << bit_offset);
     }
 
+    inline void BitSet::flip(size_t index) {
+        assert(index < size_bits_);
+
+        size_t block_offset = to_block_offset(index);
+        size_t bit_offset = to_bit_offset(index);
+
+        blocks_[block_offset] ^= (1ull << bit_offset);
+    }
 
     inline size_t BitSet::size_bits() const {
         return size_blocks() / BLOCK_SIZE_BITS;

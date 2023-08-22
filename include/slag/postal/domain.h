@@ -12,6 +12,7 @@
 #include "slag/postal/season.h"
 #include "slag/postal/census.h"
 #include "slag/postal/buffer.h"
+#include "slag/postal/buffer_ledger.h"
 #include "slag/postal/parcel.h"
 #include "slag/postal/post_office.h"
 #include "slag/postal/executor.h"
@@ -66,6 +67,7 @@ namespace slag::postal {
         explicit Nation(const Config& config);
 
         const Config& config() const;
+        NationalBufferLedger& buffer_ledger();
 
     private:
         friend class Region;
@@ -79,6 +81,7 @@ namespace slag::postal {
         Empire&                                   empire_;
         Config                                    config_;
         std::vector<Region*>                      regions_; // atomic/locking?
+        NationalBufferLedger                      buffer_ledger_;
         std::vector<std::unique_ptr<ParcelQueue>> parcel_queues_;
     };
 
@@ -95,6 +98,8 @@ namespace slag::postal {
         explicit Region(const Config& config);
         ~Region();
 
+        Nation& nation();
+        const Nation& nation() const;
         const Config& config() const;
         const Season& season() const;
         const Census& census() const;
@@ -102,6 +107,7 @@ namespace slag::postal {
 
         PostArea post_area() const;
         PostOffice& post_office();
+        RegionalBufferLedger& buffer_ledger();
         Executor& current_executor();
 
     public:
@@ -142,6 +148,7 @@ namespace slag::postal {
         std::vector<ParcelQueueConsumer> imports_;
         std::vector<ParcelQueueProducer> exports_;
 
+        RegionalBufferLedger             buffer_ledger_;
         std::vector<Executor*>           executor_stack_;
     };
 

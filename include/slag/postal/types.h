@@ -56,6 +56,11 @@ namespace slag::postal {
         REGION,
     };
 
+    class Domain;
+    class Empire;
+    class Nation;
+    class Region;
+
     // this tells us what thread to route an envelope to
     // TODO: rename to PostalArea
     struct PostArea {
