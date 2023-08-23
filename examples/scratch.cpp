@@ -3,6 +3,8 @@
 #include <cstddef>
 #include "slag/slag.h"
 
+#include <sys/mman.h>
+
 using namespace slag;
 
 static constexpr size_t CHUNK_SIZE_BYTES        = (1 << 15) - 3;
@@ -24,7 +26,8 @@ struct BlockFooter {
     uint16_t           reference_counts[BLOCK_CHUNK_COUNT];
 
     BlockFooter()
-        : mask{0}
+        : node{}
+        , mask{}
     {
         memset(reference_counts, 0, sizeof(reference_counts));
     }
@@ -64,6 +67,9 @@ int main(int argc, char** argv) {
 
     std::cout << sizeof(block) << std::endl;
     std::cout << sizeof(block.footer_reserved) << std::endl;
+
+    auto memory = allocate_huge_pages(sizeof(Block));
+    deallocate_free_pages(memory);
 
     return 0;
 }

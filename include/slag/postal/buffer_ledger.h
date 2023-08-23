@@ -20,6 +20,9 @@ namespace slag::postal {
 
     struct BufferSegment {
         BufferSegment* next;
+
+        // variant of BufferHandle + span to allow splicing?
+        // reader would need to maintain a handle stack
         void*          data;
         size_t         capacity;
     };

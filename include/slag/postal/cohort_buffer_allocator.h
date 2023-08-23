@@ -13,9 +13,15 @@ namespace slag::postal {
     // have roughly the same lifespan.
     class CohortBufferAllocator : public BufferAllocator {
     public:
-        CohortBufferAllocator(Region& region)
+        CohortBufferAllocator(Region& region, size_t minimum_capacity = 0)
             : BufferAllocator{region}
         {
+            size_t capacity = (minimum_capacity / sizeof(BLOCK)) * sizeof(Block);
+            if (capacity < minimum_capacity) {
+                capacity += sizeof(Block);
+            }
+
+            // TODO: reserve space
         }
 
         ~CohortBufferAllocator() {

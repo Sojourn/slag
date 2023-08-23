@@ -4,6 +4,7 @@
 #include "visit.h"
 #include "error.h"
 #include "result.h"
+#include "memory.h"
 #include "queue.h"
 #include "bit_set.h"
 #include "logging.h"

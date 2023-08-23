@@ -10,6 +10,7 @@ set(SLAG_SOURCE_FILES
     # io_uring_reactor.cpp
     # io_uring_resource_context.cpp
     error.cpp
+    memory.cpp
     # event_loop.cpp
     # task.cpp
     platform.cpp
