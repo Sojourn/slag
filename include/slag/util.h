@@ -9,6 +9,8 @@
 
 namespace slag {
 
+    static constexpr size_t DEFAULT_ALIGNMENT = alignof(void*);
+
     // size_bytes_v?
     template<typename T>
     constexpr inline size_t SIZE_BYTES = sizeof(T) / sizeof(std::byte);
@@ -37,6 +39,18 @@ namespace slag {
     template<typename T>
     constexpr inline bool is_overlapping(const std::pair<T, T>& a, const std::pair<T, T>& b) {
         return std::max(a.first, b.first) < std::min(a.second, b.second);
+    }
+
+    template<size_t ALIGNMENT = DEFAULT_ALIGNMENT>
+    inline uintptr_t align_forward(uintptr_t address) {
+        return (address + (ALIGNMENT - 1)) & ~(ALIGNMENT - 1);
+    }
+
+    template<typename T, size_t ALIGNMENT = DEFAULT_ALIGNMENT>
+    inline T* align_forward(T* pointer) {
+        uintptr_t address = reinterpret_cast<uintptr_t>(pointer);
+        uintptr_t aligned_address = align_forward<ALIGNMENT>(address);
+        return reinterpret_cast<T*>(aligned_address);
     }
 
     template<typename T>
