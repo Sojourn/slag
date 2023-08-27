@@ -32,9 +32,11 @@ int main(int, char**) {
         executor.run();
     }
 
+    CohortBufferAllocator allocator{region_};
+
     char greeting[] = "Hello, World!\0";
 
-    BufferWriter buffer_writer;
+    BufferWriter buffer_writer{allocator};
     buffer_writer.write(std::as_bytes(std::span{greeting}));
     buffer_writer.write(std::as_bytes(std::span{greeting}));
     BufferHandle handle = buffer_writer.publish();

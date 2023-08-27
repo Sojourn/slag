@@ -24,7 +24,7 @@ namespace slag {
         };
     }
 
-    void deallocate_free_pages(std::span<std::byte> memory) {
+    void deallocate_huge_pages(std::span<std::byte> memory) {
         int status = munmap(memory.data(), memory.size_bytes());
         assert(status >= 0);
     }

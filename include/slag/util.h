@@ -22,6 +22,23 @@ namespace slag {
         return 64 - __builtin_clzll(value) - 1;
     }
 
+    constexpr inline void set_bit(uint64_t& mask, size_t index) {
+        mask |= (1ull << index);
+    }
+
+    constexpr inline void reset_bit(uint64_t& mask, size_t index) {
+        mask &= ~(1ull << index);
+    }
+
+    constexpr inline bool test_bit(uint64_t& mask, size_t index) {
+        return (mask & (1ull << index)) != 0;
+    }
+
+    template<typename T>
+    constexpr inline bool is_overlapping(const std::pair<T, T>& a, const std::pair<T, T>& b) {
+        return std::max(a.first, b.first) < std::min(a.second, b.second);
+    }
+
     template<typename T>
     struct TypeWrapper {
         using type = T;

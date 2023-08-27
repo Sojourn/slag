@@ -40,6 +40,7 @@ set(SLAG_SOURCE_FILES
     postal/buffer_reader.cpp
     postal/buffer_writer.cpp
     postal/buffer_allocator.cpp
+    postal/cohort_buffer_allocator.cpp
     postal/season.cpp
     postal/domain.cpp
     postal/post_box.cpp

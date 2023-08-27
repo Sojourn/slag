@@ -1,5 +1,5 @@
 add_executable(example
-        scratch.cpp
+        poll.cpp
         )
 
 target_link_libraries(example PUBLIC slag)

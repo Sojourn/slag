@@ -25,3 +25,4 @@
 #include "buffer_writer.h"
 #include "buffer_allocator.h"
 #include "default_buffer_allocator.h"
+#include "cohort_buffer_allocator.h"
