@@ -36,16 +36,21 @@ int main(int, char**) {
 
     char greeting[] = "Hello, World!\0";
 
-    BufferWriter buffer_writer{allocator};
-    buffer_writer.write(std::as_bytes(std::span{greeting}));
-    buffer_writer.write(std::as_bytes(std::span{greeting}));
-    BufferHandle handle = buffer_writer.publish();
+    std::vector<BufferHandle> handles;
+    {
+        for (size_t i = 0; i < 512; ++i) {
+            BufferWriter buffer_writer{allocator};
+            for (size_t i = 0; i < 128; ++i) {
+                buffer_writer.write(std::as_bytes(std::span{greeting}));
+            }
+            handles.push_back(buffer_writer.publish());
+        }
+    }
 
-    BufferReader reader{std::move(handle)};
+    BufferReader reader{std::move(handles[0])};
+    handles.clear();
 
     size_t size = reader.size();
-    std::cout << (const char*)reader.read(size).data() << std::endl;
-    std::cout << reader.tell() << std::endl;
     std::cout << (const char*)reader.read(size).data() << std::endl;
     std::cout << reader.tell() << std::endl;
 

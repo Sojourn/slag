@@ -30,7 +30,7 @@ namespace slag::postal {
         static constexpr size_t BLOCK_LO_MASK     = BLOCK_SIZE - 1;
         static constexpr size_t BLOCK_HI_MASK     = ~BLOCK_LO_MASK;
         static constexpr size_t CHUNK_LO_MASK     = CHUNK_SIZE - 1;
-        static constexpr size_t CHUNK_HI_MASK     = ~BLOCK_HI_MASK;
+        static constexpr size_t CHUNK_HI_MASK     = ~CHUNK_LO_MASK;
 
         struct Chunk {
             std::byte storage[CHUNK_SIZE];

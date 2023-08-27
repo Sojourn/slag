@@ -55,6 +55,7 @@ namespace slag::postal {
                 // Attempt to adjust the segment to avoid the table.
                 if (is_overlapping(segment_rng, table_rng)) {
                     if (segment_beg < table_beg) {
+                        // Squeeze the allocation in before the table.
                         segment_end = table_beg;
                         segment_rng = std::make_pair(segment_beg, segment_end);
                     }
@@ -67,14 +68,12 @@ namespace slag::postal {
 
                 assert(!is_overlapping(segment_rng, table_rng));
             }
+            assert(segment_beg < segment_end);
+            assert(is_overlapping(segment_rng, chunk_rng));
 
-            if (segment_beg < segment_end) {
-                assert(is_overlapping(segment_rng, chunk_rng));
-
-                std::span<std::byte> storage{segment_beg, static_cast<size_t>(segment_end - segment_beg)};
-                chunk_offset_ += storage.size_bytes();
-                return storage;
-            }
+            std::span<std::byte> storage{segment_beg, static_cast<size_t>(segment_end - segment_beg)};
+            chunk_offset_ += storage.size_bytes();
+            return storage;
         }
     }
 
