@@ -29,4 +29,8 @@ namespace slag::postal {
         size_t index = 0;
     };
 
+    using RegionConfig = DomainConfig<DomainType::REGION>;
+    using NationConfig = DomainConfig<DomainType::NATION>;
+    using EmpireConfig = DomainConfig<DomainType::EMPIRE>;
+
 }

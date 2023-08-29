@@ -18,6 +18,7 @@ namespace slag::postal {
     class NationalBufferLedger;
     class RegionalBufferLedger;
 
+    // TODO: think about making this a variant
     struct BufferSegment {
         BufferSegment* next;
 

@@ -51,6 +51,8 @@ namespace slag::postal {
         void set_failure();
 
     private:
+        template<typename Driver>
+        friend class Thread;
         friend class Executor;
 
         void set_state(TaskState state);
