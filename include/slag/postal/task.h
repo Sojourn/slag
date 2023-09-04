@@ -28,10 +28,14 @@ namespace slag::postal {
         virtual ~Task() = default;
 
         TaskState state() const;
+
         bool is_waiting() const;
         bool is_running() const;
         bool is_success() const;
         bool is_failure() const;
+
+        using Pollable<PollableType::RUNNABLE>::is_runnable;
+        using Pollable<PollableType::COMPLETE>::is_complete;
 
         // This will become set when the task has completed (success/failure).
         Event& complete_event() override final;
@@ -78,6 +82,14 @@ namespace slag::postal {
 
     constexpr bool is_terminal(TaskState state) {
         return (state == TaskState::SUCCESS) || (state == TaskState::FAILURE);
+    }
+
+    constexpr bool is_valid_transition(TaskState old_state, TaskState new_state) {
+        if (is_terminal(old_state)) {
+            return false; // Cannot transition out of a terminal state.
+        }
+
+        return old_state != new_state; // Self-transitions are unexpected.
     }
 
 }

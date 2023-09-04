@@ -3,23 +3,6 @@
 
 namespace slag::postal {
 
-    constexpr bool is_valid_transition(TaskState old_state, TaskState new_state) {
-        switch (old_state) {
-            case TaskState::WAITING: {
-                // Can only transition into a running state.
-                return new_state == TaskState::RUNNING;
-            }
-            case TaskState::RUNNING: {
-                // Anything other than a self-transition is fine.
-                return new_state != TaskState::RUNNING;
-            }
-            default: {
-                // Already in a terminal state, which cannot self-transition.
-                return false;
-            }
-        }
-    }
-
     Task::Task()
         : state_{TaskState::WAITING}
     {

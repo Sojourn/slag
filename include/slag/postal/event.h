@@ -25,6 +25,9 @@ namespace slag::postal {
         const void* user_data() const;
         void set_user_data(void* user_data);
 
+        bool is_linked() const;
+        void unlink();
+
     private:    
         friend class Selector;
 

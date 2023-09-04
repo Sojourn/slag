@@ -66,7 +66,12 @@ namespace slag::postal {
                 // Fetch our stashed task pointer.
                 Task* task = static_cast<Task*>(event->user_data());
                 assert(task);
-                assert(task->is_waiting());
+
+                // Check if the task completed externally.
+                if (task->is_complete()) {
+                    assert(task->is_success() || task->is_failure());
+                    continue;
+                }
 
                 // Run the task and reschedule if it doesn't complete.
                 run_until(*task, deadline);

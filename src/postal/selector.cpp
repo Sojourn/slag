@@ -12,6 +12,11 @@ namespace slag::postal {
         insert(std::span{&pointer, 1});
     }
 
+    void Selector::insert(Event& event, void* user_data) {
+        event.set_user_data(user_data);
+        insert(event);
+    }
+
     void Selector::insert(std::span<Event*> events) {
         for (Event* event: events) {
             if (!event) {

@@ -12,8 +12,13 @@ namespace slag::postal {
     public:
         Event& readable_event() override;
 
+        template<PollableType type, typename T>
+        void insert(T& object);
         void insert(Event& event);
+        void insert(Event& event, void* user_data);
         void insert(std::span<Event*> events); // Can be sparse.
+
+        // TODO: a splice call for doing an insert.
 
         void remove(Event& event);
         void remove(std::span<Event*> events); // Can be sparse.
@@ -33,5 +38,10 @@ namespace slag::postal {
         Event      ready_event_;
         ReadyQueue ready_queue_;
     };
+
+    template<PollableType type, typename T>
+    inline void Selector::insert(T& object) {
+        insert(get_pollable_event<type>(object), &object);
+    }
 
 }

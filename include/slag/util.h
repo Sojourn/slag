@@ -32,7 +32,7 @@ namespace slag {
         mask &= ~(1ull << index);
     }
 
-    constexpr inline bool test_bit(uint64_t& mask, size_t index) {
+    constexpr inline bool test_bit(uint64_t mask, size_t index) {
         return (mask & (1ull << index)) != 0;
     }
 

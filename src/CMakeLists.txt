@@ -50,6 +50,8 @@ set(SLAG_SOURCE_FILES
     postal/event.cpp
     postal/selector.cpp
     postal/executor.cpp
+    postal/operation_base.cpp
+    postal/reactor.cpp
 )
 
 set(SLAG_HEADER_FILES

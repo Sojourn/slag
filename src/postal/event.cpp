@@ -66,6 +66,15 @@ namespace slag::postal {
         user_data_ = user_data;
     }
 
+    bool Event::is_linked() const {
+        return static_cast<bool>(selector_);
+    }
+
+    void Event::unlink() {
+        selector_ = nullptr;
+        selector_hook_.unlink();
+    }
+
     void Event::attach(Selector& selector) {
         assert(selector_ == nullptr);
         assert(!selector_hook_.is_linked());
