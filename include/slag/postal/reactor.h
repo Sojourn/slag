@@ -44,3 +44,5 @@ namespace slag::postal {
     };
 
 }
+
+#include "reactor.hpp"

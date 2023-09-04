@@ -1,7 +1,8 @@
 #pragma once
 
 #include <cerrno>
-#include "../operation_base.h"
+#include "slag/logging.h"
+#include "slag/postal/operation_base.h"
 
 namespace slag::postal {
 
@@ -18,8 +19,7 @@ namespace slag::postal {
             writable_event().set();
         }
 
-        // Should this consume the result?
-        int32_t poll() const {
+        int32_t result() const {
             return result_;
         }
 
@@ -41,6 +41,10 @@ namespace slag::postal {
                     break;
                 }
             }
+        }
+
+        Event& complete_event() override final {
+            return complete_event_;
         }
 
     private:
@@ -88,6 +92,7 @@ namespace slag::postal {
 
         void handle_operation_result(int32_t result) {
             result_ = result;
+            complete_event_.set();
         }
 
         void handle_cancel_result(int32_t result) {

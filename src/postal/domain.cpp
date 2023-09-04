@@ -195,6 +195,10 @@ namespace slag::postal {
         return *executor_stack_.back();
     }
 
+    Reactor& Region::reactor() {
+        return reactor_;
+    }
+
     auto Region::census_cursor() -> Census** {
         return &census_cursor_;
     }

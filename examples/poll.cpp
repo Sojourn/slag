@@ -7,16 +7,15 @@
 
 using namespace slag::postal;
 
-// This should be relatively pure and just call into the various
-// event loop phases.
-class EventLoop : public Task {
+class MockTask : public Task {
 public:
-    EventLoop() {
-        runnable_event_.set();
+    MockTask()
+        : operation_{make_nop_operation()}
+    {
     }
 
     Event& runnable_event() override final {
-        return runnable_event_;
+        return operation_->complete_event();
     }
 
     void run() override final {
@@ -24,7 +23,44 @@ public:
     }
 
 private:
-    Event runnable_event_;
+    NopOperationHandle operation_;
+};
+
+// This should be relatively pure and just call into the various
+// event loop phases.
+class EventLoop : public Task {
+public:
+    EventLoop() {
+        runnable_event_.set();
+        executor_.insert(task_);
+    }
+
+    Event& runnable_event() override final {
+        return runnable_event_;
+    }
+
+    void run() override final {
+        if (executor_.is_runnable()) {
+            executor_.run();
+        }
+
+        Reactor& reactor = region().reactor();
+        reactor.poll();
+
+        if (task_.is_complete()) {
+            if (task_.is_success()) {
+                set_success();
+            }
+            else {
+                set_failure();
+            }
+        }
+    }
+
+private:
+    Event    runnable_event_;
+    Executor executor_;
+    MockTask task_;
 };
 
 using WorkerThread = Thread<EventLoop>;

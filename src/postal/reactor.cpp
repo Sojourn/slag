@@ -17,26 +17,9 @@ namespace slag::postal {
 
     Reactor::~Reactor() {
         io_uring_queue_exit(&ring_);
-    }
 
-    template<OperationType type, typename... Args>
-    OperationHandle<type> Reactor::start_operation(Args&&... args) {
-        Operation<type>& operation = operation_allocator_.allocate<type>(std::forward<Args>(args)...);
-
-        // Wait for the operation to have something to submit.
-        {
-            OperationBase& operation_base = operation;
-            pending_submissions_.insert<PollableType::WRITABLE>(operation_base);
-        }
-
-        // Schedule the operation if it is derived from Task.
-        if constexpr (std::is_base_of_v<Task, Operation<type>>) {
-            executor_.insert(operation);
-        }
-
-        return {
-            operation
-        };
+        // One last collection.
+        collect_garbage();
     }
 
     void Reactor::poll() {
@@ -88,7 +71,7 @@ namespace slag::postal {
             else {
                 done = true;
             }
-        } while (done);
+        } while (!done);
 
         return count;
     }
@@ -109,7 +92,10 @@ namespace slag::postal {
                     continue; // Interrupted. Try again.
                 }
 
-                abort(); // Look at the error and add handling if it is recoverable.
+                // Look at the error and add handling if it is recoverable.
+                // I think this is just reading the published sequence number
+                // and some memory fencing--shouldn't have many failure modes...
+                abort();
             }
         }
     }

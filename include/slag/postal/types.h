@@ -7,31 +7,34 @@
 
 namespace slag::postal {
 
-    // Budget
-    // Leader
-    // Worker
-    // Policy
-    // Corpus
-    // Bureau
-    // Agency
-    // Broker
-    // Dealer
-    // Module
-    // Survey
-    // Mirror
-    // Portal
-    // Fabric
-    // Runway
-    // Stream
-    // Layout
-    // Format
-    // System
-    // Device
-    // Devise
-    // Tenure
-    // County (if we need another domain type)
+    // Length-constrained names, for fun:
+    //   Budget
+    //   Leader
+    //   Worker
+    //   Policy
+    //   Corpus
+    //   Bureau
+    //   Agency
+    //   Broker
+    //   Dealer
+    //   Module
+    //   Survey
+    //   Mirror
+    //   Portal
+    //   Fabric
+    //   Runway
+    //   Stream
+    //   Layout
+    //   Format
+    //   System
+    //   Device
+    //   Devise
+    //   Tenure
+    //   County
 
     // mirror mirror on the wall, who is the most contiguous buffer of them all
+
+    class Reactor;
 
     class Envelope;
 

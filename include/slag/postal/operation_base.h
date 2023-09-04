@@ -35,7 +35,7 @@ namespace slag::postal {
         using Slot     = int8_t;
         using SlotMask = uint16_t;
 
-        static constexpr Slot SLOT_COUNT = 8;
+        static constexpr Slot SLOT_COUNT = 16;
 
         void* make_user_data(Slot slot);
         std::pair<void*, Slot> produce_slot();

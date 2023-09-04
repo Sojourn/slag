@@ -22,33 +22,33 @@ namespace slag::postal {
         void deallocate_segment_storage(std::span<std::byte> storage) override;
 
     private:
-        static constexpr size_t BLOCK_SIZE        =  2 * 1024 * 1024;
-        static constexpr size_t CHUNK_SIZE        = 32 * 1024;
-        static constexpr size_t TABLE_SIZE        = 256;
-        static constexpr size_t BLOCK_CHUNK_COUNT = BLOCK_SIZE / CHUNK_SIZE;
+        static constexpr size_t BLOCK_SIZE_        =  2 * 1024 * 1024;
+        static constexpr size_t CHUNK_SIZE_        = 32 * 1024;
+        static constexpr size_t TABLE_SIZE_        = 256;
+        static constexpr size_t BLOCK_CHUNK_COUNT_ = BLOCK_SIZE_ / CHUNK_SIZE_;
 
-        static constexpr size_t BLOCK_LO_MASK     = BLOCK_SIZE - 1;
-        static constexpr size_t BLOCK_HI_MASK     = ~BLOCK_LO_MASK;
-        static constexpr size_t CHUNK_LO_MASK     = CHUNK_SIZE - 1;
-        static constexpr size_t CHUNK_HI_MASK     = ~CHUNK_LO_MASK;
+        static constexpr size_t BLOCK_LO_MASK_     = BLOCK_SIZE_ - 1;
+        static constexpr size_t BLOCK_HI_MASK_     = ~BLOCK_LO_MASK_;
+        static constexpr size_t CHUNK_LO_MASK_     = CHUNK_SIZE_ - 1;
+        static constexpr size_t CHUNK_HI_MASK_     = ~CHUNK_LO_MASK_;
 
         struct Chunk {
-            std::byte storage[CHUNK_SIZE];
+            std::byte storage[CHUNK_SIZE_];
         };
 
         struct Block {
-            Chunk chunks[BLOCK_CHUNK_COUNT];
+            Chunk chunks[BLOCK_CHUNK_COUNT_];
         };
 
         struct Table {
             IntrusiveQueueNode node;
             uint64_t           dirty_chunk_mask = 0;
-            uint16_t           dirty_chunk_size[BLOCK_CHUNK_COUNT] = {{0}};
+            uint16_t           dirty_chunk_size[BLOCK_CHUNK_COUNT_] = {{0}};
         };
 
-        static_assert(sizeof(Block) == BLOCK_SIZE);
-        static_assert(sizeof(Chunk) == CHUNK_SIZE);
-        static_assert(sizeof(Table) <= TABLE_SIZE);
+        static_assert(sizeof(Block) == BLOCK_SIZE_);
+        static_assert(sizeof(Chunk) == CHUNK_SIZE_);
+        static_assert(sizeof(Table) <= TABLE_SIZE_);
 
     private:
         struct Cursor {

@@ -9,7 +9,7 @@ namespace slag::postal {
 
     CohortBufferAllocator::CohortBufferAllocator(Region& region)
         : BufferAllocator{region}
-        , chunk_offset_{CHUNK_SIZE}
+        , chunk_offset_{CHUNK_SIZE_}
     {
     }
 
@@ -31,7 +31,7 @@ namespace slag::postal {
         }
 
         while (true) {
-            if (chunk_offset_ == CHUNK_SIZE) {
+            if (chunk_offset_ == CHUNK_SIZE_) {
                 if (!advance_chunk(cursor_)) {
                     cursor_ = allocate_block();
                     chunk_offset_ = 0;
@@ -39,11 +39,11 @@ namespace slag::postal {
             }
 
             auto chunk_beg = &cursor_.chunk->storage[0];
-            auto chunk_end = chunk_beg + CHUNK_SIZE;
+            auto chunk_end = chunk_beg + CHUNK_SIZE_;
             auto chunk_rng = std::make_pair(chunk_beg, chunk_end);
 
             auto segment_beg = chunk_beg + chunk_offset_;
-            auto segment_end = segment_beg + std::min(size, CHUNK_SIZE - chunk_offset_);
+            auto segment_end = segment_beg + std::min(size, CHUNK_SIZE_ - chunk_offset_);
             auto segment_rng = std::make_pair(segment_beg, segment_end);
 
             // Special logic to avoid the table if it is located in this chunk.
@@ -113,13 +113,13 @@ namespace slag::postal {
     auto CohortBufferAllocator::to_cursor(uintptr_t address) -> Cursor {
         Cursor cursor;
 
-        auto block_address = address & BLOCK_HI_MASK;
-        auto chunk_address = address & CHUNK_HI_MASK;
-        auto block_shape   = (block_address / BLOCK_SIZE) & ((BLOCK_SIZE / TABLE_SIZE) - 1);
-        auto table_address = block_address + (block_shape * TABLE_SIZE);
+        auto block_address = address & BLOCK_HI_MASK_;
+        auto chunk_address = address & CHUNK_HI_MASK_;
+        auto block_shape   = (block_address / BLOCK_SIZE_) & ((BLOCK_SIZE_ / TABLE_SIZE_) - 1);
+        auto table_address = block_address + (block_shape * TABLE_SIZE_);
 
-        cursor.chunk_index = (chunk_address - block_address) / CHUNK_SIZE;
-        cursor.table_chunk_index = (table_address - block_address) / CHUNK_SIZE;
+        cursor.chunk_index = (chunk_address - block_address) / CHUNK_SIZE_;
+        cursor.table_chunk_index = (table_address - block_address) / CHUNK_SIZE_;
 
         cursor.block = reinterpret_cast<Block*>(block_address);
         cursor.chunk = reinterpret_cast<Chunk*>(chunk_address);
@@ -184,7 +184,7 @@ namespace slag::postal {
         set_bit(dirty_chunk_mask, cursor_.chunk_index);;
         dirty_chunk_size = static_cast<uint16_t>(chunk_offset_);
         if (cursor_.chunk_index == cursor_.table_chunk_index) {
-            dirty_chunk_size -= TABLE_SIZE;
+            dirty_chunk_size -= TABLE_SIZE_;
         }
     }
 
