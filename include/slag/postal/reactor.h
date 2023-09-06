@@ -24,6 +24,9 @@ namespace slag::postal {
 
         void poll();
 
+        // Returns true if there are no active operations.
+        bool is_quiescent() const;
+
     private:
         size_t prepare_pending_operations();
         void process_completions();
@@ -36,9 +39,16 @@ namespace slag::postal {
         void handle_abandoned(OperationBase& operation_base);
 
     private:
+        struct Metrics {
+            size_t total_operation_count = 0;
+            size_t active_operation_count = 0;
+        };
+
         struct io_uring    ring_;
         Executor           executor_;
         Selector           pending_submissions_;
+
+        Metrics            metrics_;
         Selector           garbage_;
         OperationAllocator operation_allocator_;
     };

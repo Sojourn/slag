@@ -52,6 +52,8 @@ set(SLAG_SOURCE_FILES
     postal/executor.cpp
     postal/operation_base.cpp
     postal/reactor.cpp
+    postal/file_handle.cpp
+    postal/file_table.cpp
 )
 
 set(SLAG_HEADER_FILES

@@ -43,6 +43,26 @@ namespace slag::postal {
         return descriptor_;
     }
 
+    NationalBufferLedgerEntry& BufferHandle::national_entry() {
+        assert(*this);
+        return nation().buffer_ledger().get_national_entry(descriptor_);
+    }
+
+    const NationalBufferLedgerEntry& BufferHandle::national_entry() const {
+        assert(*this);
+        return nation().buffer_ledger().get_national_entry(descriptor_);
+    }
+
+    RegionalBufferLedgerEntry& BufferHandle::regional_entry() {
+        assert(*this);
+        return region().buffer_ledger().get_regional_entry(descriptor_);
+    }
+
+    const RegionalBufferLedgerEntry& BufferHandle::regional_entry() const {
+        assert(*this);
+        return region().buffer_ledger().get_regional_entry(descriptor_);
+    }
+
     BufferHandle BufferHandle::share() {
         if (*this) {
             increment_reference_count();

@@ -17,9 +17,6 @@ namespace slag::postal {
 
     Reactor::~Reactor() {
         io_uring_queue_exit(&ring_);
-
-        // One last collection.
-        collect_garbage();
     }
 
     void Reactor::poll() {
@@ -35,6 +32,10 @@ namespace slag::postal {
 
         process_completions();
         collect_garbage();
+    }
+
+    bool Reactor::is_quiescent() const {
+        return metrics_.active_operation_count == 0;
     }
 
     size_t Reactor::prepare_pending_operations() {
@@ -114,6 +115,7 @@ namespace slag::postal {
 
             visit([&](auto&& operation) {
                 operation_allocator_.deallocate(operation);
+                metrics_.active_operation_count -= 1;
             }, *reinterpret_cast<OperationBase*>(user_data));
         }
     }

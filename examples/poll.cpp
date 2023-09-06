@@ -10,29 +10,70 @@ using namespace slag::postal;
 class MockTask : public Task {
 public:
     MockTask()
-        : operation_{make_nop_operation()}
+        : state_{0}
+        , open_operation_{make_open_operation("/tmp/foo", O_RDWR|O_CREAT)}
     {
     }
 
     Event& runnable_event() override final {
-        return operation_->complete_event();
+        switch (state_) {
+            case 0: {
+                return open_operation_->complete_event();
+            }
+            case 1: {
+                return nop_operation_->complete_event();
+            }
+        }
+
+        abort();
     }
 
     void run() override final {
-        set_success();
+        switch (state_++) {
+            case 0: {
+                if (auto&& result = open_operation_->result()) {
+                    std::cout << "open success" << std::endl;
+
+                    file_ = std::move(result.value());
+                    open_operation_.reset();
+                    nop_operation_ = make_nop_operation();
+                }
+                else {
+                    std::cout << "open failure" << std::endl;
+                    set_failure();
+                }
+                break;
+            }
+            case 1: {
+                auto&& result = nop_operation_->result();
+                if (result) {
+                    std::cout << "nop success" << std::endl;
+                    set_success();
+                }
+                else {
+                    std::cout << "nop failure" << std::endl;
+                    set_failure();
+                }
+            }
+        }
     }
 
 private:
-    NopOperationHandle operation_;
+    int                 state_;
+    FileHandle          file_;
+    OpenOperationHandle open_operation_;
+    NopOperationHandle  nop_operation_;
 };
 
 // This should be relatively pure and just call into the various
 // event loop phases.
 class EventLoop : public Task {
 public:
-    EventLoop() {
+    EventLoop()
+        : reactor_{region().reactor()}
+    {
         runnable_event_.set();
-        executor_.insert(task_);
+        executor_.insert(task_.emplace());
     }
 
     Event& runnable_event() override final {
@@ -44,23 +85,31 @@ public:
             executor_.run();
         }
 
-        Reactor& reactor = region().reactor();
-        reactor.poll();
+        reactor_.poll();
 
-        if (task_.is_complete()) {
-            if (task_.is_success()) {
-                set_success();
-            }
-            else {
-                set_failure();
-            }
+        if (task_->is_complete()) {
+            set_success(task_->is_success()) ;
+            task_.reset();
+
+            shutdown();
+        }
+    }
+
+    void shutdown() {
+        // Destroying this should cause operations to be canceled and file handles to be dropped.
+        task_.reset();
+
+        // Drive the reactor until all operations have completed.
+        while (!reactor_.is_quiescent()) {
+            reactor_.poll();
         }
     }
 
 private:
-    Event    runnable_event_;
-    Executor executor_;
-    MockTask task_;
+    Reactor&                reactor_;
+    Event                   runnable_event_;
+    Executor                executor_;
+    std::optional<MockTask> task_;
 };
 
 using WorkerThread = Thread<EventLoop>;

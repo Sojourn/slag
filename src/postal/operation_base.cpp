@@ -6,6 +6,7 @@ namespace slag::postal {
     OperationBase::OperationBase(OperationType type, Reactor& reactor)
         : type_{type}
         , abandoned_{false}
+        , daemonized_{false}
         , reactor_{reactor}
     {
     }
@@ -43,10 +44,19 @@ namespace slag::postal {
     }
 
     void OperationBase::abandon() {
-        cancel();
+        if (daemonized_) {
+            // Allow daemonized operations to continue running.
+        }
+        else {
+            cancel();
+        }
 
         abandoned_ = true;
         reactor_.handle_abandoned(*this);
+    }
+
+    void OperationBase::daemonize() {
+        daemonized_ = true;
     }
 
     void* OperationBase::make_user_data(Slot slot) {

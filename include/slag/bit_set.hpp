@@ -30,7 +30,7 @@ namespace slag {
         }
 
         // set bits in the last, potentially partially aligned block
-        auto partial_block_size_bits = size_bits_ & (BLOCK_SIZE_BITS - 1);
+        auto partial_block_size_bits = size_bits_ & (BLOCK_SIZE_BITS_ - 1);
         auto partial_block_mask = (1ull << partial_block_size_bits) - 1;
         blocks_.back() |= partial_block_mask;
     }
@@ -74,11 +74,11 @@ namespace slag {
     }
 
     inline size_t BitSet::size_bits() const {
-        return size_blocks() / BLOCK_SIZE_BITS;
+        return size_blocks() / BLOCK_SIZE_BITS_;
     }
 
     inline size_t BitSet::size_bytes() const {
-        return size_blocks() / BLOCK_SIZE_BYTES;
+        return size_blocks() / BLOCK_SIZE_BYTES_;
     }
 
     inline size_t BitSet::size_blocks() const {
@@ -106,11 +106,11 @@ namespace slag {
     }
 
     inline void BitSet::grow_size_bytes(size_t new_size_bytes) {
-        grow_size_blocks(new_size_bytes * BLOCK_SIZE_BYTES);
+        grow_size_blocks(new_size_bytes * BLOCK_SIZE_BYTES_);
     }
 
     inline void BitSet::grow_size_blocks(size_t new_size_blocks) {
-        grow_size_bits(new_size_blocks * BLOCK_SIZE_BITS);
+        grow_size_bits(new_size_blocks * BLOCK_SIZE_BITS_);
     }
 
     inline auto BitSet::block(size_t block_index) -> Block& {
@@ -122,7 +122,7 @@ namespace slag {
     }
 
     inline size_t BitSet::calculate_block_count(size_t size_bits) {
-        size_t base_block_count = size_bits / BLOCK_SIZE_BITS;
+        size_t base_block_count = size_bits / BLOCK_SIZE_BITS_;
         size_t block_count = base_block_count;
 
         // include a padding block there are a non-zero number of padding bits
@@ -134,17 +134,17 @@ namespace slag {
     }
 
     inline size_t BitSet::calculate_padding_bit_count(size_t size_bits) {
-        size_t non_padding_bit_count = size_bits & (BLOCK_SIZE_BITS - 1);
+        size_t non_padding_bit_count = size_bits & (BLOCK_SIZE_BITS_ - 1);
 
-        return BLOCK_SIZE_BITS - non_padding_bit_count - 1;
+        return BLOCK_SIZE_BITS_ - non_padding_bit_count - 1;
     }
 
     inline size_t BitSet::to_block_offset(size_t index) {
-        return index >> BLOCK_SIZE_BITS_LOG2;
+        return index >> BLOCK_SIZE_BITS_LOG2_;
     }
 
     inline size_t BitSet::to_bit_offset(size_t index) {
-        return index & (BLOCK_SIZE_BITS - 1);
+        return index & (BLOCK_SIZE_BITS_ - 1);
     }
 
     inline BitSetScanner::BitSetScanner(const BitSet& bit_set)
@@ -169,7 +169,7 @@ namespace slag {
 
         // find the next bit and calculate offsets
         auto current_block_offset = next_block_index_ - 1;
-        auto block_offset = current_block_offset * BLOCK_SIZE_BITS;
+        auto block_offset = current_block_offset * BLOCK_SIZE_BITS_;
         auto bit_offset = static_cast<size_t>(__builtin_ctzll(block_));
 
         // remove this bit from our internal state

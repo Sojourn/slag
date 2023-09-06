@@ -10,6 +10,9 @@ namespace slag::postal {
 
     class Reactor;
 
+    template<OperationType type>
+    class Operation;
+
     class alignas(16) OperationBase
         : public Pollable<PollableType::READABLE>
         , public Pollable<PollableType::WRITABLE>
@@ -30,6 +33,9 @@ namespace slag::postal {
 
         // Attempt to cancel the operation.
         virtual void cancel() = 0;
+
+        // Prevent cancelation when the handle for this is destroyed.
+        void daemonize();
 
     public:
         using Slot     = int8_t;
@@ -66,6 +72,7 @@ namespace slag::postal {
     private:
         OperationType      type_;
         bool               abandoned_;
+        bool               daemonized_;
         SlotMask           slot_mask_;
         Event              writable_event_;
         Event              readable_event_;
@@ -74,28 +81,5 @@ namespace slag::postal {
     };
     static_assert(OperationBase::SLOT_COUNT <= alignof(OperationBase));
     static_assert(OperationBase::SLOT_COUNT <= (sizeof(OperationBase::SlotMask) * 8));
-
-    // An individual, asynchronous system call.
-    class PrimitiveOperation
-        : public OperationBase
-        , public Pollable<PollableType::COMPLETE>
-    {
-    protected:
-        using OperationBase::OperationBase;
-    };
-
-    // An operation composed of other operations.
-    // This could be a sequence (socket + connect), or wrapping an
-    // existing operation (receive_exactly).
-    // class CompositeOperation
-    //     : public OperationBase
-    //     , public Task
-    // {
-    // protected:
-    //     using OperationBase::OperationBase;
-    // };
-
-    template<OperationType type>
-    class Operation;
 
 }

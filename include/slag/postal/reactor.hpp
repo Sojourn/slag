@@ -17,6 +17,9 @@ namespace slag::postal {
             executor_.insert(operation);
         }
 
+        metrics_.total_operation_count += 1;
+        metrics_.active_operation_count += 1;
+
         return OperationHandle<type>(operation);
     }
 

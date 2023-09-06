@@ -34,6 +34,10 @@ namespace slag::postal {
         return *this;
     }
 
+    Event::operator bool() const {
+        return is_set();
+    }
+
     bool Event::is_set() const {
         return is_set_;
     }

@@ -17,6 +17,8 @@ namespace slag::postal {
         Event& operator=(Event&& other);
         Event& operator=(const Event&) = delete;
 
+        explicit operator bool() const;
+
         bool is_set() const;
         void set(bool value = true);
         void reset();

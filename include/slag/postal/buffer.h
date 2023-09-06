@@ -8,6 +8,9 @@
 
 namespace slag::postal {
 
+    struct NationalBufferLedgerEntry;
+    struct RegionalBufferLedgerEntry;
+
     struct BufferDescriptor {
         uint32_t index;
     };
@@ -28,7 +31,13 @@ namespace slag::postal {
 
         explicit operator bool() const;
 
+        // Representations of the underlying buffer are split by nation and region.
+        // The descriptor is used as a key to tie everything together.
         BufferDescriptor descriptor() const;
+        NationalBufferLedgerEntry& national_entry();
+        const NationalBufferLedgerEntry& national_entry() const;
+        RegionalBufferLedgerEntry& regional_entry();
+        const RegionalBufferLedgerEntry& regional_entry() const;
 
         // Returns another handle to this buffer's data.
         BufferHandle share();

@@ -12,11 +12,11 @@ namespace slag {
     public:
         using Block = uint64_t;
 
-        static constexpr size_t BLOCK_SIZE_BITS      = SIZE_BITS<Block>;
-        static constexpr size_t BLOCK_SIZE_BYTES     = SIZE_BYTES<Block>;
-        static constexpr size_t BLOCK_SIZE_BITS_LOG2 = 6;
+        static constexpr size_t BLOCK_SIZE_BITS_      = SIZE_BITS<Block>;
+        static constexpr size_t BLOCK_SIZE_BYTES_     = SIZE_BYTES<Block>;
+        static constexpr size_t BLOCK_SIZE_BITS_LOG2_ = 6;
 
-        static_assert(1ull << BLOCK_SIZE_BITS_LOG2 == BLOCK_SIZE_BITS, "exp2(BLOCK_SIZE_BITS_LOG2) must equal BLOCK_SIZE_BITS");
+        static_assert(1ull << BLOCK_SIZE_BITS_LOG2_ == BLOCK_SIZE_BITS_, "exp2(BLOCK_SIZE_BITS_LOG2_) must equal BLOCK_SIZE_BITS_");
 
     public:
         explicit BitSet(size_t size_bits = 0);
@@ -66,8 +66,8 @@ namespace slag {
     public:
         using Block = BitSet::Block;
 
-        static constexpr size_t BLOCK_SIZE_BITS  = BitSet::BLOCK_SIZE_BITS;
-        static constexpr size_t BLOCK_SIZE_BYTES = BitSet::BLOCK_SIZE_BYTES;
+        static constexpr size_t BLOCK_SIZE_BITS_  = BitSet::BLOCK_SIZE_BITS_;
+        static constexpr size_t BLOCK_SIZE_BYTES_ = BitSet::BLOCK_SIZE_BYTES_;
 
     public:
         explicit BitSetScanner(const BitSet& bit_set);

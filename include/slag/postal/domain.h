@@ -19,6 +19,7 @@
 #include "slag/postal/post_office.h"
 #include "slag/postal/executor.h"
 #include "slag/postal/reactor.h"
+#include "slag/postal/file_table.h"
 
 namespace slag::postal {
 
@@ -114,6 +115,7 @@ namespace slag::postal {
         BufferAllocator& buffer_allocator();
         Executor& current_executor();
         Reactor& reactor();
+        FileTable& file_table();
 
     public:
         // Return a cursor that always points at the Census for the current Season.
@@ -158,6 +160,7 @@ namespace slag::postal {
 
         std::vector<Executor*>           executor_stack_;
         Reactor                          reactor_;
+        FileTable                        file_table_;
     };
 
 }

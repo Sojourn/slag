@@ -5,6 +5,9 @@
 
 #define SLAG_POSTAL_OPERATION_TYPES(X) \
     X(NOP)                             \
+    X(OPEN)                            \
+    X(CLOSE)                           \
+    X(WRITE)                           \
 
 namespace slag::postal {
 
