@@ -24,8 +24,8 @@ namespace slag {
         void detach(StackImpl&);
 
     private:
-        Above* above_    = nullptr;
-        Below* below_    = nullptr;
+        Above* above_ = nullptr;
+        Below* below_ = nullptr;
     };
 
 }
