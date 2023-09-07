@@ -21,7 +21,7 @@ public:
                 return open_operation_->complete_event();
             }
             case 1: {
-                return nop_operation_->complete_event();
+                return write_operation_->complete_event();
             }
         }
 
@@ -36,7 +36,16 @@ public:
 
                     file_ = std::move(result.value());
                     open_operation_.reset();
-                    nop_operation_ = make_nop_operation();
+
+                    const char message[] = "Hello, World!\n";
+
+                    BufferWriter writer;
+                    writer.write(std::as_bytes(std::span{message}));
+
+                    write_operation_ = make_write_operation(
+                        file_, uint64_t{0},
+                        writer.publish(), size_t{0}
+                    );
                 }
                 else {
                     std::cout << "open failure" << std::endl;
@@ -45,13 +54,13 @@ public:
                 break;
             }
             case 1: {
-                auto&& result = nop_operation_->result();
+                auto&& result = write_operation_->result();
                 if (result) {
-                    std::cout << "nop success" << std::endl;
+                    std::cout << "write success - " << result.value() << " bytes written" << std::endl;
                     set_success();
                 }
                 else {
-                    std::cout << "nop failure" << std::endl;
+                    std::cout << "write failure" << std::endl;
                     set_failure();
                 }
             }
@@ -59,10 +68,10 @@ public:
     }
 
 private:
-    int                 state_;
-    FileHandle          file_;
-    OpenOperationHandle open_operation_;
-    NopOperationHandle  nop_operation_;
+    int                  state_;
+    FileHandle           file_;
+    OpenOperationHandle  open_operation_;
+    WriteOperationHandle write_operation_;
 };
 
 // This should be relatively pure and just call into the various
