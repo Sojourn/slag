@@ -1,6 +1,5 @@
 #pragma once
 
-#include <string>
 #include <cerrno>
 #include "slag/postal/primitive_operation.h"
 
