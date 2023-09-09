@@ -7,6 +7,60 @@
 
 using namespace slag::postal;
 
+class TestProtoThread : public slag::postal::ProtoTask {
+public:
+    void run() override final {
+        SLAG_PT_BEGIN();
+
+        {
+            open_operation_ = make_open_operation("/tmp/foo", O_RDWR|O_CREAT);
+        }
+        SLAG_PT_WAIT_COMPLETE(*open_operation_);
+
+        if (auto&& result = open_operation_->result(); result) {
+            file_ = std::move(result.value());
+            open_operation_.reset();
+        }
+        else {
+            set_failure();
+            return;
+        }
+
+
+        for (i_ = 0; i_ < 10; ++i_) {
+            {
+                const char message[] = "Hello, World!\n";
+
+                BufferWriter writer;
+                writer.write(std::as_bytes(std::span{message}));
+                write_operation_ = make_write_operation(
+                    file_, uint64_t{0},
+                    writer.publish(), size_t{0}
+                );
+            }
+            SLAG_PT_WAIT_COMPLETE(*write_operation_);
+
+            if (auto&& result = write_operation_->result(); result) {
+                std::cout << "Wrote " << result.value() << " bytes" << std::endl;
+                write_operation_.reset();
+            }
+            else {
+                set_failure();
+                return;
+            }
+        }
+
+
+        SLAG_PT_END();
+    }
+
+private:
+    FileHandle           file_;
+    OpenOperationHandle  open_operation_;
+    WriteOperationHandle write_operation_;
+    int                  i_ = 0;
+};
+
 class MockTask : public Task {
 public:
     MockTask()
@@ -115,10 +169,12 @@ public:
     }
 
 private:
+    using InitTask = TestProtoThread;
+
     Reactor&                reactor_;
     Event                   runnable_event_;
     Executor                executor_;
-    std::optional<MockTask> task_;
+    std::optional<InitTask> task_;
 };
 
 using WorkerThread = Thread<EventLoop>;

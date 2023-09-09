@@ -18,6 +18,7 @@
 #include "pollable_queue.h"
 #include "selector.h"
 #include "executor.h"
+#include "proto_task.h"
 
 #include "buffer.h"
 #include "buffer_ledger.h"

@@ -86,8 +86,8 @@ namespace slag::postal {
         void handle_result(Slot slot, int32_t result) override final {
             if (slot == operation_slot_) {
                 operation_slot_ = -1;
-                complete_event_.set();
                 result_ = handle_operation_result(result);
+                readable_event().set();
             }
             else if (slot == cancel_slot_) {
                 cancel_slot_ = -1;

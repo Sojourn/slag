@@ -36,6 +36,8 @@ set(SLAG_SOURCE_FILES
     record_decoder.cpp
     ../generated/record.cpp
     postal/buffer.cpp
+    # postal/buffer_slice.cpp
+    # postal/buffer_cursor.cpp
     postal/buffer_ledger.cpp
     postal/buffer_reader.cpp
     postal/buffer_writer.cpp
