@@ -35,10 +35,13 @@ namespace slag::postal {
     // macros to setup/cleanup. Use the wait macros inside of them to block until
     // some resource is ready.
     //
-    // https://dunkels.com/adam/pt/index.html
-    //
-    // TODO: think naming this ProtoThread vs. ProtoTask. ProtoThread is accurate to the concept,
+    // TODO: Think naming this ProtoThread vs. ProtoTask. ProtoThread is accurate to the concept,
     //       but ProtoTask is internally consistent.
+    // TODO: Think about using computed labels. Not sure how &&<label> interacts with operator overloading.
+    //       Also it is non-standard, but would give us access to more C-constructs.
+    //
+    // References:
+    //   https://dunkels.com/adam/pt/index.html
     //
     class ProtoTask : public Task {
     public:
