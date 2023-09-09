@@ -1,9 +1,17 @@
 #pragma once
 
+// Steps to add a new operation:
+//   1. slag/postal/operation.h: Add the include.
+//   2. slag/postal/operation_types.h: Add a new value to the X-macro.
+//   3. slag/postal/operation_factory.h: Add a factory function to construct it.
+//   4. slag/postal/operations/foo_operation.h: Create and implement.
+//
+
 #include "operations/nop_operation.h"
 #include "operations/open_operation.h"
 #include "operations/close_operation.h"
 #include "operations/write_operation.h"
+#include "operations/timer_operation.h"
 
 namespace slag::postal {
 

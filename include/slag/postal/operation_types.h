@@ -8,6 +8,7 @@
     X(OPEN)                            \
     X(CLOSE)                           \
     X(WRITE)                           \
+    X(TIMER)                           \
 
 namespace slag::postal {
 

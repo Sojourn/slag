@@ -15,8 +15,8 @@ public:
         {
             open_operation_ = make_open_operation("/tmp/foo", O_RDWR|O_CREAT);
         }
-        SLAG_PT_WAIT_COMPLETE(*open_operation_);
 
+        SLAG_PT_WAIT_COMPLETE(*open_operation_);
         if (auto&& result = open_operation_->result(); result) {
             file_ = std::move(result.value());
             open_operation_.reset();
@@ -25,7 +25,6 @@ public:
             set_failure();
             return;
         }
-
 
         for (i_ = 0; i_ < 10; ++i_) {
             {
@@ -38,8 +37,8 @@ public:
                     writer.publish(), size_t{0}
                 );
             }
-            SLAG_PT_WAIT_COMPLETE(*write_operation_);
 
+            SLAG_PT_WAIT_COMPLETE(*write_operation_);
             if (auto&& result = write_operation_->result(); result) {
                 std::cout << "Wrote " << result.value() << " bytes" << std::endl;
                 write_operation_.reset();
@@ -50,6 +49,21 @@ public:
             }
         }
 
+        {
+            std::cout << "Sleeping for a sec" << std::endl;
+            timer_operation_ = make_timer_operation(std::chrono::seconds(1));
+
+            SLAG_PT_WAIT_COMPLETE(*timer_operation_);
+            if (auto&& result = timer_operation_->result(); result) {
+                std::cout << "Timeout!" << std::endl;
+                timer_operation_.reset();
+            }
+            else {
+                std::cout << "Error?" << std::endl;
+                set_failure();
+                return;
+            }
+        }
 
         SLAG_PT_END();
     }
@@ -58,6 +72,7 @@ private:
     FileHandle           file_;
     OpenOperationHandle  open_operation_;
     WriteOperationHandle write_operation_;
+    TimerOperationHandle timer_operation_;
     int                  i_ = 0;
 };
 

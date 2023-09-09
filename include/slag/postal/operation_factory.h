@@ -11,6 +11,7 @@ namespace slag::postal {
     using OpenOperationHandle = OperationHandle<OperationType::OPEN>;
     using CloseOperationHandle = OperationHandle<OperationType::CLOSE>;
     using WriteOperationHandle = OperationHandle<OperationType::WRITE>;
+    using TimerOperationHandle = OperationHandle<OperationType::TIMER>;
 
     template<OperationType type, typename... Args>
     inline OperationHandle<type> make_operation(Args&&... args) {
@@ -39,6 +40,11 @@ namespace slag::postal {
     template<typename... Args>
     inline auto make_write_operation(Args&&... args) {
         return make_operation<OperationType::WRITE>(std::forward<Args>(args)...);
+    }
+
+    template<typename... Args>
+    inline auto make_timer_operation(Args&&... args) {
+        return make_operation<OperationType::TIMER>(std::forward<Args>(args)...);
     }
 
 }
