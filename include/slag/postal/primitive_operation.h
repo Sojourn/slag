@@ -37,7 +37,7 @@ namespace slag::postal {
             switch (state_) {
                 case State::OPERATION_PENDING: {
                     operation_slot_ = SLOT_COUNT;
-                    handle_result(operation_slot_, -ECANCELED);
+                    handle_result(operation_slot_, -ECANCELED, false);
                     break;
                 }
                 case State::OPERATION_WORKING: {
@@ -83,15 +83,21 @@ namespace slag::postal {
         }
 
     private:
-        void handle_result(Slot slot, int32_t result) override final {
+        void handle_result(Slot slot, int32_t result, bool more) override final {
             if (slot == operation_slot_) {
-                operation_slot_ = -1;
-                result_ = handle_operation_result(result);
+                if (!more) {
+                    operation_slot_ = -1;
+                }
+
+                result_ = handle_operation_result(result, more);
                 readable_event().set();
             }
             else if (slot == cancel_slot_) {
-                cancel_slot_ = -1;
-                handle_cancel_result(result);
+                if (!more) {
+                    cancel_slot_ = -1;
+                }
+
+                handle_cancel_result(result, more);
             }
             else {
                 assert(false);
@@ -104,10 +110,11 @@ namespace slag::postal {
             }
         }
 
-        virtual Result<T> handle_operation_result(int32_t result) = 0;
+        virtual Result<T> handle_operation_result(int32_t result, bool more) = 0;
 
-        void handle_cancel_result(int32_t result) {
+        void handle_cancel_result(int32_t result, bool more) {
             (void)result;
+            (void)more;
         }
 
     private:

@@ -5,6 +5,7 @@
 #include <cerrno>
 #include <cstdint>
 #include <cstddef>
+#include <cassert>
 #include <sys/uio.h>
 #include "slag/postal/file_handle.h"
 #include "slag/postal/buffer_ledger.h"
@@ -69,7 +70,9 @@ namespace slag::postal {
             );
         }
 
-        Result<size_t> handle_operation_result(int32_t result) override final {
+        Result<size_t> handle_operation_result(int32_t result, bool more) override final {
+            assert(!more);
+
             if (result < 0) {
                 return make_system_error(-result);
             }

@@ -102,11 +102,11 @@ namespace slag::postal {
     }
 
     void Reactor::process_completion(struct io_uring_cqe& cqe) {
-        auto&& [operation_base, slot] = OperationBase::consume_slot(
-            reinterpret_cast<void*>(cqe.user_data)
-        );
+        bool more = cqe.flags & IORING_CQE_F_MORE;
+        void* user_data = reinterpret_cast<void*>(cqe.user_data);
+        auto&& [operation_base, slot] = (more ? OperationBase::peek_slot(user_data) : OperationBase::consume_slot(user_data));
 
-        operation_base->handle_result(slot, cqe.res);
+        operation_base->handle_result(slot, cqe.res, more);
     }
 
     void Reactor::collect_garbage() {

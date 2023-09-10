@@ -2,6 +2,7 @@
 
 #include <string>
 #include <cerrno>
+#include <cassert>
 #include "slag/postal/file_handle.h"
 #include "slag/postal/primitive_operation.h"
 
@@ -42,7 +43,9 @@ namespace slag::postal {
             );
         }
 
-        Result<FileHandle> handle_operation_result(int32_t result) override final {
+        Result<FileHandle> handle_operation_result(int32_t result, bool more) override final {
+            assert(!more);
+
             if (result < 0) {
                 return make_system_error(-result);
             }

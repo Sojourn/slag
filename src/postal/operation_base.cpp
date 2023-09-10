@@ -77,11 +77,19 @@ namespace slag::postal {
     }
 
     auto OperationBase::consume_slot(void* user_data) -> std::pair<OperationBase*, Slot> {
+        std::pair<OperationBase*, Slot> result = peek_slot(user_data);
+
+        auto&& [operation_base, slot] = result;
+        operation_base->slot_mask_ &= ~(1u << slot);
+
+        return result;
+    }
+
+    auto OperationBase::peek_slot(void* user_data) -> std::pair<OperationBase*, Slot> {
         auto packed_value = reinterpret_cast<uintptr_t>(user_data);
 
         OperationBase* operation_base = reinterpret_cast<OperationBase*>(packed_value & ~(SLOT_COUNT - 1));
         Slot slot = static_cast<Slot>(packed_value & (SLOT_COUNT - 1));
-        operation_base->slot_mask_ &= ~(1u << slot);
 
         return std::make_pair(operation_base, slot);
     }

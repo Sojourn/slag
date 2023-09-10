@@ -46,6 +46,7 @@ namespace slag::postal {
         void* make_user_data(Slot slot);
         std::pair<void*, Slot> produce_slot();
         static std::pair<OperationBase*, Slot> consume_slot(void* user_data);
+        static std::pair<OperationBase*, Slot> peek_slot(void* user_data);
 
     protected:
         OperationBase(OperationType type, Reactor& reactor);
@@ -61,7 +62,7 @@ namespace slag::postal {
         friend class Reactor;
 
         virtual void prepare(Slot slot, struct io_uring_sqe& sqe) = 0;
-        virtual void handle_result(Slot slot, int32_t result) = 0;
+        virtual void handle_result(Slot slot, int32_t result, bool more) = 0;
 
     private: // API for handles.
         template<OperationType type>
