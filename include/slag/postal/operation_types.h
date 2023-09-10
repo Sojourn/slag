@@ -11,6 +11,7 @@
     X(TIMER)                           \
     X(SOCKET)                          \
     X(CONNECT)                         \
+    X(ACCEPT)                          \
 
 namespace slag::postal {
 

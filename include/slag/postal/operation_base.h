@@ -29,7 +29,6 @@ namespace slag::postal {
         const Reactor& reactor() const;
 
         Event& writable_event() override final;
-        Event& readable_event() override final;
 
         // Attempt to cancel the operation.
         virtual void cancel() = 0;
@@ -76,7 +75,6 @@ namespace slag::postal {
         bool               daemonized_;
         SlotMask           slot_mask_;
         Event              writable_event_;
-        Event              readable_event_;
         Reactor&           reactor_;
         IntrusiveQueueNode node_;
     };

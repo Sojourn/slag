@@ -27,10 +27,6 @@ namespace slag::postal {
         return reactor_;
     }
 
-    Event& OperationBase::readable_event() {
-        return readable_event_;
-    }
-
     Event& OperationBase::writable_event() {
         return writable_event_;
     }

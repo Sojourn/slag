@@ -15,6 +15,7 @@ namespace slag::postal {
     using TimerOperationHandle   = OperationHandle<OperationType::TIMER>;
     using SocketOperationHandle  = OperationHandle<OperationType::SOCKET>;
     using ConnectOperationHandle = OperationHandle<OperationType::CONNECT>;
+    using AcceptOperationHandle  = OperationHandle<OperationType::ACCEPT>;
 
     template<OperationType type, typename... Args>
     inline OperationHandle<type> make_operation(Args&&... args) {
@@ -50,14 +51,16 @@ namespace slag::postal {
         return make_operation<OperationType::TIMER>(std::forward<Args>(args)...);
     }
 
-    template<typename... Args>
     inline auto make_socket_operation(int domain, int type, int protocol = 0) {
         return make_operation<OperationType::SOCKET>(domain, type, protocol);
     }
 
-    template<typename... Args>
-    inline auto make_connect_operation(const Address& address) {
-        return make_operation<OperationType::CONNECT>(address);
+    inline auto make_connect_operation(FileHandle socket, const Address& address) {
+        return make_operation<OperationType::CONNECT>(std::move(socket), address);
+    }
+
+    inline auto make_accept_operation(FileHandle socket) {
+        return make_operation<OperationType::ACCEPT>(std::move(socket));
     }
 
 }
