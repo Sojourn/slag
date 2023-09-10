@@ -1,6 +1,5 @@
 #pragma once
 
-#include <iostream>
 #include <cerrno>
 #include "slag/postal/primitive_operation.h"
 
@@ -10,7 +9,7 @@ namespace slag::postal {
     class Operation<OperationType::TIMER> : public PrimitiveOperation<void> {
     public:
         template<typename Rep, typename Period>
-        explicit Operation(Reactor& reactor, const std::chrono::duration<Rep, Period>& duration)
+        Operation(Reactor& reactor, const std::chrono::duration<Rep, Period>& duration)
             : PrimitiveOperation{OperationType::TIMER, reactor}
             , timespec_{to_kernel_timespec(duration)}
         {

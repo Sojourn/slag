@@ -50,16 +50,28 @@ public:
         }
 
         {
-            std::cout << "Sleeping for a sec" << std::endl;
+            std::cout << "One sec" << std::endl;
             timer_operation_ = make_timer_operation(std::chrono::seconds(1));
 
             SLAG_PT_WAIT_COMPLETE(*timer_operation_);
             if (auto&& result = timer_operation_->result(); result) {
-                std::cout << "Timeout!" << std::endl;
                 timer_operation_.reset();
             }
             else {
-                std::cout << "Error?" << std::endl;
+                set_failure();
+                return;
+            }
+        }
+
+        {
+            socket_operation_ = make_socket_operation(AF_INET, SOCK_STREAM);
+
+            SLAG_PT_WAIT_COMPLETE(*socket_operation_);
+            if (auto&& result = socket_operation_->result(); result) {
+                socket_ = std::move(result.value());
+                socket_operation_.reset();
+            }
+            else {
                 set_failure();
                 return;
             }
@@ -69,11 +81,13 @@ public:
     }
 
 private:
-    FileHandle           file_;
-    OpenOperationHandle  open_operation_;
-    WriteOperationHandle write_operation_;
-    TimerOperationHandle timer_operation_;
-    int                  i_ = 0;
+    FileHandle            file_;
+    FileHandle            socket_;
+    OpenOperationHandle   open_operation_;
+    WriteOperationHandle  write_operation_;
+    TimerOperationHandle  timer_operation_;
+    SocketOperationHandle socket_operation_;
+    int                   i_ = 0;
 };
 
 class MockTask : public Task {

@@ -9,6 +9,8 @@
     X(CLOSE)                           \
     X(WRITE)                           \
     X(TIMER)                           \
+    X(SOCKET)                          \
+    X(CONNECT)                         \
 
 namespace slag::postal {
 
