@@ -7,7 +7,7 @@
 
 using namespace slag::postal;
 
-class TestProtoThread : public slag::postal::ProtoTask {
+class TestProtoTask : public ProtoTask {
 public:
     void run() override final {
         SLAG_PT_BEGIN();
@@ -90,82 +90,136 @@ private:
     int                   i_ = 0;
 };
 
-class MockTask : public Task {
+class Server;
+
+class ServerConnection : public ProtoTask {
 public:
-    MockTask()
-        : state_{0}
-        , open_operation_{make_open_operation("/tmp/foo", O_RDWR|O_CREAT)}
+    ServerConnection(Server& server, FileHandle socket)
+        : server_{server}
+        , socket_{std::move(socket)}
     {
-    }
-
-    Event& runnable_event() override final {
-        switch (state_) {
-            case 0: {
-                return open_operation_->complete_event();
-            }
-            case 1: {
-                return write_operation_->complete_event();
-            }
-        }
-
-        abort();
     }
 
     void run() override final {
-        switch (state_++) {
-            case 0: {
-                if (auto&& result = open_operation_->result()) {
-                    std::cout << "open success" << std::endl;
+        SLAG_PT_BEGIN();
 
-                    file_ = std::move(result.value());
-                    open_operation_.reset();
+        slag::info("Writing MOTD to socket");
+        {
+            const char message[] = "MOTD\n";
 
-                    const char message[] = "Hello, World!\n";
-
-                    BufferWriter writer;
-                    writer.write(std::as_bytes(std::span{message}));
-
-                    write_operation_ = make_write_operation(
-                        file_, uint64_t{0},
-                        writer.publish(), size_t{0}
-                    );
-                }
-                else {
-                    std::cout << "open failure" << std::endl;
-                    set_failure();
-                }
-                break;
-            }
-            case 1: {
-                auto&& result = write_operation_->result();
-                if (result) {
-                    std::cout << "write success - " << result.value() << " bytes written" << std::endl;
-                    set_success();
-                }
-                else {
-                    std::cout << "write failure" << std::endl;
-                    set_failure();
-                }
-            }
+            BufferWriter writer;
+            writer.write(std::as_bytes(std::span{message}));
+            write_operation_ = make_write_operation(
+                socket_, uint64_t{0},
+                writer.publish(), size_t{0}
+            );
         }
+        SLAG_PT_WAIT_COMPLETE(*write_operation_);
+
+        if (auto&& result = write_operation_->result(); result) {
+            std::cout << "Wrote " << result.value() << " bytes" << std::endl;
+            write_operation_.reset();
+        }
+        else {
+            set_failure();
+            return;
+        }
+
+        SLAG_PT_END();
     }
 
 private:
-    int                  state_;
-    FileHandle           file_;
-    OpenOperationHandle  open_operation_;
+    Server&              server_;
+    FileHandle           socket_;
     WriteOperationHandle write_operation_;
 };
 
-// This should be relatively pure and just call into the various
-// event loop phases.
+class Server : public ProtoTask {
+public:
+    explicit Server(const slag::Address& address)
+        : address_{address}
+    {
+    }
+
+    void run() override final {
+        SLAG_PT_BEGIN();
+
+        // Connections can inherit the executor driving us.
+        region().current_executor().insert(connections_);
+
+        // Setup the listening socket.
+        {
+            socket_operation_ = make_socket_operation(AF_INET, SOCK_STREAM, 0);
+            SLAG_PT_WAIT_COMPLETE(*socket_operation_);
+
+            auto&& result = socket_operation_->result();
+            if (result.has_error()) {
+                slag::error("[Server] failed to open socket - {}", to_string(result.error()));
+                set_failure();
+                return;
+            }
+
+            socket_ = std::move(result.value());
+            socket_operation_.reset();
+
+            if (::bind(socket_.file_descriptor(), &address_.addr(), address_.size()) < 0) {
+                slag::error("[Server] failed to bind socket - {}", to_string(slag::make_system_error()));
+                set_failure();
+                return;
+            }
+
+            int backlog = 4096;
+            if (::listen(socket_.file_descriptor(), backlog) < 0) {
+                slag::error("[Server] failed to listen on socket - {}", to_string(slag::make_system_error()));
+                set_failure();
+                return;
+            }
+
+            slag::info("[Server] accepting connections on port:{}", ntohs(address_.addr_in().sin_port));
+        }
+
+        // Accept connections.
+        {
+            accept_operation_ = make_accept_operation(socket_);
+            while (true) {
+                SLAG_PT_WAIT_READABLE(*accept_operation_);
+
+                auto&& results = accept_operation_->results();
+                while (auto&& result = results.pop_front()) {
+                    if (result->has_error()) {
+                        slag::error("[Server] failed to accept socket - {}", to_string(result->error()));
+                        set_failure();
+                        return;
+                    }
+
+                    connections_.spawn(*this, std::move(result->value()));
+                }
+            }
+        }
+
+        SLAG_PT_END();
+    }
+
+private:
+    slag::Address               address_;
+    FileHandle                  socket_;
+    SocketOperationHandle       socket_operation_;
+    AcceptOperationHandle       accept_operation_;
+    TaskGroup<ServerConnection> connections_;
+};
+
+template<typename InitTask>
 class EventLoop : public Task {
 public:
-    EventLoop()
+    template<typename... Args>
+    EventLoop(Args&&... args)
         : reactor_{region().reactor()}
     {
         runnable_event_.set();
-        executor_.insert(task_.emplace());
+
+        executor_.insert(
+            task_.emplace(std::forward<Args>(args)...)
+        );
     }
 
     Event& runnable_event() override final {
@@ -198,15 +252,26 @@ public:
     }
 
 private:
-    using InitTask = TestProtoThread;
-
     Reactor&                reactor_;
     Event                   runnable_event_;
     Executor                executor_;
     std::optional<InitTask> task_;
 };
 
-using WorkerThread = Thread<EventLoop>;
+using WorkerThread = Thread<
+    EventLoop<Server>
+>;
+
+slag::Address make_address(int port) {
+    struct sockaddr_in addr;
+    memset(&addr, 0, sizeof(addr));
+
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    addr.sin_port = htons(static_cast<short>(port));
+
+    return slag::Address{addr};
+}
 
 int main(int, char**) {
     Empire::Config empire_config;
@@ -233,7 +298,10 @@ int main(int, char**) {
         region_config.buffer_range = std::make_pair(region_buffer_range_beg, region_buffer_range_end);
 
         threads.push_back(
-            std::make_unique<WorkerThread>(region_config)
+            std::make_unique<WorkerThread>(
+                region_config,
+                make_address(10000 + static_cast<int>(region_index))
+            )
         );
     }
 
