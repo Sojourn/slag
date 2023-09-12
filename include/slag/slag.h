@@ -10,6 +10,7 @@
 #include "logging.h"
 #include "intrusive_list.h"
 #include "intrusive_queue.h"
+#include "token_bucket.h"
 #include "transform.h"
 #include "buffer_writer.h"
 #include "buffer_reader.h"
