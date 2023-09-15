@@ -97,6 +97,7 @@ public:
     ServerConnection(Server& server, FileHandle socket)
         : server_{server}
         , socket_{std::move(socket)}
+        , tx_token_bucket_{4, 1024}
     {
     }
 
@@ -131,7 +132,9 @@ public:
 private:
     Server&              server_;
     FileHandle           socket_;
+    slag::TokenBucket    tx_token_bucket_;
     WriteOperationHandle write_operation_;
+    TimerOperationHandle timer_operation_;
 };
 
 class Server : public ProtoTask {

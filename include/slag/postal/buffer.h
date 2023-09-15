@@ -31,9 +31,11 @@ namespace slag::postal {
 
         explicit operator bool() const;
 
-        // Representations of the underlying buffer are split by nation and region.
         // The descriptor is used as a key to tie everything together.
         BufferDescriptor descriptor() const;
+        size_t size() const;
+
+        // Representations of the underlying buffer are split by nation and region.
         NationalBufferLedgerEntry& national_entry();
         const NationalBufferLedgerEntry& national_entry() const;
         RegionalBufferLedgerEntry& regional_entry();

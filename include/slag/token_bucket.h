@@ -6,12 +6,18 @@
 
 namespace slag {
 
+    // A time library agnostic token bucket implementation.
     class TokenBucket {
     public:
         static constexpr uint64_t NO_WAIT_NS       = std::numeric_limits<uint64_t>::min();
         static constexpr uint64_t INFINITE_WAIT_NS = std::numeric_limits<uint64_t>::max();
 
         TokenBucket(uint64_t tokens_per_second, uint64_t capacity);
+
+        uint64_t tokens() const;
+        uint64_t capacity() const;
+
+        void configure(uint64_t tokens_per_second, uint64_t capacity);
 
         void update(uint64_t now_ns);
 
@@ -23,6 +29,10 @@ namespace slag {
 
         // A fused update and consume function for convenience.
         uint64_t update_and_consume(uint64_t now_ts, uint64_t token_count);
+
+    private:
+        // Spill excess tokens/remainder, so that they do not exceed the bucket's capacity.
+        void spill();
 
     private:
         uint64_t tokens_;

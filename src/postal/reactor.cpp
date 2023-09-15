@@ -4,7 +4,9 @@
 
 namespace slag::postal {
 
-    Reactor::Reactor() {
+    Reactor::Reactor()
+        : interrupt_handler_{nullptr}
+    {
         int result;
         do {
             result = io_uring_queue_init(4096, &ring_, 0);
@@ -19,15 +21,21 @@ namespace slag::postal {
         io_uring_queue_exit(&ring_);
     }
 
-    void Reactor::poll() {
+    void Reactor::poll(bool blocking) {
         // Give composite operations a chance to make progress before we start submitting.
         while (executor_.is_runnable()) {
             executor_.run();
         }
 
-        // Fill up the submission queue.
-        if (prepare_pending_operations() > 0) {
+        // Submit and optionally wait for completions.
+        if (blocking) {
+            io_uring_submit_and_wait(&ring_, 1);
+        }
+        else if (prepare_pending_operations()) {
             io_uring_submit(&ring_);
+        }
+        else {
+            // Nothing to submit, and we don't want to wait.
         }
 
         process_completions();
@@ -36,6 +44,20 @@ namespace slag::postal {
 
     bool Reactor::is_quiescent() const {
         return metrics_.active_operation_count == 0;
+    }
+
+    void Reactor::interrupt(uint16_t source, uint16_t reason) {
+        InterruptOperationPayload payload = {
+            .source = source,
+            .reason = reason,
+        };
+
+        (void)payload;
+        // make_interrupt_operation();
+    }
+
+    void Reactor::set_interrupt_handler(ReactorInterruptHandler& interrupt_handler) {
+        interrupt_handler_ = &interrupt_handler;
     }
 
     size_t Reactor::prepare_pending_operations() {
@@ -102,11 +124,32 @@ namespace slag::postal {
     }
 
     void Reactor::process_completion(struct io_uring_cqe& cqe) {
+        if (cqe.user_data) {
+            process_operation_completion(cqe);
+        }
+        else {
+            process_interrupt_completion(cqe);
+        }
+    }
+
+    void Reactor::process_operation_completion(struct io_uring_cqe& cqe) {
         bool more = cqe.flags & IORING_CQE_F_MORE;
         void* user_data = reinterpret_cast<void*>(cqe.user_data);
         auto&& [operation_base, slot] = (more ? OperationBase::peek_slot(user_data) : OperationBase::consume_slot(user_data));
 
         operation_base->handle_result(slot, cqe.res, more);
+    }
+
+    void Reactor::process_interrupt_completion(struct io_uring_cqe& cqe) {
+        if (!interrupt_handler_) {
+            return;
+        }
+
+        // Extract the payload from the completion entry.
+        InterruptOperationPayload payload;
+        memcpy(&payload, &cqe.res, sizeof(payload));
+
+        interrupt_handler_->handle_interrupt(payload.source, payload.reason);
     }
 
     void Reactor::collect_garbage() {

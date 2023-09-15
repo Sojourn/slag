@@ -14,6 +14,21 @@ namespace slag {
     {
     }
 
+    uint64_t TokenBucket::tokens() const {
+        return tokens_;
+    }
+
+    uint64_t TokenBucket::capacity() const {
+        return capacity_;
+    }
+
+    void TokenBucket::configure(uint64_t tokens_per_second, uint64_t capacity) {
+        tokens_per_second_ = tokens_per_second;
+        capacity_ = capacity;
+
+        spill();
+    }
+
     void TokenBucket::update(uint64_t now_ns) {
         if (last_update_ns_ < now_ns) {
             if (last_update_ns_) {
@@ -23,10 +38,7 @@ namespace slag {
                 tokens_ += scaled_token_delta / NANOSECONDS_PER_SECOND;
                 remainder_  = scaled_token_delta % NANOSECONDS_PER_SECOND;
 
-                if (tokens_ > capacity_) {
-                    tokens_ = capacity_;
-                    remainder_ = 0;
-                }
+                spill();
             }
 
             last_update_ns_ = now_ns;
@@ -55,6 +67,13 @@ namespace slag {
     uint64_t TokenBucket::update_and_consume(uint64_t now_ts, uint64_t token_count) {
         update(now_ts);
         return consume(token_count);
+    }
+
+    void TokenBucket::spill() {
+        if (tokens_ > capacity_) {
+            tokens_ = capacity_;
+            remainder_ = 0;
+        }
     }
 
 }

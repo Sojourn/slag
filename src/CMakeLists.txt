@@ -57,6 +57,7 @@ set(SLAG_SOURCE_FILES
     postal/reactor.cpp
     postal/file_handle.cpp
     postal/file_table.cpp
+    postal/tasks/buffered_writer_task.cpp
 )
 
 set(SLAG_HEADER_FILES

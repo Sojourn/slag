@@ -63,4 +63,8 @@ namespace slag::postal {
         return make_operation<OperationType::ACCEPT>(std::move(socket));
     }
 
+    inline auto make_interrupt_operation(int file_descriptor, InterruptOperationPayload payload) {
+        return make_operation<OperationType::INTERRUPT>(file_descriptor, payload);
+    }
+
 }

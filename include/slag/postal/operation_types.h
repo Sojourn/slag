@@ -12,6 +12,7 @@
     X(SOCKET)                          \
     X(CONNECT)                         \
     X(ACCEPT)                          \
+    X(INTERRUPT)                       \
 
 namespace slag::postal {
 

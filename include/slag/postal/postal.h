@@ -32,3 +32,5 @@
 #include "reactor.h"
 #include "operation.h"
 #include "operation_factory.h"
+
+#include "tasks/buffered_writer_task.h"

@@ -43,6 +43,14 @@ namespace slag::postal {
         return descriptor_;
     }
 
+    size_t BufferHandle::size() const {
+        if (!*this) {
+            return 0;
+        }
+
+        return national_entry().size;
+    }
+
     NationalBufferLedgerEntry& BufferHandle::national_entry() {
         assert(*this);
         return nation().buffer_ledger().get_national_entry(descriptor_);
