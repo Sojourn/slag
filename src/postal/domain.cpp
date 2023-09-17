@@ -1,4 +1,5 @@
 #include "slag/postal/domain.h"
+#include "slag/postal/operation_factory.h"
 #include <stdexcept>
 #include <cassert>
 
@@ -87,6 +88,23 @@ namespace slag::postal {
                 config_.parcel_queue_capacity
             );
         }
+
+        // A table of io_uring reactor file descriptors corresponding to
+        // regions so that they can be easily interrupted.
+        ring_descriptors_.resize(region_count);
+        for (int& ring_descriptor: ring_descriptors_) {
+            ring_descriptor = -1;
+        }
+    }
+
+    Nation::~Nation() {
+        for (int& ring_descriptor: ring_descriptors_) {
+            if (ring_descriptor >= 0) {
+                int status = ::close(ring_descriptor);
+                assert(status >= 0);
+                ring_descriptor = -1;
+            }
+        }
     }
 
     auto Nation::config() const -> const Config& {
@@ -106,8 +124,22 @@ namespace slag::postal {
         return *parcel_queues_[index];
     }
 
+    int Nation::ring_descriptor(PostArea area) {
+        assert(area.nation == area.nation);
+
+        size_t index = area.region;
+        assert(index < ring_descriptors_.size());
+        return ring_descriptors_[index];
+    }
+
     void Nation::attach(Region& region) {
+        int ring_descriptor = dup(region.reactor().file_descriptor());
+        if (ring_descriptor < 0) {
+            throw std::runtime_error("Failed to duplicate ring descriptor");
+        }
+
         regions_[region.index()] = &region;
+        ring_descriptors_[region.index()] = ring_descriptor;
     }
 
     void Nation::detach(Region& region) {
@@ -155,6 +187,35 @@ namespace slag::postal {
 
     auto Region::census(Season season) const -> const Census& {
         return history_[to_index(season)];
+    }
+
+    void Region::set_interrupt_handler(InterruptHandler& interrupt_handler) {
+        reactor_.set_interrupt_handler(interrupt_handler);
+    }
+
+    void Region::interrupt(uint16_t to_region_index, uint16_t reason) {
+        interrupt(make_post_area(to_region_index), reason);
+    }
+
+    void Region::interrupt(PostArea to, uint16_t reason) {
+        int ring_descriptor = nation_.ring_descriptor(to);
+        if (ring_descriptor < 0) {
+            return;
+        }
+
+        auto operation = make_interrupt_operation(ring_descriptor, InterruptOperationPayload {
+            .source = static_cast<uint16_t>(index()),
+            .reason = reason,
+        });
+
+        // An interrupt is fire-and-forget.
+        operation->daemonize();
+    }
+
+    void Region::interrupt_all(uint16_t reason) {
+        for (size_t region_index = 0; region_index < nation_.config().region_count; ++region_index) {
+            interrupt(make_post_area(region_index), reason);
+        }
     }
 
     auto Region::imports() -> std::span<ParcelQueueConsumer> {

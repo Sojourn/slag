@@ -9,9 +9,9 @@
 
 namespace slag::postal {
 
-    class ReactorInterruptHandler {
+    class InterruptHandler {
     protected:
-        ~ReactorInterruptHandler() = default;
+        ~InterruptHandler() = default;
 
     public:
         virtual void handle_interrupt(uint16_t source, uint16_t reason) = 0;
@@ -37,11 +37,9 @@ namespace slag::postal {
         // Returns true if there are no active operations.
         bool is_quiescent() const;
 
-        // An API for waking up a blocking reactor. It can have a have a handler
-        // installed which will get a callback with some information about who
-        // did it (source) and why (reason).
-        void interrupt(uint16_t source, uint16_t reason);
-        void set_interrupt_handler(ReactorInterruptHandler& interrupt_handler);
+        void set_interrupt_handler(InterruptHandler& interrupt_handler);
+
+        int file_descriptor();
 
     private:
         size_t prepare_pending_operations();
@@ -72,7 +70,7 @@ namespace slag::postal {
         Selector                 garbage_;
         OperationAllocator       operation_allocator_;
 
-        ReactorInterruptHandler* interrupt_handler_;
+        InterruptHandler* interrupt_handler_;
     };
 
 }

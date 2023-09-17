@@ -67,6 +67,16 @@ namespace slag {
     }
 
     template<template<typename> class... Layers>
+    template<typename Functor>
+    inline void Stack<Layers...>::for_each_layer_reverse(Functor&& functor) {
+        auto visit = [&]<size_t... I>(std::index_sequence<I...>) {
+            (functor(get_layer_at<sizeof...(Layers) - I - 1>()), ...);
+        };
+
+        visit(std::make_index_sequence<sizeof...(Layers)>{});
+    }
+
+    template<template<typename> class... Layers>
     template<typename LayerImpl>
     inline auto Stack<Layers...>::get_layer_above() -> LayerAboveType<LayerImpl>* {
         using T = LayerAboveType<LayerImpl>;

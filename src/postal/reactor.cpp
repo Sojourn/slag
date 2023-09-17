@@ -46,18 +46,12 @@ namespace slag::postal {
         return metrics_.active_operation_count == 0;
     }
 
-    void Reactor::interrupt(uint16_t source, uint16_t reason) {
-        InterruptOperationPayload payload = {
-            .source = source,
-            .reason = reason,
-        };
-
-        (void)payload;
-        // make_interrupt_operation();
+    void Reactor::set_interrupt_handler(InterruptHandler& interrupt_handler) {
+        interrupt_handler_ = &interrupt_handler;
     }
 
-    void Reactor::set_interrupt_handler(ReactorInterruptHandler& interrupt_handler) {
-        interrupt_handler_ = &interrupt_handler;
+    int Reactor::file_descriptor() {
+        return ring_.ring_fd;
     }
 
     size_t Reactor::prepare_pending_operations() {

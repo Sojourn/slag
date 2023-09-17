@@ -1,75 +1,198 @@
 #include <iostream>
-#include <cstdint>
-#include <cstddef>
-#include "slag/slag.h"
-
-#include <sys/mman.h>
+#include "slag/stack.h"
+#include "slag/postal/task.h"
+#include "slag/postal/proto_task.h"
+#include "slag/postal/reactor.h"
+#include "slag/postal/pollable.h"
+#include "slag/postal/executor.h"
 
 using namespace slag;
+using namespace slag::postal;
 
-static constexpr size_t CHUNK_SIZE_BYTES        = (1 << 15) - 3;
-static constexpr size_t BLOCK_SIZE_BYTES        = 2 << 20;
-static constexpr size_t BLOCK_CHUNK_COUNT       = 64;
-static constexpr size_t BLOCK_FOOTER_SIZE_BYTES = BLOCK_SIZE_BYTES - (BLOCK_CHUNK_COUNT * CHUNK_SIZE_BYTES);
+#define SLAG_SERVICE_TYPES(X) \
+    X(SYSTEM)                 \
+    X(CHRONO)                 \
+    X(POSTAL)                 \
+    X(WORKER)                 \
 
-struct Chunk {
-    uint8_t storage[CHUNK_SIZE_BYTES];
+enum class ServiceType {
+#define X(SLAG_SERVICE_TYPE) SLAG_SERVICE_TYPE,
+    SLAG_SERVICE_TYPES(X)
+#undef X
+};
 
-    Chunk() {
-        memset(storage, 0, sizeof(storage));
+constexpr size_t SERVICE_TYPE_COUNT = 0
+#define X(SLAG_SERVICE_TYPE) + 1
+    SLAG_SERVICE_TYPES(X)
+#undef X
+;
+
+enum class ServiceState {
+    INITIAL,
+    STARTING,
+    RUNNING,
+    STOPPING,
+    STOPPED,
+};
+
+class ServiceBase {
+public:
+    virtual ~ServiceBase() = default;
+
+    ServiceState state() const {
+        return state_;
+    }
+
+protected:
+    void set_state(ServiceState state) {
+        assert((static_cast<size_t>(state_) + 1) == static_cast<size_t>(state));
+    }
+
+private:
+    ServiceState state_;
+};
+
+template<typename Impl, ServiceType type>
+class Service;
+
+template<typename Impl>
+class Service<Impl, ServiceType::SYSTEM> : public ServiceBase {
+public:
+    constexpr static ServiceType TYPE = ServiceType::SYSTEM;
+
+private:
+    Impl& impl() {
+        return static_cast<Impl&>(*this);
     }
 };
 
-struct BlockFooter {
-    IntrusiveQueueNode node;
-    uint64_t           mask;
-    uint16_t           reference_counts[BLOCK_CHUNK_COUNT];
+template<typename Stack>
+class FooService
+    : public Service<FooService<Stack>, ServiceType::SYSTEM>
+    , public Layer<FooService, Stack>
+    , public ProtoTask
+{
+public:
+    using Base = Layer<FooService, Stack>;
 
-    BlockFooter()
-        : node{}
-        , mask{}
+    using Base::above;
+    using Base::below;
+
+public:
+    FooService() {
+    }
+
+    void start() {
+    }
+
+    void stop() {
+    }
+
+    void wait() {
+    }
+
+private:
+    Event runnable_event_;
+};
+
+template<typename Stack>
+class BarService
+    : public Service<BarService<Stack>, ServiceType::CHRONO>
+    , public Layer<BarService, Stack>
+    , public ProtoTask
+{
+public:
+    using Base = Layer<BarService, Stack>;
+
+    using Base::above;
+    using Base::below;
+
+public:
+    BarService();
+};
+
+// Runs a stack of services.
+template<template<typename> class... Services>
+class Driver {
+public:
+    Driver()
+        : running_{false}
+        , stopping_{false}
     {
-        memset(reference_counts, 0, sizeof(reference_counts));
     }
+
+    void run() {
+        if (!running_) {
+            throw std::runtime_error("Already running");
+        }
+        if (stopping_) {
+            throw std::runtime_error("Already stopped");
+        }
+
+        running_ = true;
+        {
+            start_services();
+
+            // Run until something requests that we stop.
+            while (!stopping_) {
+                step();
+            }
+
+            stop_services();
+        }
+        running_ = false;
+    }
+
+    void stop() {
+        assert(running_);
+
+        stopping_ = true;
+    }
+
+private:
+    void start_services() {
+        service_stack_.for_each_layer([this](auto&& service) {
+            executor_.insert(service);
+
+            service.start();
+            while (service.state() != ServiceState::RUNNING) {
+                step();
+            }
+        });
+    }
+
+    void stop_services() {
+        service_stack_.for_each_layer([this](auto&& service) {
+            service.stop();
+            while (service.state() != ServiceState::RUNNING) {
+                step();
+            }
+
+            assert(service.is_complete());
+        });
+    }
+
+    void step() {
+        if (executor_.is_runnable()) {
+            executor_.run();
+        }
+        else {
+            service_stack_.get_bottom_layer().wait();
+        }
+    }
+
+private:
+    Executor           executor_;
+    bool               running_;
+    bool               stopping_;
+    Stack<Services...> service_stack_;
 };
-
-struct Block {
-    Chunk       chunks[BLOCK_CHUNK_COUNT];
-    BlockFooter footer;
-    uint8_t     footer_reserved[BLOCK_FOOTER_SIZE_BYTES - sizeof(BlockFooter)];
-};
-static_assert(sizeof(Block) == BLOCK_SIZE_BYTES);
-
-Block& to_block(const void* address) {
-    uintptr_t block_mask = (BLOCK_SIZE_BYTES - 1);
-    uintptr_t block_address = reinterpret_cast<uintptr_t>(address) & block_mask;
-    return *reinterpret_cast<Block*>(block_address);
-}
-
-Chunk& to_chunk(const void* address) {
-    Block& block = to_block(address);
-
-    // Calculate how many bytes into the block this address is.
-    uintptr_t block_offset = reinterpret_cast<uintptr_t>(address) - reinterpret_cast<uintptr_t>(&block);
-
-    // Calculate how many chunks into the block this address is.
-    size_t chunk_index = static_cast<uint32_t>(block_offset) / CHUNK_SIZE_BYTES;
-
-    return block.chunks[chunk_index];
-}
 
 int main(int argc, char** argv) {
     (void)argc;
     (void)argv;
 
-    Block block;
-    (void)block;
-
-    std::cout << sizeof(block) << std::endl;
-    std::cout << sizeof(block.footer_reserved) << std::endl;
-
-    auto memory = allocate_huge_pages(sizeof(Block));
-    deallocate_free_pages(memory);
+    Driver<FooService, BarService> driver;
 
     return 0;
 }

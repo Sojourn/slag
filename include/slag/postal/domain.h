@@ -69,6 +69,7 @@ namespace slag::postal {
         using Census = DomainCensus<DomainType::NATION>;
 
         explicit Nation(const Config& config);
+        ~Nation();
 
         const Config& config() const;
         NationalBufferLedger& buffer_ledger();
@@ -77,6 +78,7 @@ namespace slag::postal {
         friend class Region;
 
         ParcelQueue& parcel_queue(PostArea to, PostArea from);
+        int ring_descriptor(PostArea area);
 
         void attach(Region& region);
         void detach(Region& region);
@@ -87,6 +89,7 @@ namespace slag::postal {
         std::vector<Region*>                      regions_; // atomic/locking?
         NationalBufferLedger                      buffer_ledger_;
         std::vector<std::unique_ptr<ParcelQueue>> parcel_queues_;
+        std::vector<int>                          ring_descriptors_;
     };
 
     // allocate buffers out of the sorted stack of recycled buffers; they
@@ -123,6 +126,12 @@ namespace slag::postal {
 
         void enter_season(Season season);
         void leave_season(Season season);
+
+    public:
+        void set_interrupt_handler(InterruptHandler& interrupt_handler);
+        void interrupt(uint16_t source, uint16_t reason);
+        void interrupt(PostArea area, uint16_t reason);
+        void interrupt_all(uint16_t reason);
 
     private:
         std::span<ParcelQueueConsumer> imports();

@@ -39,6 +39,9 @@ namespace slag {
         template<typename Functor>
         void for_each_layer(Functor&& functor);
 
+        template<typename Functor>
+        void for_each_layer_reverse(Functor&& functor);
+
     private:
         template<template<typename> class LayerImpl, typename StackImpl>
         friend class Layer;
