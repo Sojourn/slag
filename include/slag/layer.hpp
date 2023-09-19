@@ -23,16 +23,6 @@ namespace slag {
     }
 
     template<template<typename> class LayerImpl, typename StackImpl>
-    inline void Layer<LayerImpl, StackImpl>::start() {
-        // not implemented
-    }
-
-    template<template<typename> class LayerImpl, typename StackImpl>
-    inline void Layer<LayerImpl, StackImpl>::stop() {
-        // not implemented
-    }
-
-    template<template<typename> class LayerImpl, typename StackImpl>
     inline void Layer<LayerImpl, StackImpl>::attach(StackImpl& stack) {
         above_ = stack.template get_layer_above<LayerImpl<StackImpl>>();
         below_ = stack.template get_layer_below<LayerImpl<StackImpl>>();

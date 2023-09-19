@@ -155,6 +155,7 @@ namespace slag::postal {
         , post_office_{*this}
         , buffer_ledger_{*this}
         , buffer_allocator_{*this}
+        , reactor_{nullptr}
     {
         make_history();
 
@@ -190,7 +191,7 @@ namespace slag::postal {
     }
 
     void Region::set_interrupt_handler(InterruptHandler& interrupt_handler) {
-        reactor_.set_interrupt_handler(interrupt_handler);
+        reactor_->set_interrupt_handler(interrupt_handler);
     }
 
     void Region::interrupt(uint16_t to_region_index, uint16_t reason) {
@@ -257,7 +258,7 @@ namespace slag::postal {
     }
 
     Reactor& Region::reactor() {
-        return reactor_;
+        return *reactor_;
     }
 
     FileTable& Region::file_table() {
@@ -365,6 +366,16 @@ namespace slag::postal {
         assert(!executor_stack_.empty());
         assert(executor_stack_.back() == &executor);
         executor_stack_.pop_back();
+    }
+
+    void Region::attach_reactor(Reactor& reactor) {
+        assert(!reactor_);
+        reactor_ = &reactor;
+    }
+
+    void Region::detach_reactor(Reactor& reactor) {
+        assert(reactor_ == &reactor);
+        reactor_ = nullptr;
     }
 
 }

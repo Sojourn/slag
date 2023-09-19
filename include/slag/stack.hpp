@@ -7,19 +7,11 @@ namespace slag {
         for_each_layer([this](auto&& layer) {
             layer.attach(*this);
         });
-
-        for_each_layer([this](auto&& layer) {
-            layer.start();
-        });
     }
 
     template<template<typename> class... Layers>
     inline Stack<Layers...>::~Stack() {
-        for_each_layer([this](auto&& layer) {
-            layer.stop();
-        });
-
-        for_each_layer([this](auto&& layer) {
+        for_each_layer_reverse([this](auto&& layer) {
             layer.detach(*this);
         });
     }

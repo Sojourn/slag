@@ -1,11 +1,13 @@
 #include "slag/postal/reactor.h"
+#include "slag/postal/domain.h"
 #include <stdexcept>
 #include <cassert>
 
 namespace slag::postal {
 
-    Reactor::Reactor()
-        : interrupt_handler_{nullptr}
+    Reactor::Reactor(Executor& executor)
+        : executor_{executor}
+        , interrupt_handler_{nullptr}
     {
         int result;
         do {
@@ -15,27 +17,35 @@ namespace slag::postal {
         if (result < 0) {
             throw std::runtime_error("Failed to initialize io_uring");
         }
+
+        region().attach_reactor(*this);
     }
 
     Reactor::~Reactor() {
         io_uring_queue_exit(&ring_);
+
+        region().detach_reactor(*this);
     }
 
-    void Reactor::poll(bool blocking) {
-        // Give composite operations a chance to make progress before we start submitting.
-        while (executor_.is_runnable()) {
-            executor_.run();
-        }
+    void Reactor::poll(bool non_blocking) {
+        size_t submission_count = prepare_pending_operations();
 
-        // Submit and optionally wait for completions.
-        if (blocking) {
-            io_uring_submit_and_wait(&ring_, 1);
-        }
-        else if (prepare_pending_operations()) {
-            io_uring_submit(&ring_);
+        if (non_blocking) {
+            if (submission_count > 0) {
+                io_uring_submit(&ring_);
+            }
+            else {
+                // Proceed to checking for completions.
+            }
         }
         else {
-            // Nothing to submit, and we don't want to wait.
+            if (submission_count > 0) {
+                io_uring_submit_and_wait(&ring_, 1);
+            }
+            else {
+                // TODO: check if there is version of this that doesn't submit.
+                io_uring_submit_and_wait(&ring_, 1);
+            }
         }
 
         process_completions();

@@ -154,6 +154,12 @@ namespace slag::postal {
         void leave_executor(Executor& executor);
 
     private:
+        friend class Reactor;
+
+        void attach_reactor(Reactor& reactor);
+        void detach_reactor(Reactor& reactor);
+
+    private:
         Nation&                          nation_;
         Config                           config_;
         Season                           season_;
@@ -168,7 +174,7 @@ namespace slag::postal {
         DefaultBufferAllocator           buffer_allocator_;
 
         std::vector<Executor*>           executor_stack_;
-        Reactor                          reactor_;
+        Reactor*                         reactor_;
         FileTable                        file_table_;
     };
 

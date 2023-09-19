@@ -24,15 +24,13 @@ namespace slag::postal {
         Reactor& operator=(const Reactor&) = delete;
 
     public:
-        Reactor();
+        explicit Reactor(Executor& executor);
         ~Reactor();
 
         template<OperationType type, typename... Args>
         OperationHandle<type> start_operation(Args&&... args);
 
-        // Submit/check for completions. Optionally block until
-        // there are one or more completions.
-        void poll(bool blocking = true);
+        void poll(bool non_blocking);
 
         // Returns true if there are no active operations.
         bool is_quiescent() const;
@@ -63,14 +61,14 @@ namespace slag::postal {
         };
 
         struct io_uring          ring_;
-        Executor                 executor_;
+        Executor&                executor_;
         Selector                 pending_submissions_;
 
         Metrics                  metrics_;
         Selector                 garbage_;
         OperationAllocator       operation_allocator_;
 
-        InterruptHandler* interrupt_handler_;
+        InterruptHandler*        interrupt_handler_;
     };
 
 }
