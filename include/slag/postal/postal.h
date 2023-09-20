@@ -28,6 +28,9 @@
 #include "default_buffer_allocator.h"
 #include "cohort_buffer_allocator.h"
 
+#include "driver.h"
+#include "service.h"
+
 #include "thread.h"
 #include "reactor.h"
 #include "operation.h"

@@ -8,14 +8,16 @@
 
 namespace slag::postal {
 
-    using NopOperationHandle     = OperationHandle<OperationType::NOP>;
-    using OpenOperationHandle    = OperationHandle<OperationType::OPEN>;
-    using CloseOperationHandle   = OperationHandle<OperationType::CLOSE>;
-    using WriteOperationHandle   = OperationHandle<OperationType::WRITE>;
-    using TimerOperationHandle   = OperationHandle<OperationType::TIMER>;
-    using SocketOperationHandle  = OperationHandle<OperationType::SOCKET>;
-    using ConnectOperationHandle = OperationHandle<OperationType::CONNECT>;
-    using AcceptOperationHandle  = OperationHandle<OperationType::ACCEPT>;
+    using NopOperationHandle        = OperationHandle<OperationType::NOP>;
+    using OpenOperationHandle       = OperationHandle<OperationType::OPEN>;
+    using CloseOperationHandle      = OperationHandle<OperationType::CLOSE>;
+    using WriteOperationHandle      = OperationHandle<OperationType::WRITE>;
+    using TimerOperationHandle      = OperationHandle<OperationType::TIMER>;
+    using SocketOperationHandle     = OperationHandle<OperationType::SOCKET>;
+    using ConnectOperationHandle    = OperationHandle<OperationType::CONNECT>;
+    using AcceptOperationHandle     = OperationHandle<OperationType::ACCEPT>;
+    using MAdviseOperationHandle    = OperationHandle<OperationType::MADVISE>;
+    using InterruptOperationHandle  = OperationHandle<OperationType::INTERRUPT>;
 
     template<OperationType type, typename... Args>
     inline OperationHandle<type> make_operation(Args&&... args) {
@@ -61,6 +63,10 @@ namespace slag::postal {
 
     inline auto make_accept_operation(FileHandle socket) {
         return make_operation<OperationType::ACCEPT>(std::move(socket));
+    }
+
+    inline auto make_madvise_operation(void* address, size_t length, int advice) {
+        return make_operation<OperationType::MADVISE>(address, length, advice);
     }
 
     inline auto make_interrupt_operation(int file_descriptor, InterruptOperationPayload payload) {

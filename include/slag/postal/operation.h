@@ -15,6 +15,7 @@
 #include "operations/socket_operation.h"
 #include "operations/connect_operation.h"
 #include "operations/accept_operation.h"
+#include "operations/madvise_operation.h"
 #include "operations/interrupt_operation.h"
 
 namespace slag::postal {
