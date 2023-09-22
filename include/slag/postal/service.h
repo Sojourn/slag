@@ -4,6 +4,7 @@
 
 #define SLAG_SERVICE_TYPES(X) \
     X(SYSTEM)                 \
+    X(MEMORY)                 \
     X(LOGGER)                 \
     X(CHRONO)                 \
     X(POSTAL)                 \
@@ -64,7 +65,7 @@ namespace slag::postal {
         }
 
     protected:
-        void set_state(ServiceState state) {
+        void set_service_state(ServiceState state) {
             assert(static_cast<size_t>(state_) + 1 == static_cast<size_t>(state));
 
             state_ = state;

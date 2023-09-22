@@ -34,7 +34,7 @@ namespace slag::postal {
         void set_state(State state);
         void start_services();
         void stop_services();
-        void step();
+        void step(bool force_non_blocking = false);
 
     private:
         State              state_;

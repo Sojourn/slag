@@ -69,12 +69,12 @@ namespace slag::postal {
 
     template<template<typename> class... Services>
     void Driver<Services...>::start_services() {
-        service_stack_.for_each_layer([this](auto&& service) {
-            executor_.insert(service);
-
+        service_stack_.for_each_layer_reverse([this](auto&& service) {
             service.start();
+
+            executor_.insert(service);
             while (service.is_service_starting()) {
-                step();
+                step(true);
             }
 
             assert(service.is_service_running());
@@ -87,12 +87,13 @@ namespace slag::postal {
     void Driver<Services...>::stop_services() {
         service_stack_.for_each_layer([this](auto&& service) {
             service.stop();
+
             while (service.is_service_stopping()) {
                 if (state_ == State::HALTING) {
                     return;
                 }
 
-                step();
+                step(true);
             }
 
             // The service should have completed when it stopped.
@@ -104,14 +105,14 @@ namespace slag::postal {
     }
 
     template<template<typename> class... Services>
-    void Driver<Services...>::step() {
+    void Driver<Services...>::step(bool force_non_blocking) {
         if (executor_.is_runnable()) {
             executor_.run();
         }
 
         // Poll frequently to drain the completion queue, but don't
         // block if we have more work to do in userspace.
-        bool non_blocking = executor_.is_runnable();
+        bool non_blocking = force_non_blocking || executor_.is_runnable();
         service_stack_.get_bottom_layer().poll(non_blocking);
     }
 

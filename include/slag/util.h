@@ -41,15 +41,27 @@ namespace slag {
         return std::max(a.first, b.first) < std::min(a.second, b.second);
     }
 
-    template<size_t ALIGNMENT = DEFAULT_ALIGNMENT>
+    template<size_t ALIGNMENT>
     inline uintptr_t align_forward(uintptr_t address) {
         return (address + (ALIGNMENT - 1)) & ~(ALIGNMENT - 1);
     }
 
-    template<typename T, size_t ALIGNMENT = DEFAULT_ALIGNMENT>
+    template<size_t ALIGNMENT, typename T>
     inline T* align_forward(T* pointer) {
         uintptr_t address = reinterpret_cast<uintptr_t>(pointer);
         uintptr_t aligned_address = align_forward<ALIGNMENT>(address);
+        return reinterpret_cast<T*>(aligned_address);
+    }
+
+    template<size_t ALIGNMENT>
+    inline uintptr_t align_backward(uintptr_t address) {
+        return address & ~(ALIGNMENT - 1);
+    }
+
+    template<size_t ALIGNMENT, typename T>
+    inline T* align_backward(T* pointer) {
+        uintptr_t address = reinterpret_cast<uintptr_t>(pointer);
+        uintptr_t aligned_address = align_backward<ALIGNMENT>(address);
         return reinterpret_cast<T*>(aligned_address);
     }
 
