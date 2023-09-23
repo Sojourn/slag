@@ -9,6 +9,14 @@ namespace slag::postal {
     }
 
     template<template<typename> class... Services>
+    template<typename T, typename... Args>
+    void Driver<Services...>::spawn(Args&&... args) {
+        auto&& service = service_stack_.get_top_layer();
+
+        service.template spawn<T>(std::forward<Args>(args)...);
+    }
+
+    template<template<typename> class... Services>
     void Driver<Services...>::run() {
         if (state_ != State::INITIAL) {
             assert(false);

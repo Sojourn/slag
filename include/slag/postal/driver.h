@@ -11,6 +11,9 @@ namespace slag::postal {
     public:
         Driver();
 
+        template<typename T, typename... Args>
+        void spawn(Args&&... args);
+
         void run();
 
         // Gracefully shutdown. This can be called once 
