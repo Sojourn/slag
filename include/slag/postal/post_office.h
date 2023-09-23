@@ -3,7 +3,7 @@
 #include <vector>
 #include <cstdint>
 #include <cstddef>
-#include "slag/queue.h"
+#include "slag/collection/queue.h"
 #include "slag/postal/types.h"
 
 namespace slag::postal {

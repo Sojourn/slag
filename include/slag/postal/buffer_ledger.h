@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <cstddef>
 
-#include "slag/queue.h"
+#include "slag/collection/queue.h"
 #include "slag/pool_allocator.h"
 #include "slag/postal/types.h"
 #include "slag/postal/config.h"

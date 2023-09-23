@@ -1,10 +1,9 @@
 #pragma once
 
 #include <span>
-#include <bitset>
 #include <cstdint>
 #include <cstddef>
-#include "slag/intrusive_queue.h"
+#include "slag/collection/intrusive_queue.h"
 #include "slag/postal/types.h"
 #include "slag/postal/buffer.h"
 #include "slag/postal/buffer_allocator.h"

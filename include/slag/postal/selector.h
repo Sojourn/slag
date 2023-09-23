@@ -2,7 +2,7 @@
 
 #include <span>
 #include <cstddef>
-#include "slag/intrusive_queue.h"
+#include "slag/collection/intrusive_queue.h"
 #include "slag/postal/event.h"
 #include "slag/postal/pollable.h"
 

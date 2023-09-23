@@ -6,7 +6,7 @@
 #include <vector>
 #include <cstdint>
 #include <cstddef>
-#include "slag/spsc_queue.h"
+#include "slag/collection/spsc_queue.h"
 #include "slag/postal/types.h"
 #include "slag/postal/config.h"
 #include "slag/postal/season.h"

@@ -2,7 +2,7 @@
 
 #include <cstdint>
 #include <cstddef>
-#include "slag/intrusive_queue.h"
+#include "slag/collection/intrusive_queue.h"
 
 namespace slag::postal {
 

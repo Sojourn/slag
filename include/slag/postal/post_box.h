@@ -1,7 +1,7 @@
 #pragma once
 
-#include "slag/queue.h"
-#include "slag/intrusive_list.h"
+#include "slag/collection/queue.h"
+#include "slag/collection/intrusive_list.h"
 #include "slag/postal/types.h"
 #include "slag/postal/domain.h"
 #include "slag/postal/envelope.h"

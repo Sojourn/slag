@@ -1,6 +1,6 @@
 #pragma once
 
-#include "slag/spsc_queue.h"
+#include "slag/collection/spsc_queue.h"
 #include "slag/postal/types.h"
 #include "slag/postal/buffer.h"
 

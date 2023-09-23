@@ -3,8 +3,8 @@
 #include <vector>
 #include <cstdint>
 #include <cstddef>
-#include "slag/bit_set.h"
-#include "slag/spsc_queue.h"
+#include "slag/collection/bit_set.h"
+#include "slag/collection/spsc_queue.h"
 #include "slag/postal/types.h"
 
 namespace slag::postal {

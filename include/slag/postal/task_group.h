@@ -1,7 +1,7 @@
 #pragma once
 
 #include "slag/pool_allocator.h"
-#include "slag/intrusive_queue.h"
+#include "slag/collection/intrusive_queue.h"
 #include "slag/postal/task.h"
 
 namespace slag::postal {

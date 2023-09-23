@@ -1,6 +1,6 @@
 #pragma once
 
-#include "slag/queue.h"
+#include "slag/collection/queue.h"
 #include "slag/postal/event.h"
 #include "slag/postal/pollable.h"
 

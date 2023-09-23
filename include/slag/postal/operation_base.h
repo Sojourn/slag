@@ -1,7 +1,7 @@
 #pragma once
 
 #include <liburing.h>        
-#include "slag/intrusive_queue.h"
+#include "slag/collection/intrusive_queue.h"
 #include "slag/postal/event.h"
 #include "slag/postal/pollable.h"
 #include "slag/postal/operation_types.h"
