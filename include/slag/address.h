@@ -3,7 +3,10 @@
 #include <variant>
 #include <string>
 #include <vector>
-#include "slag/platform.h"
+#include <netdb.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include "slag/error.h"
 
 namespace slag {
 

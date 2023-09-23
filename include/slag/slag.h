@@ -15,7 +15,6 @@
 #include "buffer_writer.h"
 #include "buffer_reader.h"
 #include "spsc_queue.h"
-#include "application.h"
 #include "message.h"
 #include "record_encoder.h"
 #include "record_decoder.h"
