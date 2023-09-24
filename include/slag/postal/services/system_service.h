@@ -3,7 +3,7 @@
 #include "slag/layer.h"
 #include "slag/core/executor.h"
 #include "slag/postal/service.h"
-#include "slag/postal/reactor.h"
+#include "slag/system/reactor.h"
 
 namespace slag {
 

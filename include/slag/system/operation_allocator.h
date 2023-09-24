@@ -2,8 +2,8 @@
 
 #include <utility>
 #include "slag/pool_allocator.h"
-#include "slag/postal/operation_types.h"
-#include "slag/postal/operation.h"
+#include "slag/system/operation_types.h"
+#include "slag/system/operation.h"
 
 namespace slag {
 

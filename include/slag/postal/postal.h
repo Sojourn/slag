@@ -19,6 +19,3 @@
 #include "service.h"
 
 #include "thread.h"
-#include "reactor.h"
-#include "operation.h"
-#include "operation_factory.h"

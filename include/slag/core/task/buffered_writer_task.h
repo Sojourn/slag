@@ -9,7 +9,7 @@
 #include "slag/core/task/proto_task.h"
 #include "slag/core/pollable.h"
 #include "slag/core/pollable/pollable_queue.h"
-#include "slag/postal/operation_factory.h"
+#include "slag/system.h"
 
 namespace slag {
 

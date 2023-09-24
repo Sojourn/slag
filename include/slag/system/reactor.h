@@ -3,9 +3,9 @@
 #include <liburing.h>        
 #include "slag/core/selector.h"
 #include "slag/core/executor.h"
-#include "slag/postal/operation.h"
-#include "slag/postal/operation_handle.h"
-#include "slag/postal/operation_allocator.h"
+#include "slag/system/operation.h"
+#include "slag/system/operation_handle.h"
+#include "slag/system/operation_allocator.h"
 
 namespace slag {
 

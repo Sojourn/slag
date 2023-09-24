@@ -2,7 +2,7 @@
 
 #include <cerrno>
 #include <cassert>
-#include "slag/postal/multishot_operation.h"
+#include "slag/system/multishot_operation.h"
 
 namespace slag {
 

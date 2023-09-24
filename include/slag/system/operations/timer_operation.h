@@ -2,7 +2,7 @@
 
 #include <cerrno>
 #include <cassert>
-#include "slag/postal/primitive_operation.h"
+#include "slag/system/primitive_operation.h"
 
 namespace slag {
 

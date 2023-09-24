@@ -4,7 +4,7 @@
 #include <cassert>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include "slag/postal/primitive_operation.h"
+#include "slag/system/primitive_operation.h"
 
 namespace slag {
 

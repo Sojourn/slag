@@ -1,6 +1,6 @@
 #pragma once
 
-#include "slag/postal/operation.h"
+#include "slag/system/operation.h"
 
 namespace slag {
 

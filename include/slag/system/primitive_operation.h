@@ -5,32 +5,32 @@
 #include "slag/result.h"
 #include "slag/core/event.h"
 #include "slag/core/pollable.h"
-#include "slag/core/pollable/pollable_queue.h"
-#include "slag/postal/operation_base.h"
+#include "slag/system/operation_base.h"
 
 namespace slag {
 
     template<typename T>
-    class MultishotOperation
+    class PrimitiveOperation
         : public OperationBase
         , public Pollable<PollableType::COMPLETE>
     {
     public:
-        MultishotOperation(OperationType type, Reactor& reactor)
+        PrimitiveOperation(OperationType type, Reactor& reactor)
             : OperationBase{type, reactor}
             , state_{State::OPERATION_PENDING}
+            , result_{make_system_error(EAGAIN)}
             , operation_slot_{-1}
             , cancel_slot_{-1}
         {
             writable_event().set();
         }
 
-        PollableQueue<Result<T>>& results() {
-            return results_;
+        Result<T>& result() {
+            return result_;
         }
 
         Event& readable_event() override final {
-            return results_.readable_event();
+            return readable_event_;
         }
 
         Event& complete_event() override final {
@@ -93,7 +93,8 @@ namespace slag {
                     operation_slot_ = -1;
                 }
 
-                results_.push_back(handle_operation_result(result, more));
+                result_ = handle_operation_result(result, more);
+                readable_event().set();
             }
             else if (slot == cancel_slot_) {
                 if (!more) {
@@ -129,11 +130,12 @@ namespace slag {
             COMPLETE,
         };
 
-        State                    state_;
-        PollableQueue<Result<T>> results_;
-        Slot                     operation_slot_;
-        Slot                     cancel_slot_;
-        Event                    complete_event_;
+        State     state_;
+        Result<T> result_;
+        Slot      operation_slot_;
+        Slot      cancel_slot_;
+        Event     readable_event_;
+        Event     complete_event_;
     };
 
 }

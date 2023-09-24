@@ -20,6 +20,7 @@ set(SLAG_SOURCE_FILES
     core/selector.cpp
     core/executor.cpp
     core/task/buffered_writer_task.cpp
+    system/reactor.cpp
     postal/buffer.cpp
     postal/buffer_ledger.cpp
     postal/buffer_reader.cpp
@@ -30,7 +31,6 @@ set(SLAG_SOURCE_FILES
     postal/post_office.cpp
     postal/postal_service.cpp
     postal/operation_base.cpp
-    postal/reactor.cpp
     postal/file_handle.cpp
     postal/file_table.cpp
 )

@@ -1,5 +1,5 @@
 #include "slag/core/domain.h"
-#include "slag/postal/operation_factory.h"
+#include "slag/system.h"
 #include <stdexcept>
 #include <cassert>
 
@@ -188,35 +188,6 @@ namespace slag {
 
     auto Region::census(Season season) const -> const Census& {
         return history_[to_index(season)];
-    }
-
-    void Region::set_interrupt_handler(InterruptHandler& interrupt_handler) {
-        reactor_->set_interrupt_handler(interrupt_handler);
-    }
-
-    void Region::interrupt(uint16_t to_region_index, uint16_t reason) {
-        interrupt(make_post_area(to_region_index), reason);
-    }
-
-    void Region::interrupt(PostArea to, uint16_t reason) {
-        int ring_descriptor = nation_.ring_descriptor(to);
-        if (ring_descriptor < 0) {
-            return;
-        }
-
-        auto operation = make_interrupt_operation(ring_descriptor, InterruptOperationPayload {
-            .source = static_cast<uint16_t>(index()),
-            .reason = reason,
-        });
-
-        // An interrupt is fire-and-forget.
-        operation->daemonize();
-    }
-
-    void Region::interrupt_all(uint16_t reason) {
-        for (size_t region_index = 0; region_index < nation_.config().region_count; ++region_index) {
-            interrupt(make_post_area(region_index), reason);
-        }
     }
 
     auto Region::imports() -> std::span<ParcelQueueConsumer> {

@@ -5,7 +5,7 @@
 #include "slag/layer.h"
 #include "slag/logging.h"
 #include "slag/postal/service.h"
-#include "slag/postal/operation_factory.h"
+#include "slag/system/operation_factory.h"
 
 namespace slag {
 

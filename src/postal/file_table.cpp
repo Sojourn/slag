@@ -1,5 +1,5 @@
 #include "slag/postal/file_table.h"
-#include "slag/postal/operation_factory.h"
+#include "slag/system/operation_factory.h"
 #include <stdexcept>
 #include <cstring>
 #include <cassert>

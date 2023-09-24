@@ -1,4 +1,4 @@
-#include "slag/postal/reactor.h"
+#include "slag/system/reactor.h"
 #include "slag/core/domain.h"
 #include <stdexcept>
 #include <cassert>

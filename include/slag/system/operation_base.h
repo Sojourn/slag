@@ -4,7 +4,7 @@
 #include "slag/core/event.h"
 #include "slag/core/pollable.h"
 #include "slag/collection/intrusive_queue.h"
-#include "slag/postal/operation_types.h"
+#include "slag/system/operation_types.h"
 
 namespace slag {
 

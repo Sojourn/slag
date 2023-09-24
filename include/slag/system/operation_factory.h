@@ -2,9 +2,9 @@
 
 #include "slag/address.h"
 #include "slag/core/domain.h"
-#include "slag/postal/reactor.h"
-#include "slag/postal/operation.h"
-#include "slag/postal/operation_handle.h"
+#include "slag/system/reactor.h"
+#include "slag/system/operation.h"
+#include "slag/system/operation_handle.h"
 
 namespace slag {
 

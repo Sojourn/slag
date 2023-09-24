@@ -19,10 +19,11 @@
 #include "slag/postal/default_buffer_allocator.h"
 #include "slag/postal/parcel.h"
 #include "slag/postal/post_office.h"
-#include "slag/postal/reactor.h"
 #include "slag/postal/file_table.h"
 
 namespace slag {
+
+    class Reactor;
 
     Empire& empire();
     Nation& nation();
@@ -123,15 +124,6 @@ namespace slag {
 
         void enter_season(Season season);
         void leave_season(Season season);
-
-    public:
-        // TODO: InterruptSender and InterruptReceiver interfaces, and make an interrupt
-        //       service that will handle retrying if the target completion queue is full.
-        void set_interrupt_handler(InterruptHandler& interrupt_handler);
-
-        void interrupt(uint16_t source, uint16_t reason);
-        void interrupt(PostArea area, uint16_t reason);
-        void interrupt_all(uint16_t reason);
 
     private:
         std::span<ParcelQueueConsumer> imports();

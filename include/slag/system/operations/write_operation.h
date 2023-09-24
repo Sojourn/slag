@@ -9,7 +9,7 @@
 #include <sys/uio.h>
 #include "slag/postal/file_handle.h"
 #include "slag/postal/buffer_ledger.h"
-#include "slag/postal/primitive_operation.h"
+#include "slag/system/primitive_operation.h"
 
 namespace slag {
 

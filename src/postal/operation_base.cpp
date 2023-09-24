@@ -1,5 +1,5 @@
-#include "slag/postal/operation_base.h"
-#include "slag/postal/reactor.h"
+#include "slag/system/operation_base.h"
+#include "slag/system/reactor.h"
 
 namespace slag {
 

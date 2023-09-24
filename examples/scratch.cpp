@@ -5,7 +5,7 @@
 #include "slag/core/pollable.h"
 #include "slag/core/executor.h"
 #include "slag/core/task/proto_task.h"
-#include "slag/postal/reactor.h"
+#include "slag/system/reactor.h"
 #include "slag/postal/driver.h"
 #include "slag/postal/service.h"
 #include "slag/postal/services/system_service.h"
