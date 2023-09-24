@@ -5,15 +5,15 @@
 #include <cstdint>
 #include <cstddef>
 
-#include "slag/collection/queue.h"
 #include "slag/pool_allocator.h"
+#include "slag/core/config.h"
+#include "slag/core/census.h"
+#include "slag/collection/queue.h"
 #include "slag/postal/types.h"
-#include "slag/postal/config.h"
-#include "slag/postal/census.h"
 #include "slag/postal/buffer.h"
 #include "slag/postal/buffer_allocator.h"
 
-namespace slag::postal {
+namespace slag {
 
     class NationalBufferLedger;
     class RegionalBufferLedger;

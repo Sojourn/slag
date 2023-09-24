@@ -3,7 +3,7 @@
 #include <vector>
 #include "slag/postal/types.h"
 
-namespace slag::postal {
+namespace slag {
 
     class PostalService {
         PostalService(PostalService&&) = delete;

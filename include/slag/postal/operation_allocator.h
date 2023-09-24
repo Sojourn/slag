@@ -5,7 +5,7 @@
 #include "slag/postal/operation_types.h"
 #include "slag/postal/operation.h"
 
-namespace slag::postal {
+namespace slag {
 
     class OperationAllocator {
     public:

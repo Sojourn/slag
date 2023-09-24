@@ -1,10 +1,10 @@
 #include "slag/postal/buffer_writer.h"
-#include "slag/postal/domain.h"
+#include "slag/core/domain.h"
 #include <stdexcept>
 #include <cstring>
 #include <cassert>
 
-namespace slag::postal {
+namespace slag {
 
     BufferWriter::BufferWriter(BufferAllocator& allocator)
         : allocator_{allocator}

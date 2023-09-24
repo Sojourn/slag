@@ -1,7 +1,7 @@
-#include "slag/postal/task.h"
+#include "slag/core/task.h"
 #include <stdexcept>
 
-namespace slag::postal {
+namespace slag {
 
     Task::Task()
         : state_{TaskState::WAITING}

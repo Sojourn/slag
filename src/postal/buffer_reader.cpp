@@ -1,8 +1,8 @@
 #include "slag/postal/buffer_reader.h"
-#include "slag/postal/domain.h"
+#include "slag/core/domain.h"
 #include <cassert>
 
-namespace slag::postal {
+namespace slag {
 
     BufferReader::BufferReader(BufferHandle handle)
         : handle_{std::move(handle)}

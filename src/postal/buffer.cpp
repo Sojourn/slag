@@ -1,9 +1,9 @@
 #include "slag/postal/buffer.h"
-#include "slag/postal/domain.h"
+#include "slag/core/domain.h"
 #include <cstring>
 #include <cassert>
 
-namespace slag::postal {
+namespace slag {
 
     BufferHandle::BufferHandle(BufferDescriptor descriptor)
         : descriptor_{descriptor}

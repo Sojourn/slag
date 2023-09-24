@@ -1,5 +1,6 @@
 #include "catch.hpp"
 #include "slag/slag.h"
+#include "slag/transform.h"
 #include <limits>
 
 using namespace slag;

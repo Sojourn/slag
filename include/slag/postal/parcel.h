@@ -4,7 +4,7 @@
 #include "slag/postal/types.h"
 #include "slag/postal/buffer.h"
 
-namespace slag::postal {
+namespace slag {
 
     struct Parcel {
         PostCode         to;

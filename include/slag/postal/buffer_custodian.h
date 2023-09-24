@@ -2,7 +2,7 @@
 
 
 
-namespace slag::postal {
+namespace slag {
 
     class BufferCustodian {
     public:

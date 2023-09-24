@@ -1,8 +1,8 @@
 #pragma once
 
-#include "slag/postal/task.h"
-#include "slag/postal/event.h"
-#include "slag/postal/pollable.h"
+#include "slag/core/task.h"
+#include "slag/core/event.h"
+#include "slag/core/pollable.h"
 
 #define SLAG_PT_BEGIN()  \
     switch (pt_state_) { \
@@ -28,7 +28,7 @@
 #define SLAG_PT_WAIT_RUNNABLE(resource) SLAG_PT_WAIT(resource, PollableType::RUNNABLE)
 #define SLAG_PT_WAIT_COMPLETE(resource) SLAG_PT_WAIT(resource, PollableType::COMPLETE)
 
-namespace slag::postal {
+namespace slag {
 
     // An adaptation of protothreads for our readiness model. To use this,
     // derive it and override the Task::run function. Task::run should use the BEGIN/END

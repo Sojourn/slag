@@ -2,7 +2,7 @@
 #include "catch.hpp"
 #include "slag/slag.h"
 
-using namespace slag::postal;
+using namespace slag;
 
 struct MockTask : Task {
     int                  state = 0;

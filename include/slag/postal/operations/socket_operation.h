@@ -6,7 +6,7 @@
 #include <sys/socket.h>
 #include "slag/postal/primitive_operation.h"
 
-namespace slag::postal {
+namespace slag {
 
     template<>
     class Operation<OperationType::SOCKET> : public PrimitiveOperation<FileHandle> {

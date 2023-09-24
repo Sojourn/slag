@@ -1,10 +1,10 @@
 #pragma once
 
 #include <string_view>
-#include "slag/postal/event.h"
-#include "slag/postal/pollable.h"
+#include "slag/core/event.h"
+#include "slag/core/pollable.h"
 
-namespace slag::postal {
+namespace slag {
 
     enum class TaskState {
         WAITING, // The task is waiting on an event, or to be scheduled.

@@ -1,12 +1,12 @@
 #pragma once
 
 #include "slag/address.h"
-#include "slag/postal/domain.h"
+#include "slag/core/domain.h"
 #include "slag/postal/reactor.h"
 #include "slag/postal/operation.h"
 #include "slag/postal/operation_handle.h"
 
-namespace slag::postal {
+namespace slag {
 
     using NopOperationHandle        = OperationHandle<OperationType::NOP>;
     using OpenOperationHandle       = OperationHandle<OperationType::OPEN>;

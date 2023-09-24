@@ -3,11 +3,11 @@
 #include <memory>
 #include <vector>
 #include "slag/layer.h"
+#include "slag/core/selector.h"
+#include "slag/core/executor.h"
 #include "slag/postal/service.h"
-#include "slag/postal/selector.h"
-#include "slag/postal/executor.h"
 
-namespace slag::postal {
+namespace slag {
 
     template<typename Stack>
     class WorkerService

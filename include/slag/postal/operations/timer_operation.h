@@ -4,7 +4,7 @@
 #include <cassert>
 #include "slag/postal/primitive_operation.h"
 
-namespace slag::postal {
+namespace slag {
 
     template<>
     class Operation<OperationType::TIMER> : public PrimitiveOperation<void> {

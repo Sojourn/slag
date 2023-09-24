@@ -1,9 +1,9 @@
-#include "slag/postal/domain.h"
+#include "slag/core/domain.h"
 #include "slag/postal/operation_factory.h"
 #include <stdexcept>
 #include <cassert>
 
-namespace slag::postal {
+namespace slag {
 
     static       Domain* empire_instance = nullptr;
     static       Domain* nation_instance = nullptr;
@@ -70,7 +70,7 @@ namespace slag::postal {
 
     Nation::Nation(const Config& config)
         : Domain{DomainType::NATION, config.index}
-        , empire_{slag::postal::empire()}
+        , empire_{slag::empire()}
         , config_{config}
         , buffer_ledger_{*this}
     {
@@ -148,7 +148,7 @@ namespace slag::postal {
 
     Region::Region(const Config& config)
         : Domain{DomainType::REGION, config.index}
-        , nation_{slag::postal::nation()}
+        , nation_{slag::nation()}
         , config_{config}
         , season_{Season::WINTER}
         , census_cursor_{nullptr}

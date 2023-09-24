@@ -3,11 +3,11 @@
 #include <span>
 #include <cstdint>
 #include <cstddef>
-#include "slag/postal/domain.h"
+#include "slag/core/domain.h"
 #include "slag/postal/buffer.h"
 #include "slag/postal/buffer_ledger.h"
 
-namespace slag::postal {
+namespace slag {
 
     class BufferWriter {
     public:

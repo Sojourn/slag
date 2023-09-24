@@ -5,7 +5,7 @@
 #include "slag/intrusive_queue.h"
 #include "slag/slag.h"
 
-using namespace slag::postal;
+using namespace slag;
 
 class TestProtoTask : public ProtoTask {
 public:

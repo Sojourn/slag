@@ -18,7 +18,7 @@
 #include "operations/madvise_operation.h"
 #include "operations/interrupt_operation.h"
 
-namespace slag::postal {
+namespace slag {
 
     template<typename Visitor>
     inline void visit(Visitor&& visitor, OperationBase& operation_base) {

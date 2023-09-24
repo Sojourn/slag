@@ -7,7 +7,7 @@
 #include "slag/postal/buffer.h"
 #include "slag/postal/buffer_allocator.h"
 
-namespace slag::postal {
+namespace slag {
 
     // Allocate fixed size chunks of storage out of a provided pool of storage.
     // This is intended to be used for fixed io_uring buffers.

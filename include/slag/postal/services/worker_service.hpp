@@ -1,6 +1,6 @@
 #include "slag/postal/services/worker_service.h"
 
-namespace slag::postal {
+namespace slag {
 
     template<typename Stack>
     WorkerService<Stack>::WorkerService()

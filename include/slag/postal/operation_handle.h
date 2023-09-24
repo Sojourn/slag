@@ -2,7 +2,7 @@
 
 #include "slag/postal/operation.h"
 
-namespace slag::postal {
+namespace slag {
 
     template<OperationType type>
     class OperationHandle {

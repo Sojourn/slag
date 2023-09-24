@@ -4,7 +4,7 @@
 #include <cassert>
 #include "slag/postal/multishot_operation.h"
 
-namespace slag::postal {
+namespace slag {
 
     template<>
     class Operation<OperationType::ACCEPT> : public MultishotOperation<FileHandle> {

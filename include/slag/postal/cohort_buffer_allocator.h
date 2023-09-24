@@ -8,7 +8,7 @@
 #include "slag/postal/buffer.h"
 #include "slag/postal/buffer_allocator.h"
 
-namespace slag::postal {
+namespace slag {
 
     // This should be used for allocations that are expected to
     // have roughly the same lifespan.

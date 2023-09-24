@@ -1,8 +1,8 @@
-#include "slag/postal/event.h"
-#include "slag/postal/selector.h"
+#include "slag/core/event.h"
+#include "slag/core/selector.h"
 #include <cassert>
 
-namespace slag::postal {
+namespace slag {
 
     Event::Event()
         : user_data_{nullptr}

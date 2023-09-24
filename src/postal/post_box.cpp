@@ -1,7 +1,7 @@
 #include "slag/postal/post_box.h"
 #include "slag/postal/post_office.h"
 
-namespace slag::postal {
+namespace slag {
 
     PostBox::PostBox(PostOffice& post_office)
         : post_office_{post_office}

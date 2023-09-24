@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <cstddef>
 
-namespace slag::postal {
+namespace slag {
 
     class BufferCursor {
     public:

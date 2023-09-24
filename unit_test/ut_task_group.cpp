@@ -1,8 +1,11 @@
 #include <array>
 #include "catch.hpp"
 #include "slag/slag.h"
+#include "slag/core/task.h"
+#include "slag/core/task/task_group.h"
+#include "slag/core/executor.h"
 
-using namespace slag::postal;
+using namespace slag;
 
 class SquareTask : public Task {
 public:

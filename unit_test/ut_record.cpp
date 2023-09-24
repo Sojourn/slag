@@ -1,5 +1,7 @@
 #include "catch.hpp"
-#include "slag/slag.h"
+#include "slag/record_encoder.h"
+#include "slag/record_decoder.h"
+#include "../generated/record.h"
 
 using namespace slag;
 

@@ -3,12 +3,12 @@
 #include <cassert>
 #include "slag/error.h"
 #include "slag/result.h"
-#include "slag/postal/event.h"
-#include "slag/postal/pollable.h"
-#include "slag/postal/pollable_queue.h"
+#include "slag/core/event.h"
+#include "slag/core/pollable.h"
+#include "slag/core/pollable/pollable_queue.h"
 #include "slag/postal/operation_base.h"
 
-namespace slag::postal {
+namespace slag {
 
     template<typename T>
     class MultishotOperation

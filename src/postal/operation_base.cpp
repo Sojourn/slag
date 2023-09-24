@@ -1,7 +1,7 @@
 #include "slag/postal/operation_base.h"
 #include "slag/postal/reactor.h"
 
-namespace slag::postal {
+namespace slag {
 
     OperationBase::OperationBase(OperationType type, Reactor& reactor)
         : type_{type}

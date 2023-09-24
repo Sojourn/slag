@@ -1,9 +1,9 @@
 #include "slag/postal/file_handle.h"
-#include "slag/postal/domain.h"
+#include "slag/core/domain.h"
 #include <utility>
 #include <cassert>
 
-namespace slag::postal {
+namespace slag {
 
     FileHandle::FileHandle()
         : file_descriptor_{-1}

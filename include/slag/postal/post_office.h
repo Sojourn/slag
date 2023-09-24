@@ -6,7 +6,7 @@
 #include "slag/collection/queue.h"
 #include "slag/postal/types.h"
 
-namespace slag::postal {
+namespace slag {
 
     class Region;
 

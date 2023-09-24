@@ -6,11 +6,12 @@
 #include <cstdint>
 #include <cstddef>
 #include "slag/token_bucket.h"
-#include "slag/postal/proto_task.h"
-#include "slag/postal/pollable_queue.h"
+#include "slag/core/task/proto_task.h"
+#include "slag/core/pollable.h"
+#include "slag/core/pollable/pollable_queue.h"
 #include "slag/postal/operation_factory.h"
 
-namespace slag::postal {
+namespace slag {
 
     // TODO: think about having multiple in-flight write operations at once. We
     //       know buffer and file offsets, so we should be able to kick them off

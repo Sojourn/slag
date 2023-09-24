@@ -13,26 +13,26 @@ set(SLAG_SOURCE_FILES
     record_encoder.cpp
     record_decoder.cpp
     ../generated/record.cpp
+    core/season.cpp
+    core/domain.cpp
+    core/task.cpp
+    core/event.cpp
+    core/selector.cpp
+    core/executor.cpp
+    core/task/buffered_writer_task.cpp
     postal/buffer.cpp
     postal/buffer_ledger.cpp
     postal/buffer_reader.cpp
     postal/buffer_writer.cpp
     postal/buffer_allocator.cpp
     postal/cohort_buffer_allocator.cpp
-    postal/season.cpp
-    postal/domain.cpp
     postal/post_box.cpp
     postal/post_office.cpp
     postal/postal_service.cpp
-    postal/task.cpp
-    postal/event.cpp
-    postal/selector.cpp
-    postal/executor.cpp
     postal/operation_base.cpp
     postal/reactor.cpp
     postal/file_handle.cpp
     postal/file_table.cpp
-    postal/tasks/buffered_writer_task.cpp
 )
 
 set(SLAG_HEADER_FILES

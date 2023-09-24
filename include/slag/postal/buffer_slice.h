@@ -4,7 +4,7 @@
 #include "slag/postal/buffer.h"
 #include "slag/postal/buffer_cursor.h"
 
-namespace slag::postal {
+namespace slag {
 
     class BufferSlice {
     public:

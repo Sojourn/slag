@@ -7,7 +7,7 @@
 #include "slag/postal/buffer.h"
 #include "slag/postal/buffer_ledger.h"
 
-namespace slag::postal {
+namespace slag {
 
     class BufferReader {
     public:

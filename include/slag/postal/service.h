@@ -1,6 +1,6 @@
 #pragma once
 
-#include "slag/postal/task.h"
+#include "slag/core/task.h"
 
 #define SLAG_SERVICE_TYPES(X) \
     X(SYSTEM)                 \
@@ -10,7 +10,7 @@
     X(POSTAL)                 \
     X(WORKER)                 \
 
-namespace slag::postal {
+namespace slag {
 
     enum class ServiceType {
     #define X(SLAG_SERVICE_TYPE) SLAG_SERVICE_TYPE,

@@ -1,7 +1,7 @@
-#include "slag/postal/selector.h"
+#include "slag/core/selector.h"
 #include <cassert>
 
-namespace slag::postal {
+namespace slag {
 
     Event& Selector::readable_event() {
         return ready_event_;

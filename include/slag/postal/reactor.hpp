@@ -1,6 +1,6 @@
 #include <cassert>
 
-namespace slag::postal {
+namespace slag {
 
     template<OperationType type, typename... Args>
     inline OperationHandle<type> Reactor::start_operation(Args&&... args) {

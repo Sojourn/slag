@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <cstddef>
 
-namespace slag::postal {
+namespace slag {
 
     constexpr size_t SEASON_COUNT = 4;
 

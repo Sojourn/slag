@@ -6,7 +6,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
-namespace slag::postal {
+namespace slag {
 
     static size_t query_max_file_descriptors() {
         struct rlimit resource_limit;

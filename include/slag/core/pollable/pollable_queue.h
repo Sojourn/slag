@@ -1,10 +1,10 @@
 #pragma once
 
+#include "slag/core/event.h"
+#include "slag/core/pollable.h"
 #include "slag/collection/queue.h"
-#include "slag/postal/event.h"
-#include "slag/postal/pollable.h"
 
-namespace slag::postal {
+namespace slag {
 
     template<typename T>
     class PollableAdapter<Queue<T>> : public Pollable<PollableType::READABLE> {

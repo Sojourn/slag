@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cassert>
-#include "slag/postal/event.h"
+#include "slag/core/event.h"
 
 // CANCELED
 // REAPABLE
@@ -16,7 +16,7 @@
     X(RUNNABLE)                \
     X(COMPLETE)                \
 
-namespace slag::postal {
+namespace slag {
 
     enum class PollableType {
 #define X(SLAG_POLLABLE_TYPE) \

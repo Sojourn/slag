@@ -1,7 +1,7 @@
 #include <stdexcept>
 #include <cassert>
 
-namespace slag::postal {
+namespace slag {
 
     template<typename Driver>
     template<typename... DriverArgs>

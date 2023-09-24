@@ -1,9 +1,9 @@
 #include "slag/postal/post_office.h"
 #include "slag/postal/post_box.h"
-#include "slag/postal/domain.h"
+#include "slag/core/domain.h"
 #include <cassert>
 
-namespace slag::postal {
+namespace slag {
 
     PostOffice::PostOffice(Region& region)
         : region_{region}

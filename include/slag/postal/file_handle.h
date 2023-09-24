@@ -1,6 +1,6 @@
 #pragma once
 
-namespace slag::postal {
+namespace slag {
 
     class FileHandle {
     public:

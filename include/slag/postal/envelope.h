@@ -3,7 +3,7 @@
 #include "slag/postal/types.h"
 #include "slag/postal/buffer.h"
 
-namespace slag::postal {
+namespace slag {
 
     class Envelope {
     public:

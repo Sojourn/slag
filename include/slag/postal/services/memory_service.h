@@ -7,7 +7,7 @@
 #include "slag/postal/service.h"
 #include "slag/postal/operation_factory.h"
 
-namespace slag::postal {
+namespace slag {
 
     // TODO: inherit a BlockAllocator interface and attach ourselves to the region.
     //

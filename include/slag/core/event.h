@@ -4,7 +4,7 @@
 #include <cstddef>
 #include "slag/collection/intrusive_queue.h"
 
-namespace slag::postal {
+namespace slag {
 
     class Selector;
 

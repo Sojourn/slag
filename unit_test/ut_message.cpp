@@ -1,5 +1,5 @@
 #include "catch.hpp"
-#include "slag/slag.h"
+#include "slag/message.h"
 
 using namespace slag;
 

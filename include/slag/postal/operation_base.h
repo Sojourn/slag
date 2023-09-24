@@ -1,12 +1,12 @@
 #pragma once
 
 #include <liburing.h>        
+#include "slag/core/event.h"
+#include "slag/core/pollable.h"
 #include "slag/collection/intrusive_queue.h"
-#include "slag/postal/event.h"
-#include "slag/postal/pollable.h"
 #include "slag/postal/operation_types.h"
 
-namespace slag::postal {
+namespace slag {
 
     class Reactor;
 

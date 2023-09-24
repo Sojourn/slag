@@ -7,7 +7,7 @@
 #include "slag/postal/buffer.h"
 #include "slag/postal/buffer_allocator.h"
 
-namespace slag::postal {
+namespace slag {
 
     // Allocates storage for buffers using the default system allocator.
     //

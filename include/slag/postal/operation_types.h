@@ -15,7 +15,7 @@
     X(MADVISE)                         \
     X(INTERRUPT)                       \
 
-namespace slag::postal {
+namespace slag {
 
     enum class OperationType : uint8_t {
 #define X(SLAG_POSTAL_OPERATION_TYPE) \

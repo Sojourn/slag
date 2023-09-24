@@ -1,11 +1,11 @@
 #include "slag/postal/buffer_ledger.h"
-#include "slag/postal/domain.h"
+#include "slag/core/domain.h"
 #include <limits>
 #include <stdexcept>
 #include <cstring>
 #include <cassert>
 
-namespace slag::postal {
+namespace slag {
 
     NationalBufferLedger::NationalBufferLedger(Nation& nation)
         : nation_{nation}

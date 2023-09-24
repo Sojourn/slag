@@ -1,7 +1,7 @@
 #include "slag/postal/buffer_slice.h"
 #include <cassert>
 
-namespace slag::postal {
+namespace slag {
 
     BufferSlice::BufferSlice(BufferHandle buffer, BufferCursor first, BufferCursor last)
         : buffer_{std::move(buffer)}

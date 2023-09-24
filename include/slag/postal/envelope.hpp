@@ -1,6 +1,6 @@
 #include <cassert>
 
-namespace slag::postal {
+namespace slag {
 
     inline const PostCode& Envelope::to() const {
         return to_;

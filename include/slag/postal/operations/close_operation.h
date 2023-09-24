@@ -5,7 +5,7 @@
 #include "slag/logging.h"
 #include "slag/postal/primitive_operation.h"
 
-namespace slag::postal {
+namespace slag {
 
     template<>
     class Operation<OperationType::CLOSE> : public PrimitiveOperation<void> {

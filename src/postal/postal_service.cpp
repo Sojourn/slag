@@ -3,7 +3,7 @@
 #include <limits>
 #include <cassert>
 
-namespace slag::postal {
+namespace slag {
 
     PostalService::PostalService(uint16_t identity)
         : identity_{identity}

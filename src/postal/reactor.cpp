@@ -1,9 +1,9 @@
 #include "slag/postal/reactor.h"
-#include "slag/postal/domain.h"
+#include "slag/core/domain.h"
 #include <stdexcept>
 #include <cassert>
 
-namespace slag::postal {
+namespace slag {
 
     Reactor::Reactor(Executor& executor)
         : executor_{executor}

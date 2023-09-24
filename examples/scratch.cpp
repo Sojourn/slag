@@ -1,11 +1,11 @@
 #include <iostream>
 #include "slag/stack.h"
-#include "slag/postal/task.h"
-#include "slag/postal/proto_task.h"
+#include "slag/core/domain.h"
+#include "slag/core/task.h"
+#include "slag/core/pollable.h"
+#include "slag/core/executor.h"
+#include "slag/core/task/proto_task.h"
 #include "slag/postal/reactor.h"
-#include "slag/postal/pollable.h"
-#include "slag/postal/executor.h"
-#include "slag/postal/domain.h"
 #include "slag/postal/driver.h"
 #include "slag/postal/service.h"
 #include "slag/postal/services/system_service.h"
@@ -13,7 +13,6 @@
 #include "slag/postal/services/worker_service.h"
 
 using namespace slag;
-using namespace slag::postal;
 
 class InitTask : public ProtoTask {
 public:

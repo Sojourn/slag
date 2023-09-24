@@ -1,6 +1,6 @@
 #include <cassert>
 
-namespace slag::postal {
+namespace slag {
 
     template<typename TaskImpl>
     inline TaskGroup<TaskImpl>::TaskGroup(size_t initial_capacity)

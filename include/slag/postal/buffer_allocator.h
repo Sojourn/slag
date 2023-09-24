@@ -6,11 +6,14 @@
 #include "slag/postal/types.h"
 #include "slag/postal/buffer.h"
 
-namespace slag::postal {
+namespace slag {
 
     // System: uses the c.r.t. allocator.
     // Linear: linear allocation 
     // Cohort: ~fifo allocations.
+
+    class Nation;
+    class Region;
 
     class NationalBufferLedger;
     class RegionalBufferLedger;

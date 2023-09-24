@@ -2,7 +2,7 @@
 
 #include <vector>
 
-namespace slag::postal {
+namespace slag {
 
     class Region;
 

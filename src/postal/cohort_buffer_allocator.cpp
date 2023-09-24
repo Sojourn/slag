@@ -5,7 +5,7 @@
 #include <cstring>
 #include <cassert>
 
-namespace slag::postal {
+namespace slag {
 
     CohortBufferAllocator::CohortBufferAllocator(Region& region)
         : BufferAllocator{region}

@@ -1,9 +1,9 @@
-#include "slag/postal/executor.h"
-#include "slag/postal/domain.h"
+#include "slag/core/executor.h"
+#include "slag/core/domain.h"
 #include "slag/logging.h"
 #include <stdexcept>
 
-namespace slag::postal {
+namespace slag {
 
     class ExecutorActivation {
         ExecutorActivation(ExecutorActivation&&) = delete;

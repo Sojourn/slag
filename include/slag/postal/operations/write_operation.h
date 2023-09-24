@@ -11,7 +11,7 @@
 #include "slag/postal/buffer_ledger.h"
 #include "slag/postal/primitive_operation.h"
 
-namespace slag::postal {
+namespace slag {
 
     template<>
     class Operation<OperationType::WRITE> : public PrimitiveOperation<size_t> {

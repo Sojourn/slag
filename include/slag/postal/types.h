@@ -5,7 +5,7 @@
 #include <cstddef>
 #include <cstring>
 
-namespace slag::postal {
+namespace slag {
 
     // Length-constrained names, for fun:
     //   Budget
@@ -52,17 +52,6 @@ namespace slag::postal {
 
     // in charge of the PostalService in a region
     class PostMasterGeneral;
-
-    enum class DomainType {
-        EMPIRE,
-        NATION,
-        REGION,
-    };
-
-    class Domain;
-    class Empire;
-    class Nation;
-    class Region;
 
     // this tells us what thread to route an envelope to
     // TODO: rename to PostalArea

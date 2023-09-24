@@ -1,7 +1,7 @@
 #include "slag/postal/buffer_cursor.h"
 #include <cassert>
 
-namespace slag::postal {
+namespace slag {
 
     BufferCursor::BufferCursor(BufferSegment& segment)
         : segment_{&segment}

@@ -1,11 +1,11 @@
 #include "slag/postal/buffer_allocator.h"
 #include "slag/postal/buffer_ledger.h"
-#include "slag/postal/domain.h"
+#include "slag/core/domain.h"
 #include <limits>
 #include <stdexcept>
 #include <cassert>
 
-namespace slag::postal {
+namespace slag {
 
     static constexpr size_t MAX_BUFFER_SEGMENT_COUNT = std::numeric_limits<
         decltype(NationalBufferLedgerEntry::segment_count)

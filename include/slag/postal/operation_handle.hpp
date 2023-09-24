@@ -1,7 +1,7 @@
 #include <stdexcept>
 #include <cassert>
 
-namespace slag::postal {
+namespace slag {
 
     template<OperationType type>
     inline OperationHandle<type>::OperationHandle(Operation<type>& operation)

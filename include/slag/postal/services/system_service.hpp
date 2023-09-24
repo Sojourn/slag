@@ -1,7 +1,6 @@
 #include <cassert>
-#include "slag/postal/domain.h"
 
-namespace slag::postal {
+namespace slag {
 
     template<typename Stack>
     inline SystemService<Stack>::SystemService()

@@ -1,14 +1,14 @@
 #pragma once
 
+#include "slag/core/domain.h"
+#include "slag/core/pollable.h"
+#include "slag/core/pollable/pollable_queue.h"
 #include "slag/collection/queue.h"
 #include "slag/collection/intrusive_list.h"
 #include "slag/postal/types.h"
-#include "slag/postal/domain.h"
 #include "slag/postal/envelope.h"
-#include "slag/postal/pollable.h"
-#include "slag/postal/pollable_queue.h"
 
-namespace slag::postal {
+namespace slag {
 
     class PostBox {
         PostBox(PostBox&&) = delete;

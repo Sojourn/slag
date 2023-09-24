@@ -1,11 +1,11 @@
 #pragma once
 
 #include "slag/layer.h"
-#include "slag/postal/reactor.h"
+#include "slag/core/executor.h"
 #include "slag/postal/service.h"
-#include "slag/postal/executor.h"
+#include "slag/postal/reactor.h"
 
-namespace slag::postal {
+namespace slag {
 
     template<typename Stack>
     class SystemService

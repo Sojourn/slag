@@ -1,6 +1,6 @@
 #pragma once
 
-namespace slag::postal {
+namespace slag {
 
     // TODO: rename this to PostMaster
     class PostMaster : public Task {

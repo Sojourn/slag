@@ -6,26 +6,23 @@
 #include <vector>
 #include <cstdint>
 #include <cstddef>
+#include "slag/core/types.h"
+#include "slag/core/config.h"
+#include "slag/core/season.h"
+#include "slag/core/census.h"
+#include "slag/core/executor.h"
 #include "slag/collection/spsc_queue.h"
 #include "slag/postal/types.h"
-#include "slag/postal/config.h"
-#include "slag/postal/season.h"
-#include "slag/postal/census.h"
 #include "slag/postal/buffer.h"
 #include "slag/postal/buffer_ledger.h"
 #include "slag/postal/buffer_allocator.h"
 #include "slag/postal/default_buffer_allocator.h"
 #include "slag/postal/parcel.h"
 #include "slag/postal/post_office.h"
-#include "slag/postal/executor.h"
 #include "slag/postal/reactor.h"
 #include "slag/postal/file_table.h"
 
-namespace slag::postal {
-
-    class Empire;
-    class Nation;
-    class Region;
+namespace slag {
 
     Empire& empire();
     Nation& nation();

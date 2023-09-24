@@ -3,9 +3,9 @@
 #include <vector>
 #include <cstdint>
 #include <cstddef>
-#include "slag/postal/types.h"
+#include "slag/core/types.h"
 
-namespace slag::postal {
+namespace slag {
 
     template<DomainType domain_type>
     struct DomainConfig;

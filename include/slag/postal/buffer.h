@@ -6,7 +6,7 @@
 #include <cstddef>
 #include "slag/postal/types.h"
 
-namespace slag::postal {
+namespace slag {
 
     struct NationalBufferLedgerEntry;
     struct RegionalBufferLedgerEntry;

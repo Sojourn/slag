@@ -2,11 +2,11 @@
 
 #include <span>
 #include <cstddef>
+#include "slag/core/event.h"
+#include "slag/core/pollable.h"
 #include "slag/collection/intrusive_queue.h"
-#include "slag/postal/event.h"
-#include "slag/postal/pollable.h"
 
-namespace slag::postal {
+namespace slag {
 
     class Selector : public Pollable<PollableType::READABLE> {
     public:

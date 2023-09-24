@@ -1,13 +1,13 @@
 #pragma once
 
 #include <liburing.h>        
-#include "slag/postal/selector.h"
-#include "slag/postal/executor.h"
+#include "slag/core/selector.h"
+#include "slag/core/executor.h"
 #include "slag/postal/operation.h"
 #include "slag/postal/operation_handle.h"
 #include "slag/postal/operation_allocator.h"
 
-namespace slag::postal {
+namespace slag {
 
     class InterruptHandler {
     protected:

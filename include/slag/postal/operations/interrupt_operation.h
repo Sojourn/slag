@@ -4,7 +4,7 @@
 #include <cassert>
 #include "slag/postal/primitive_operation.h"
 
-namespace slag::postal {
+namespace slag {
 
     struct InterruptOperationPayload {
         uint16_t source;

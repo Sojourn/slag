@@ -1,7 +1,8 @@
-#include "slag/postal/season.h"
+#include "slag/core/season.h"
 #include <cstdlib>
+#include <cassert>
 
-namespace slag::postal {
+namespace slag {
 
     static const Season SEASONS[SEASON_COUNT] = {
         Season::SPRING,

@@ -6,7 +6,7 @@
 #include "slag/postal/file_handle.h"
 #include "slag/postal/primitive_operation.h"
 
-namespace slag::postal {
+namespace slag {
 
     template<>
     class Operation<OperationType::OPEN> : public PrimitiveOperation<FileHandle> {

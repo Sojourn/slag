@@ -1,7 +1,7 @@
-#include "slag/postal/tasks/buffered_writer_task.h"
+#include "slag/core/task/buffered_writer_task.h"
 #include <cassert>
 
-namespace slag::postal {
+namespace slag {
 
     BufferWriterTask::BufferWriterTask(FileHandle file)
         : file_{std::move(file)}

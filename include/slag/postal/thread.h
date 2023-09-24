@@ -2,10 +2,10 @@
 
 #include <thread>
 #include <future>
-#include "slag/postal/config.h"
-#include "slag/postal/domain.h"
+#include "slag/core/domain.h"
+#include "slag/core/config.h"
 
-namespace slag::postal {
+namespace slag {
 
     template<typename Driver>
     class Thread {

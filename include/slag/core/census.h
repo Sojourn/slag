@@ -7,7 +7,7 @@
 #include "slag/collection/spsc_queue.h"
 #include "slag/postal/types.h"
 
-namespace slag::postal {
+namespace slag {
 
     template<DomainType domain_type>
     struct DomainCensus;

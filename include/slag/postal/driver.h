@@ -1,10 +1,10 @@
 #pragma once
 
 #include "slag/stack.h"
-#include "slag/postal/task.h"
-#include "slag/postal/executor.h"
+#include "slag/core/task.h"
+#include "slag/core/executor.h"
 
-namespace slag::postal {
+namespace slag {
 
     template<template<typename> class... Services>
     class Driver {

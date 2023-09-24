@@ -1,6 +1,6 @@
 #include <cassert>
 
-namespace slag::postal {
+namespace slag {
 
     template<template<typename> class... Services>
     Driver<Services...>::Driver()

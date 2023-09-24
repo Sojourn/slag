@@ -1,10 +1,10 @@
 #pragma once
 
 #include "slag/pool_allocator.h"
+#include "slag/core/task.h"
 #include "slag/collection/intrusive_queue.h"
-#include "slag/postal/task.h"
 
-namespace slag::postal {
+namespace slag {
 
     // Manages the lifetime and execution of a homogeneous collection of tasks.
     // All tasks are destroyed when this goes out of scope, completed or not.
@@ -51,4 +51,4 @@ namespace slag::postal {
 
 }
 
-#include "slag/postal/task_group.hpp"
+#include "task_group.hpp"
