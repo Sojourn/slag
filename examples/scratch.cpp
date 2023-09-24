@@ -9,8 +9,8 @@
 #include "slag/postal/driver.h"
 #include "slag/postal/service.h"
 #include "slag/postal/services/system_service.h"
-#include "slag/postal/services/memory_service.h"
 #include "slag/postal/services/worker_service.h"
+#include "slag/memory/memory_service.h"
 
 using namespace slag;
 
