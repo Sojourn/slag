@@ -27,6 +27,12 @@ namespace slag {
         const void* user_data() const;
         void set_user_data(void* user_data);
 
+        template<typename T>
+        T& cast_user_data();
+
+        template<typename T>
+        const T& cast_user_data() const;
+
         bool is_linked() const;
         void unlink();
 
@@ -42,5 +48,15 @@ namespace slag {
         IntrusiveQueueNode selector_hook_;
         bool               is_set_;
     };
+
+    template<typename T>
+    inline T& Event::cast_user_data() {
+        return *reinterpret_cast<T*>(user_data_);
+    }
+
+    template<typename T>
+    inline const T& Event::cast_user_data() const {
+        return *reinterpret_cast<const T*>(user_data_);
+    }
 
 }

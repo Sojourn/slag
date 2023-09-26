@@ -67,42 +67,28 @@ namespace slag {
         return ring_.ring_fd;
     }
 
-    // TODO: break this function up. It has too many levels of nesting.
     size_t Reactor::prepare_pending_operations() {
+        size_t ready_count = pending_submissions_.ready_count();
         size_t count = 0;
-        bool done = false;
 
-        do {
-            if (Event* event = pending_submissions_.select()) {
-                OperationBase* operation_base = reinterpret_cast<OperationBase*>(
-                    event->user_data()
-                );
-
-                if (auto&& [user_data, slot] = operation_base->produce_slot(); user_data) {
-                    // Attempt to prepare a new submission queue entry.
-                    if (struct io_uring_sqe* sqe = io_uring_get_sqe(&ring_)) {
-                        operation_base->prepare(slot, *sqe);
-                        io_uring_sqe_set_data(sqe, user_data);
-
-                        count += 1;
-                    }
-                    else {
-                        // The submisssion queue is full.
-                        done = true;
-                    }
-                }
-                else {
-                    // This operation has the maximum number of in-flight requests.
-                    assert(false);
-                    done = true;
-                }
-
-                pending_submissions_.insert<PollableType::WRITABLE>(*operation_base);
+        for (; count < ready_count; ++count) {
+            struct io_uring_sqe* sqe = io_uring_get_sqe(&ring_);
+            if (!sqe) {
+                break; // Submission queue is full.
             }
-            else {
-                done = true;
-            }
-        } while (!done);
+
+            // Figure out what we want to submit.
+            auto&& event = *pending_submissions_.select();
+            auto&& operation_base = event.cast_user_data<OperationBase>();
+            auto&& [user_data, slot] = operation_base.produce_slot();
+
+            // Prepare the submission queue entry.
+            operation_base.prepare(slot, *sqe);
+            io_uring_sqe_set_data(sqe, user_data);
+            count += 1;
+
+            pending_submissions_.insert<PollableType::WRITABLE>(operation_base);
+        }
 
         return count;
     }
