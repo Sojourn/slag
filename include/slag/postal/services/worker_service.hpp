@@ -50,7 +50,10 @@ namespace slag {
             //       graceful way to do this.
             tasks_.clear();
 
+            set_success();
             set_service_state(ServiceState::STOPPED);
+
+            info("[WorkerService] stopped");
             return;
         }
 

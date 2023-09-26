@@ -1,6 +1,7 @@
 #pragma once
 
-#include <liburing.h>        
+#include <array>
+#include <liburing.h>
 #include "slag/core/selector.h"
 #include "slag/core/executor.h"
 #include "slag/system/operation.h"
@@ -27,8 +28,8 @@ namespace slag {
         explicit Reactor(Executor& executor);
         ~Reactor();
 
-        template<OperationType type, typename... Args>
-        OperationHandle<type> start_operation(Args&&... args);
+        template<OperationType operation_type, typename... Args>
+        OperationHandle<operation_type> start_operation(Args&&... args);
 
         void poll(bool non_blocking);
 
@@ -37,6 +38,7 @@ namespace slag {
 
         void set_interrupt_handler(InterruptHandler& interrupt_handler);
 
+        // TODO: rename to borrow_file_descriptor.
         int file_descriptor();
 
     private:
@@ -53,22 +55,32 @@ namespace slag {
         friend class OperationBase;
 
         void handle_abandoned(OperationBase& operation_base);
+        void handle_daemonized(OperationBase& operation_base);
 
     private:
-        struct Metrics {
-            size_t total_operation_count = 0;
-            size_t active_operation_count = 0;
+        struct OperationMetrics {
+            std::array<size_t, OPERATION_TYPE_COUNT> active_counts;
+            std::array<size_t, OPERATION_TYPE_COUNT> daemon_counts;
+
+            size_t total_active_count() const;
+            size_t total_daemon_count() const;
         };
 
+        struct Metrics {
+            OperationMetrics operations;
+        };
+
+        void increment_operation_count(const OperationBase& operation_base);
+        void decrement_operation_count(const OperationBase& operation_base);
+
+    private:
         struct io_uring          ring_;
         Executor&                executor_;
-        Selector                 pending_submissions_;
-
-        Metrics                  metrics_;
-        Selector                 garbage_;
-        OperationAllocator       operation_allocator_;
-
         InterruptHandler*        interrupt_handler_;
+        Selector                 pending_submissions_;
+        Selector                 garbage_;
+        Metrics                  metrics_;
+        OperationAllocator       operation_allocator_;
     };
 
 }

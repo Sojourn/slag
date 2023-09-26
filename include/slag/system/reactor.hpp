@@ -2,9 +2,9 @@
 
 namespace slag {
 
-    template<OperationType type, typename... Args>
-    inline OperationHandle<type> Reactor::start_operation(Args&&... args) {
-        Operation<type>& operation = operation_allocator_.allocate<type>(std::forward<Args>(args)...);
+    template<OperationType operation_type, typename... Args>
+    inline OperationHandle<operation_type> Reactor::start_operation(Args&&... args) {
+        Operation<operation_type>& operation = operation_allocator_.allocate<operation_type>(std::forward<Args>(args)...);
 
         // Wait for the operation to have something to submit.
         {
@@ -13,14 +13,14 @@ namespace slag {
         }
 
         // Schedule the operation if it is derived from Task.
-        if constexpr (std::is_base_of_v<Task, Operation<type>>) {
+        if constexpr (std::is_base_of_v<Task, Operation<operation_type>>) {
             executor_.insert(operation);
         }
 
-        metrics_.total_operation_count += 1;
-        metrics_.active_operation_count += 1;
+        // Update metrics for this operation.
+        increment_operation_count(operation);
 
-        return OperationHandle<type>(operation);
+        return OperationHandle<operation_type>(operation);
     }
 
 }

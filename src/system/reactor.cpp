@@ -1,5 +1,6 @@
 #include "slag/system/reactor.h"
 #include "slag/core/domain.h"
+#include <numeric>
 #include <stdexcept>
 #include <cassert>
 
@@ -22,6 +23,8 @@ namespace slag {
     }
 
     Reactor::~Reactor() {
+        collect_garbage();
+
         io_uring_queue_exit(&ring_);
 
         region().detach_reactor(*this);
@@ -53,7 +56,7 @@ namespace slag {
     }
 
     bool Reactor::is_quiescent() const {
-        return metrics_.active_operation_count == 0;
+        return metrics_.operations.total_active_count() - garbage_.ready_count();
     }
 
     void Reactor::set_interrupt_handler(InterruptHandler& interrupt_handler) {
@@ -64,6 +67,7 @@ namespace slag {
         return ring_.ring_fd;
     }
 
+    // TODO: break this function up. It has too many levels of nesting.
     size_t Reactor::prepare_pending_operations() {
         size_t count = 0;
         bool done = false;
@@ -129,9 +133,12 @@ namespace slag {
 
     void Reactor::process_completion(struct io_uring_cqe& cqe) {
         if (cqe.user_data) {
+            // A local operation has completed.
             process_operation_completion(cqe);
         }
         else {
+            // Woken up by another thread. The user data field will
+            // never be null for a local operation.
             process_interrupt_completion(cqe);
         }
     }
@@ -161,8 +168,8 @@ namespace slag {
             void* user_data = event->user_data();
 
             visit([&](auto&& operation) {
+                decrement_operation_count(operation);
                 operation_allocator_.deallocate(operation);
-                metrics_.active_operation_count -= 1;
             }, *reinterpret_cast<OperationBase*>(user_data));
         }
     }
@@ -179,6 +186,38 @@ namespace slag {
 
             garbage_.insert(event);
         }, operation_base);
+    }
+
+    void Reactor::handle_daemonized(OperationBase& operation_base) {
+        size_t index = to_index(operation_base.type());
+
+        metrics_.operations.daemon_counts[index] += 1;
+    }
+
+    size_t Reactor::OperationMetrics::total_active_count() const {
+        return std::accumulate(active_counts.begin(), active_counts.end(), size_t{0});
+    }
+
+    size_t Reactor::OperationMetrics::total_daemon_count() const {
+        return std::accumulate(daemon_counts.begin(), daemon_counts.end(), size_t{0});
+    }
+
+    void Reactor::increment_operation_count(const OperationBase& operation_base) {
+        size_t index = to_index(operation_base.type());
+
+        metrics_.operations.active_counts[index] += 1;
+        if (operation_base.is_daemonized()) {
+            assert(false); // Not fatal, but metrics will probably be off.
+        }
+    }
+
+    void Reactor::decrement_operation_count(const OperationBase& operation_base) {
+        size_t index = to_index(operation_base.type());
+
+        metrics_.operations.active_counts[index] -= 1;
+        if (operation_base.is_daemonized()) {
+            metrics_.operations.daemon_counts[index] -= 1;
+        }
     }
 
 }

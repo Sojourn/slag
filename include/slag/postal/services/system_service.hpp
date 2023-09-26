@@ -50,9 +50,15 @@ namespace slag {
             set_service_state(ServiceState::RUNNING);
             return;
         }
-        if (is_service_stopping() && reactor_.is_quiescent()) {
-            set_service_state(ServiceState::STOPPED);
-            return;
+        if (is_service_stopping()) {
+            if (reactor_.is_quiescent()) {
+                set_success();
+                set_service_state(ServiceState::STOPPED);
+                return;
+            }
+            else {
+                asm("int $3");
+            }
         }
 
         while (executor_.is_runnable()) {

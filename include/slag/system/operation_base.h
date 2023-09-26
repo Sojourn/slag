@@ -57,6 +57,10 @@ namespace slag {
         // Returns true if there are no handles associated with this operation.
         bool is_abandoned() const;
 
+        // Returns true if this operation has been daemonized. It will run
+        // to completion even if it is abandoned.
+        bool is_daemonized() const;
+
     private: // API for the reactor.
         friend class Reactor;
 

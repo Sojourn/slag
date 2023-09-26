@@ -26,6 +26,9 @@ namespace slag {
         Event* select();
         size_t select(std::span<Event*> events);
 
+        // Returns the number of events that are available to be selected.
+        size_t ready_count() const;
+
     private:
         friend class Event;
 

@@ -86,7 +86,12 @@ namespace slag {
 
         set_service_state(ServiceState::STOPPING);
 
-        operation_->cancel();
+        // Make any pending operation finish sooner rather than later.
+        if (operation_) {
+            operation_->cancel();
+        }
+
+        update_readiness();
     }
 
     template<typename Stack>
@@ -108,7 +113,10 @@ namespace slag {
 
         // Stop if we are now quiescent.
         if (!operation_ && is_service_stopping()) {
+            set_success();
             set_service_state(ServiceState::STOPPED);
+
+            info("[MemoryService] stopped");
             return;
         }
 
@@ -228,16 +236,26 @@ namespace slag {
 
     template<typename Stack>
     inline void MemoryService<Stack>::update_readiness() {
-        if (state_ == State::IDLE) {
-            bool activate = false;
-            activate |= (!pause_commits_ && is_undercommitted());
-            activate |= (!pause_uncommits_ && is_overcommitted());
-
-            activate_event_.set(activate);
-            runnable_event_ = &activate_event_;
+        if (operation_) {
+            runnable_event_ = &operation_->complete_event();
         }
         else {
-            runnable_event_ = &operation_->complete_event();
+            switch (service_state()) {
+                case ServiceState::STOPPING: {
+                    activate_event_.set();
+                    runnable_event_ = &activate_event_;
+                    break;
+                }
+                default: {
+                    bool activate = false;
+                    activate |= (!pause_commits_ && is_undercommitted());
+                    activate |= (!pause_uncommits_ && is_overcommitted());
+
+                    activate_event_.set(activate);
+                    runnable_event_ = &activate_event_;
+                    break;
+                }
+            }
         }
     }
 

@@ -80,6 +80,10 @@ namespace slag {
         return count;
     }
 
+    size_t Selector::ready_count() const {
+        return ready_queue_.size();
+    }
+
     void Selector::handle_readiness_change(Event& event) {
         if (event.is_set()) {
             ready_queue_.push_back(event);

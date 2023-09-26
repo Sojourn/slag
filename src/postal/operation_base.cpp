@@ -39,7 +39,15 @@ namespace slag {
         return abandoned_;
     }
 
+    bool OperationBase::is_daemonized() const {
+        return daemonized_;
+    }
+
     void OperationBase::abandon() {
+        if (abandoned_) {
+            return;
+        }
+
         if (daemonized_) {
             // Allow daemonized operations to continue running.
         }
@@ -52,7 +60,12 @@ namespace slag {
     }
 
     void OperationBase::daemonize() {
+        if (daemonized_) {
+            return;
+        }
+
         daemonized_ = true;
+        reactor_.handle_daemonized(*this);
     }
 
     void* OperationBase::make_user_data(Slot slot) {

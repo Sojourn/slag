@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string_view>
 #include <cstdint>
 #include <cstddef>
 
@@ -33,6 +34,20 @@ namespace slag {
 
     constexpr size_t to_index(OperationType operation_type) {
         return static_cast<size_t>(operation_type);
+    }
+
+    constexpr std::string_view to_string_view(OperationType operation_type) {
+        switch (operation_type) {
+#define X(SLAG_POSTAL_OPERATION_TYPE)                         \
+            case OperationType::SLAG_POSTAL_OPERATION_TYPE: { \
+                return #SLAG_POSTAL_OPERATION_TYPE;           \
+            }                                                 \
+
+            SLAG_POSTAL_OPERATION_TYPES(X)
+#undef X
+        }
+
+        abort();
     }
 
 }

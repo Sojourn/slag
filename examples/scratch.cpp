@@ -21,7 +21,7 @@ public:
 
         while (true) {
             timer_operation_ = make_timer_operation(
-                std::chrono::seconds(1)
+                std::chrono::milliseconds(250)
             );
 
             SLAG_PT_WAIT_COMPLETE(*timer_operation_);
@@ -34,6 +34,31 @@ public:
     }
 
 private:
+    TimerOperationHandle timer_operation_;
+};
+
+template<typename Driver>
+class ShutdownTask : public ProtoTask {
+public:
+    explicit ShutdownTask(Driver& driver)
+        : driver_{driver}
+    {
+    }
+
+    void run() override final {
+        SLAG_PT_BEGIN();
+
+        timer_operation_ = make_timer_operation(std::chrono::seconds(5));
+        SLAG_PT_WAIT_COMPLETE(*timer_operation_);
+        assert(timer_operation_->result());
+
+        driver_.stop();
+
+        SLAG_PT_END();
+    }
+
+private:
+    Driver&              driver_;
     TimerOperationHandle timer_operation_;
 };
 
@@ -55,10 +80,13 @@ int main(int argc, char** argv) {
     Region::Config region_config;
     region_config.index = 0;
     region_config.buffer_range = std::make_pair(0, nation_config.buffer_count);
-    Region regino_{region_config};
+    Region region_{region_config};
 
-    Driver<WorkerService, MemoryService, SystemService> driver;
+    using MyDriver = Driver<WorkerService, MemoryService, SystemService>;
+
+    MyDriver driver;
     driver.spawn<InitTask>();
+    driver.spawn<ShutdownTask<MyDriver>>(driver);
     driver.run();
 
     return 0;
