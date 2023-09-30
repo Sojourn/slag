@@ -56,9 +56,6 @@ namespace slag {
                 set_service_state(ServiceState::STOPPED);
                 return;
             }
-            else {
-                asm("int $3");
-            }
         }
 
         while (executor_.is_runnable()) {

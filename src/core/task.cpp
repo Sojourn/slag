@@ -3,8 +3,9 @@
 
 namespace slag {
 
-    Task::Task()
+    Task::Task(TaskRole role)
         : state_{TaskState::WAITING}
+        , role_{role}
     {
     }
 
@@ -14,6 +15,10 @@ namespace slag {
 
     TaskState Task::state() const {
         return state_;
+    }
+
+    TaskRole Task::role() const {
+        return role_;
     }
 
     bool Task::is_waiting() const {

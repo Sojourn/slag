@@ -37,21 +37,15 @@ namespace slag {
             if (submission_count > 0) {
                 io_uring_submit(&ring_);
             }
-            else {
-                // Proceed to checking for completions.
-            }
         }
         else {
-            if (submission_count > 0) {
-                io_uring_submit_and_wait(&ring_, 1);
-            }
-            else {
-                // TODO: check if there is version of this that doesn't submit.
-                io_uring_submit_and_wait(&ring_, 1);
-            }
+            io_uring_submit_and_wait(&ring_, 1);
         }
 
         process_completions();
+
+        // JSR: I would like to defer this until the event loop is idle,
+        //      or we are under memory pressure.
         collect_garbage();
     }
 

@@ -33,6 +33,7 @@ set(SLAG_SOURCE_FILES
     postal/operation_base.cpp
     postal/file_handle.cpp
     postal/file_table.cpp
+    event_loop.cpp
 )
 
 set(SLAG_HEADER_FILES

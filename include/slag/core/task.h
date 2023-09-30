@@ -3,10 +3,11 @@
 #include <string_view>
 #include "slag/core/event.h"
 #include "slag/core/pollable.h"
+#include "slag/core/task_role.h"
 
 namespace slag {
 
-    enum class TaskState {
+    enum class TaskState : uint8_t {
         WAITING, // The task is waiting on an event, or to be scheduled.
         RUNNING, // The task is actively running.
         SUCCESS, // The task has completed succesfully.
@@ -24,10 +25,11 @@ namespace slag {
         Task& operator=(const Task&) = delete;
 
     public:
-        Task();
+        explicit Task(TaskRole role = TaskRole::KNIGHT);
         virtual ~Task() = default;
 
         TaskState state() const;
+        TaskRole role() const;
 
         bool is_waiting() const;
         bool is_running() const;
@@ -66,6 +68,7 @@ namespace slag {
 
     private:
         TaskState state_;
+        TaskRole  role_;
         Event     complete_event_;
     };
 
