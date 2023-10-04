@@ -50,7 +50,7 @@ namespace slag {
     }
 
     bool Reactor::is_quiescent() const {
-        return metrics_.operations.total_active_count() - garbage_.ready_count();
+        return (metrics_.operations.total_active_count() - garbage_.ready_count()) == 0;
     }
 
     void Reactor::set_interrupt_handler(InterruptHandler& interrupt_handler) {

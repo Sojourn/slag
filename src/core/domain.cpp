@@ -190,6 +190,22 @@ namespace slag {
         return history_[to_index(season)];
     }
 
+    EventLoop& Region::event_loop() {
+        return event_loop_;
+    }
+
+    const EventLoop& Region::event_loop() const {
+        return event_loop_;
+    }
+
+    ServiceRegistry& Region::service_registry() {
+        return service_registry_;
+    }
+
+    const ServiceRegistry& Region::service_registry() const {
+        return service_registry_;
+    }
+
     auto Region::imports() -> std::span<ParcelQueueConsumer> {
         return {
             imports_.data(),

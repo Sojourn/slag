@@ -19,7 +19,9 @@ set(SLAG_SOURCE_FILES
     core/event.cpp
     core/selector.cpp
     core/executor.cpp
+    core/service.cpp
     core/task/buffered_writer_task.cpp
+    memory/memory_service.cpp
     system/reactor.cpp
     postal/buffer.cpp
     postal/buffer_ledger.cpp

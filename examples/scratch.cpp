@@ -1,16 +1,7 @@
 #include <iostream>
-#include "slag/stack.h"
-#include "slag/core/domain.h"
-#include "slag/core/task.h"
-#include "slag/core/pollable.h"
-#include "slag/core/executor.h"
-#include "slag/core/task/proto_task.h"
-#include "slag/system/reactor.h"
-#include "slag/postal/driver.h"
-#include "slag/postal/service.h"
-#include "slag/postal/services/system_service.h"
-#include "slag/postal/services/worker_service.h"
-#include "slag/memory/memory_service.h"
+#include "slag/core.h"
+#include "slag/system.h"
+#include "slag/event_loop.h"
 
 using namespace slag;
 
@@ -37,11 +28,10 @@ private:
     TimerOperationHandle timer_operation_;
 };
 
-template<typename Driver>
 class ShutdownTask : public ProtoTask {
 public:
-    explicit ShutdownTask(Driver& driver)
-        : driver_{driver}
+    explicit ShutdownTask(EventLoop& event_loop)
+        : event_loop_{event_loop}
     {
     }
 
@@ -52,13 +42,13 @@ public:
         SLAG_PT_WAIT_COMPLETE(*timer_operation_);
         assert(timer_operation_->result());
 
-        driver_.stop();
+        event_loop_.stop();
 
         SLAG_PT_END();
     }
 
 private:
-    Driver&              driver_;
+    EventLoop&           event_loop_;
     TimerOperationHandle timer_operation_;
 };
 
@@ -82,12 +72,17 @@ int main(int argc, char** argv) {
     region_config.buffer_range = std::make_pair(0, nation_config.buffer_count);
     Region region_{region_config};
 
-    using MyDriver = Driver<WorkerService, MemoryService, SystemService>;
+    EventLoop event_loop;
 
-    MyDriver driver;
-    driver.spawn<InitTask>();
-    driver.spawn<ShutdownTask<MyDriver>>(driver);
-    driver.run();
+    auto init_task = std::make_unique<InitTask>();
+    auto shutdown_task = std::make_unique<ShutdownTask>(event_loop);
+
+    event_loop.bind(*init_task);
+    event_loop.bind(*shutdown_task);
+    event_loop.loop();
+
+    init_task.reset();
+    shutdown_task.reset();
 
     return 0;
 }

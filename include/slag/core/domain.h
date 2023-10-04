@@ -6,11 +6,15 @@
 #include <vector>
 #include <cstdint>
 #include <cstddef>
+#include "slag/event_loop.h"
 #include "slag/core/types.h"
 #include "slag/core/config.h"
 #include "slag/core/season.h"
 #include "slag/core/census.h"
 #include "slag/core/executor.h"
+#include "slag/core/service.h"
+#include "slag/core/service_registry.h"
+#include "slag/core/service_interface.h"
 #include "slag/collection/spsc_queue.h"
 #include "slag/postal/types.h"
 #include "slag/postal/buffer.h"
@@ -104,11 +108,18 @@ namespace slag {
         ~Region();
 
         Nation& nation();
+
         const Nation& nation() const;
         const Config& config() const;
         const Season& season() const;
         const Census& census() const;
         const Census& census(Season season) const;
+
+        EventLoop& event_loop();
+        const EventLoop& event_loop() const;
+
+        ServiceRegistry& service_registry();
+        const ServiceRegistry& service_registry() const;
 
         PostArea post_area() const;
         PostOffice& post_office();
@@ -157,6 +168,9 @@ namespace slag {
         Season                           season_;
         Census*                          census_cursor_;
         std::array<Census, SEASON_COUNT> history_;
+
+        EventLoop                        event_loop_;
+        ServiceRegistry                  service_registry_;
 
         PostOffice                       post_office_;
         std::vector<ParcelQueueConsumer> imports_;

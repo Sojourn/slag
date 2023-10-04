@@ -3,7 +3,6 @@
 #include "types.h"
 #include "buffer.h"
 
-#include "postal_service.h"
 #include "post_office.h"
 #include "post_box.h"
 
@@ -16,6 +15,4 @@
 #include "cohort_buffer_allocator.h"
 
 #include "driver.h"
-#include "service.h"
-
 #include "thread.h"
