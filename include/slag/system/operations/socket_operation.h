@@ -4,6 +4,7 @@
 #include <cassert>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include "slag/core/service_interface.h"
 #include "slag/system/primitive_operation.h"
 
 namespace slag {
@@ -11,8 +12,8 @@ namespace slag {
     template<>
     class Operation<OperationType::SOCKET> : public PrimitiveOperation<FileHandle> {
     public:
-        explicit Operation(Reactor& reactor, int domain, int type, int protocol = 0)
-            : PrimitiveOperation{OperationType::SOCKET, reactor}
+        explicit Operation(SystemServiceInterface& system_service, int domain, int type, int protocol = 0)
+            : PrimitiveOperation{OperationType::SOCKET, system_service}
             , domain_{domain}
             , type_{type}
             , protocol_{protocol}

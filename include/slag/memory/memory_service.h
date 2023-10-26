@@ -5,19 +5,19 @@
 #include "slag/layer.h"
 #include "slag/logging.h"
 #include "slag/core/service.h"
-#include "slag/system/operation_factory.h"
+#include "slag/core/service_interface.h"
+#include "slag/memory/memory_service_interface.h"
 
 namespace slag {
 
+    class ServiceRegistry;
+
     class MemoryService : public ServiceInterface<ServiceType::MEMORY> {
     public:
-        MemoryService();
+        explicit MemoryService(ServiceRegistry& service_registry);
 
         void start_service() override final;
         void stop_service() override final;
-
-        std::span<std::byte> allocate_block() override final;
-        void deallocate_block(std::span<std::byte> block) override final;
     };
 
 }

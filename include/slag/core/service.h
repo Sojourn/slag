@@ -9,6 +9,8 @@
 
 namespace slag {
 
+    class ServiceRegistry;
+
     enum class ServiceType {
     #define X(SLAG_SERVICE_TYPE) SLAG_SERVICE_TYPE,
         SLAG_SERVICE_TYPES(X)
@@ -32,16 +34,20 @@ namespace slag {
         Service& operator=(const Service&) = delete;
 
     public:
-        explicit Service(ServiceType type);
+        Service(ServiceType type, ServiceRegistry& service_registry);
         virtual ~Service() = default;
 
         ServiceType type() const;
+
+        ServiceRegistry& service_registry();
+        const ServiceRegistry& service_registry() const;
 
         virtual void start_service() = 0;
         virtual void stop_service() = 0;
 
     private:
-        ServiceType type_;
+        ServiceType      type_;
+        ServiceRegistry& service_registry_;
     };
 
 }

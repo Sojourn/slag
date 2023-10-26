@@ -80,6 +80,10 @@ namespace slag {
         return count;
     }
 
+    bool Selector::is_ready() const {
+        return !ready_queue_.is_empty();
+    }
+
     size_t Selector::ready_count() const {
         return ready_queue_.size();
     }

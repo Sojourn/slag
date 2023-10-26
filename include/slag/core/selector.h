@@ -26,6 +26,9 @@ namespace slag {
         Event* select();
         size_t select(std::span<Event*> events);
 
+        // Returns true if a call to select would succeed.
+        bool is_ready() const;
+
         // Returns the number of events that are available to be selected.
         size_t ready_count() const;
 

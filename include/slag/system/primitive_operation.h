@@ -5,6 +5,7 @@
 #include "slag/result.h"
 #include "slag/core/event.h"
 #include "slag/core/pollable.h"
+#include "slag/core/service_interface.h"
 #include "slag/system/operation_base.h"
 
 namespace slag {
@@ -15,8 +16,8 @@ namespace slag {
         , public Pollable<PollableType::COMPLETE>
     {
     public:
-        PrimitiveOperation(OperationType type, Reactor& reactor)
-            : OperationBase{type, reactor}
+        PrimitiveOperation(OperationType type, SystemServiceInterface& system_service)
+            : OperationBase{type, system_service}
             , state_{State::OPERATION_PENDING}
             , result_{make_system_error(EAGAIN)}
             , operation_slot_{-1}
@@ -45,7 +46,7 @@ namespace slag {
                     break;
                 }
                 case State::OPERATION_WORKING: {
-                    // Signal to the reactor that we want to submit something else (the cancel).
+                    // Signal that we want to submit something else (the cancel).
                     state_ = State::CANCEL_PENDING;
                     writable_event().set();
                     break;

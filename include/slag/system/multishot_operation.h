@@ -6,6 +6,7 @@
 #include "slag/core/event.h"
 #include "slag/core/pollable.h"
 #include "slag/core/pollable/pollable_queue.h"
+#include "slag/core/service_interface.h"
 #include "slag/system/operation_base.h"
 
 namespace slag {
@@ -16,8 +17,8 @@ namespace slag {
         , public Pollable<PollableType::COMPLETE>
     {
     public:
-        MultishotOperation(OperationType type, Reactor& reactor)
-            : OperationBase{type, reactor}
+        MultishotOperation(OperationType type, SystemServiceInterface& system_service)
+            : OperationBase{type, system_service}
             , state_{State::OPERATION_PENDING}
             , operation_slot_{-1}
             , cancel_slot_{-1}

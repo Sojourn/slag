@@ -1,13 +1,14 @@
 #include "slag/system/operation_base.h"
 #include "slag/system/reactor.h"
+#include "slag/system/system_service_interface.h"
 
 namespace slag {
 
-    OperationBase::OperationBase(OperationType type, Reactor& reactor)
+    OperationBase::OperationBase(OperationType type, SystemServiceInterface& system_service)
         : type_{type}
         , abandoned_{false}
         , daemonized_{false}
-        , reactor_{reactor}
+        , system_service_{system_service}
     {
     }
 
@@ -17,14 +18,6 @@ namespace slag {
 
     OperationType OperationBase::type() const {
         return type_;
-    }
-
-    Reactor& OperationBase::reactor() {
-        return reactor_;
-    }
-
-    const Reactor& OperationBase::reactor() const {
-        return reactor_;
     }
 
     Event& OperationBase::writable_event() {
@@ -45,7 +38,7 @@ namespace slag {
 
     void OperationBase::abandon() {
         if (abandoned_) {
-            return;
+            return; // Guard against being abandoned multiple times.
         }
 
         if (daemonized_) {
@@ -56,16 +49,16 @@ namespace slag {
         }
 
         abandoned_ = true;
-        reactor_.handle_abandoned(*this);
+        system_service_.handle_operation_abandoned(*this);
     }
 
     void OperationBase::daemonize() {
         if (daemonized_) {
-            return;
+            return; // Guard against being daemonized multiple times.
         }
 
         daemonized_ = true;
-        reactor_.handle_daemonized(*this);
+        system_service_.handle_operation_daemonized(*this);
     }
 
     void* OperationBase::make_user_data(Slot slot) {

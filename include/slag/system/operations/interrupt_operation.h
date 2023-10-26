@@ -2,6 +2,7 @@
 
 #include <cerrno>
 #include <cassert>
+#include "slag/core/service_interface.h"
 #include "slag/system/primitive_operation.h"
 
 namespace slag {
@@ -14,8 +15,8 @@ namespace slag {
     template<>
     class Operation<OperationType::INTERRUPT> : public PrimitiveOperation<void> {
     public:
-        explicit Operation(Reactor& reactor, int file_descriptor, InterruptOperationPayload payload)
-            : PrimitiveOperation{OperationType::INTERRUPT, reactor}
+        explicit Operation(SystemServiceInterface& system_service, int file_descriptor, InterruptOperationPayload payload)
+            : PrimitiveOperation{OperationType::INTERRUPT, system_service}
             , file_descriptor_{file_descriptor}
             , payload_{payload}
         {

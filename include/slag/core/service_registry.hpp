@@ -1,12 +1,20 @@
-#include <cassert>
+#include <tuple>
+#include <utility>
 #include <stdexcept>
+#include <cassert>
 
 namespace slag {
 
-    template<typename ServiceImpl, typename... Args>
-    inline void ServiceRegistry::initialize(Args&&... args) {
-        std::unique_ptr<Service> service = std::make_unique<ServiceImpl>(std::forward<Args>(args)...);
-        services_[to_index(service->type())] = std::move(service);
+    inline ServiceRegistry::ServiceRegistry() {
+        for (auto&& service: services_) {
+            service = nullptr;
+        }
+    }
+
+    inline void ServiceRegistry::register_service(Service& service) {
+        Service*& service_pointer = services_[to_index(service.type())];
+        assert(!service_pointer);
+        service_pointer = &service;
     }
 
     template<ServiceType type>
@@ -27,20 +35,26 @@ namespace slag {
         return *services_[to_index(type)];
     }
 
-    inline void ServiceRegistry::start_services() {
-        for (size_t i = 0; i < services_.size(); ++i) {
-            auto&& service = services_[i];
-            assert(service);
-            service->start_service();
-        }
+    template<typename Visitor>
+    inline void ServiceRegistry::for_each_service(Visitor&& visitor) {
+        auto visit = [&]<size_t... I>(std::index_sequence<I...>) {
+            (visitor(get_service<static_cast<ServiceType>(I)>()), ...);
+        };
+
+        visit(std::make_index_sequence<SERVICE_TYPE_COUNT>());
     }
 
-    inline void ServiceRegistry::stop_services() {
-        for (size_t i = 0; i < services_.size(); ++i) {
-            auto&& service = services_[services_.size() - i - 1];
-            assert(service);
-            service->stop_service();
-        }
+    template<typename Visitor>
+    inline void ServiceRegistry::for_each_service_reverse(Visitor&& visitor) {
+        auto visit = [&]<size_t... I>(std::index_sequence<I...>) {
+            (
+                visitor(
+                    get_service<static_cast<ServiceType>(SERVICE_TYPE_COUNT - I - 1)>()
+                ), ...
+            );
+        };
+
+        visit(std::make_index_sequence<SERVICE_TYPE_COUNT>());
     }
 
 }

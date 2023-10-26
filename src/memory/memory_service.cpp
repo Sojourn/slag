@@ -2,21 +2,15 @@
 
 namespace slag {
 
-    MemoryService::MemoryService() {
+    MemoryService::MemoryService(ServiceRegistry& service_registry)
+        : ServiceInterface<ServiceType::MEMORY>(service_registry)
+    {
     }
 
     void MemoryService::start_service() {
     }
 
     void MemoryService::stop_service() {
-    }
-
-    std::span<std::byte> MemoryService::allocate_block() {
-        return {};
-    }
-
-    void MemoryService::deallocate_block(std::span<std::byte> block) {
-        (void)block;
     }
 
 }

@@ -4,6 +4,7 @@
 #include <cassert>
 #include "slag/address.h"
 #include "slag/postal/file_handle.h"
+#include "slag/core/service_interface.h"
 #include "slag/system/primitive_operation.h"
 
 namespace slag {
@@ -11,8 +12,8 @@ namespace slag {
     template<>
     class Operation<OperationType::CONNECT> : public PrimitiveOperation<void> {
     public:
-        explicit Operation(Reactor& reactor, FileHandle socket, const Address& address)
-            : PrimitiveOperation{OperationType::CONNECT, reactor}
+        explicit Operation(SystemServiceInterface& system_service, FileHandle socket, const Address& address)
+            : PrimitiveOperation{OperationType::CONNECT, system_service}
             , socket_{std::move(socket)}
             , address_{address}
         {

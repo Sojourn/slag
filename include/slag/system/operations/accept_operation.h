@@ -2,6 +2,7 @@
 
 #include <cerrno>
 #include <cassert>
+#include "slag/core/service_interface.h"
 #include "slag/system/multishot_operation.h"
 
 namespace slag {
@@ -9,8 +10,8 @@ namespace slag {
     template<>
     class Operation<OperationType::ACCEPT> : public MultishotOperation<FileHandle> {
     public:
-        Operation(Reactor& reactor, FileHandle socket)
-            : MultishotOperation{OperationType::ACCEPT, reactor}
+        Operation(SystemServiceInterface& system_service, FileHandle socket)
+            : MultishotOperation{OperationType::ACCEPT, system_service}
             , socket_{std::move(socket)}
         {
             assert(socket_);

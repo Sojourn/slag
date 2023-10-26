@@ -2,9 +2,9 @@
 
 #include "slag/address.h"
 #include "slag/core/domain.h"
-#include "slag/system/reactor.h"
 #include "slag/system/operation.h"
 #include "slag/system/operation_handle.h"
+#include "slag/system/system_service_interface.h"
 
 namespace slag {
 
@@ -21,11 +21,7 @@ namespace slag {
 
     template<OperationType type, typename... Args>
     inline OperationHandle<type> make_operation(Args&&... args) {
-        Reactor& reactor = region().reactor();
-        return reactor.start_operation<type>(
-            reactor,
-            std::forward<Args>(args)...
-        );
+        return get_system_service().start_operation<type>(std::forward<Args>(args)...);
     }
 
     template<typename... Args>

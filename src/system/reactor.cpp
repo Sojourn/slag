@@ -2,14 +2,17 @@
 #include "slag/core/domain.h"
 #include <numeric>
 #include <stdexcept>
+#include <cstring>
 #include <cassert>
 
 namespace slag {
 
-    Reactor::Reactor(Executor& executor)
-        : executor_{executor}
-        , interrupt_handler_{nullptr}
+    Reactor::Reactor(Selector& pending_submissions)
+        : pending_submissions_(pending_submissions)
+        , interrupt_handler_(nullptr)
     {
+        memset(&ring_, 0, sizeof(ring_));
+
         int result;
         do {
             result = io_uring_queue_init(4096, &ring_, 0);
@@ -18,19 +21,21 @@ namespace slag {
         if (result < 0) {
             throw std::runtime_error("Failed to initialize io_uring");
         }
-
-        region().attach_reactor(*this);
     }
 
     Reactor::~Reactor() {
-        collect_garbage();
-
         io_uring_queue_exit(&ring_);
-
-        region().detach_reactor(*this);
     }
 
-    void Reactor::poll(bool non_blocking) {
+    void Reactor::set_interrupt_handler(InterruptHandler& interrupt_handler) {
+        interrupt_handler_ = &interrupt_handler;
+    }
+
+    int Reactor::borrow_file_descriptor() {
+        return ring_.ring_fd;
+    }
+
+    bool Reactor::poll(bool non_blocking) {
         size_t submission_count = prepare_pending_operations();
 
         if (non_blocking) {
@@ -42,23 +47,8 @@ namespace slag {
             io_uring_submit_and_wait(&ring_, 1);
         }
 
-        process_completions();
-
-        // JSR: I would like to defer this until the event loop is idle,
-        //      or we are under memory pressure.
-        collect_garbage();
-    }
-
-    bool Reactor::is_quiescent() const {
-        return (metrics_.operations.total_active_count() - garbage_.ready_count()) == 0;
-    }
-
-    void Reactor::set_interrupt_handler(InterruptHandler& interrupt_handler) {
-        interrupt_handler_ = &interrupt_handler;
-    }
-
-    int Reactor::file_descriptor() {
-        return ring_.ring_fd;
+        size_t completion_count = process_completions();
+        return completion_count > 0;
     }
 
     size_t Reactor::prepare_pending_operations() {
@@ -87,9 +77,10 @@ namespace slag {
         return count;
     }
 
-    void Reactor::process_completions() {
-        std::array<struct io_uring_cqe*, 8> cqe_array;
+    size_t Reactor::process_completions() {
+        size_t completion_count = 0;
 
+        std::array<struct io_uring_cqe*, 8> cqe_array;
         while (int count = io_uring_peek_batch_cqe(&ring_, cqe_array.data(), cqe_array.size())) {
             if (count > 0) {
                 for (int i = 0; i < count; ++i) {
@@ -97,6 +88,7 @@ namespace slag {
                 }
 
                 io_uring_cq_advance(&ring_, static_cast<unsigned>(count));
+                completion_count += static_cast<size_t>(count);
             }
             else {
                 if (errno == EINTR) {
@@ -109,6 +101,8 @@ namespace slag {
                 abort();
             }
         }
+
+        return completion_count;
     }
 
     void Reactor::process_completion(struct io_uring_cqe& cqe) {
@@ -141,63 +135,6 @@ namespace slag {
         memcpy(&payload, &cqe.res, sizeof(payload));
 
         interrupt_handler_->handle_interrupt(payload.source, payload.reason);
-    }
-
-    void Reactor::collect_garbage() {
-        while (Event* event = garbage_.select()) {
-            void* user_data = event->user_data();
-
-            visit([&](auto&& operation) {
-                decrement_operation_count(operation);
-                operation_allocator_.deallocate(operation);
-            }, *reinterpret_cast<OperationBase*>(user_data));
-        }
-    }
-
-    void Reactor::handle_abandoned(OperationBase& operation_base) {
-        visit([&](auto&& operation) {
-            Event& event = operation.complete_event();
-
-            // Adopt the operation so that we can reap it after it has completed.
-            event.set_user_data(&operation_base);
-            if (event.is_linked()) {
-                event.unlink();
-            }
-
-            garbage_.insert(event);
-        }, operation_base);
-    }
-
-    void Reactor::handle_daemonized(OperationBase& operation_base) {
-        size_t index = to_index(operation_base.type());
-
-        metrics_.operations.daemon_counts[index] += 1;
-    }
-
-    size_t Reactor::OperationMetrics::total_active_count() const {
-        return std::accumulate(active_counts.begin(), active_counts.end(), size_t{0});
-    }
-
-    size_t Reactor::OperationMetrics::total_daemon_count() const {
-        return std::accumulate(daemon_counts.begin(), daemon_counts.end(), size_t{0});
-    }
-
-    void Reactor::increment_operation_count(const OperationBase& operation_base) {
-        size_t index = to_index(operation_base.type());
-
-        metrics_.operations.active_counts[index] += 1;
-        if (operation_base.is_daemonized()) {
-            assert(false); // Not fatal, but metrics will probably be off.
-        }
-    }
-
-    void Reactor::decrement_operation_count(const OperationBase& operation_base) {
-        size_t index = to_index(operation_base.type());
-
-        metrics_.operations.active_counts[index] -= 1;
-        if (operation_base.is_daemonized()) {
-            metrics_.operations.daemon_counts[index] -= 1;
-        }
     }
 
 }

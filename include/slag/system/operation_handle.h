@@ -1,5 +1,6 @@
 #pragma once
 
+#include "slag/core/service_interface.h"
 #include "slag/system/operation.h"
 
 namespace slag {
@@ -7,7 +8,8 @@ namespace slag {
     template<OperationType type>
     class OperationHandle {
     private:
-        friend class Reactor;
+        template<ServiceType service_type>
+        friend class ServiceInterface;
 
         explicit OperationHandle(Operation<type>& operation);
 

@@ -2,6 +2,7 @@
 
 #include <cerrno>
 #include <cassert>
+#include "slag/core/service_interface.h"
 #include "slag/system/primitive_operation.h"
 
 namespace slag {
@@ -9,8 +10,8 @@ namespace slag {
     template<>
     class Operation<OperationType::MADVISE> : public PrimitiveOperation<void> {
     public:
-        explicit Operation(Reactor& reactor, void* address, size_t length, int advice)
-            : PrimitiveOperation{OperationType::MADVISE, reactor}
+        explicit Operation(SystemServiceInterface& system_service, void* address, size_t length, int advice)
+            : PrimitiveOperation{OperationType::MADVISE, system_service}
             , address_{address}
             , length_{length}
             , advice_{advice}

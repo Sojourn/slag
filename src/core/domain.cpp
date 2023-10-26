@@ -133,7 +133,7 @@ namespace slag {
     }
 
     void Nation::attach(Region& region) {
-        int ring_descriptor = dup(region.reactor().file_descriptor());
+        int ring_descriptor = dup(region.reactor().borrow_file_descriptor());
         if (ring_descriptor < 0) {
             throw std::runtime_error("Failed to duplicate ring descriptor");
         }

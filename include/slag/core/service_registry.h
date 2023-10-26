@@ -9,8 +9,9 @@ namespace slag {
 
     class ServiceRegistry {
     public:
-        template<typename ServiceImpl, typename... Args>
-        void initialize(Args&&... args);
+        ServiceRegistry();
+
+        void register_service(Service& service);
 
         template<ServiceType type>
         ServiceInterface<type>& get_service();
@@ -20,11 +21,14 @@ namespace slag {
         const ServiceInterface<type>& get_service() const;
         const Service& get_service(ServiceType type) const;
 
-        void start_services();
-        void stop_services();
+        template<typename Visitor>
+        void for_each_service(Visitor&& visitor);
+
+        template<typename Visitor>
+        void for_each_service_reverse(Visitor&& visitor);
 
     private:
-        std::array<std::unique_ptr<Service>, SERVICE_TYPE_COUNT> services_;
+        std::array<Service*, SERVICE_TYPE_COUNT> services_;
     };
 
 }

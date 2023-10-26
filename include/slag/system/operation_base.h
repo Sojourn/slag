@@ -3,6 +3,7 @@
 #include <liburing.h>        
 #include "slag/core/event.h"
 #include "slag/core/pollable.h"
+#include "slag/core/service_interface.h"
 #include "slag/collection/intrusive_queue.h"
 #include "slag/system/operation_types.h"
 
@@ -13,6 +14,8 @@ namespace slag {
     template<OperationType type>
     class Operation;
 
+    // The higher than usual alignment is used to allocate a few
+    // padding bits (tagged slots).
     class alignas(16) OperationBase
         : public Pollable<PollableType::READABLE>
         , public Pollable<PollableType::WRITABLE>
@@ -25,9 +28,7 @@ namespace slag {
     public:
         OperationType type() const;
 
-        Reactor& reactor();
-        const Reactor& reactor() const;
-
+        // A 'writable' operation wants to submit something.
         Event& writable_event() override final;
 
         // Attempt to cancel the operation.
@@ -48,7 +49,10 @@ namespace slag {
         static std::pair<OperationBase*, Slot> peek_slot(void* user_data);
 
     protected:
-        OperationBase(OperationType type, Reactor& reactor);
+        template<ServiceType service_type>
+        friend class ServiceInterface;
+
+        OperationBase(OperationType type, SystemServiceInterface& system_service);
         ~OperationBase();
 
         // Returns true if this operation has nothing in-flight.
@@ -74,13 +78,13 @@ namespace slag {
         void abandon();
 
     private:
-        OperationType      type_;
-        bool               abandoned_;
-        bool               daemonized_;
-        SlotMask           slot_mask_;
-        Event              writable_event_;
-        Reactor&           reactor_;
-        IntrusiveQueueNode node_;
+        OperationType           type_;
+        bool                    abandoned_;
+        bool                    daemonized_;
+        SlotMask                slot_mask_;
+        Event                   writable_event_;
+        SystemServiceInterface& system_service_;
+        IntrusiveQueueNode      node_;
     };
     static_assert(OperationBase::SLOT_COUNT <= alignof(OperationBase));
     static_assert(OperationBase::SLOT_COUNT <= (sizeof(OperationBase::SlotMask) * 8));

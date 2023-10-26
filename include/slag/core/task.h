@@ -3,7 +3,6 @@
 #include <string_view>
 #include "slag/core/event.h"
 #include "slag/core/pollable.h"
-#include "slag/core/task_role.h"
 
 namespace slag {
 
@@ -12,6 +11,12 @@ namespace slag {
         RUNNING, // The task is actively running.
         SUCCESS, // The task has completed succesfully.
         FAILURE, // The task has completed with an unspecified error.
+    };
+
+    enum class TaskPriority : uint8_t {
+        SAME, // Inherit our parent task's priority.
+        BUSY, // Always run.
+        IDLE, // Only run if there are no 'busy' tasks that are runnable.
     };
 
     class Task
@@ -25,11 +30,11 @@ namespace slag {
         Task& operator=(const Task&) = delete;
 
     public:
-        explicit Task(TaskRole role = TaskRole::KNIGHT);
+        explicit Task(TaskPriority priority = TaskPriority::SAME);
         virtual ~Task() = default;
 
         TaskState state() const;
-        TaskRole role() const;
+        TaskPriority priority() const;
 
         bool is_waiting() const;
         bool is_running() const;
@@ -67,9 +72,9 @@ namespace slag {
         // stuff for priority/epochs
 
     private:
-        TaskState state_;
-        TaskRole  role_;
-        Event     complete_event_;
+        TaskState    state_;
+        TaskPriority priority_;
+        Event        complete_event_;
     };
 
     constexpr std::string_view to_string(TaskState state) {

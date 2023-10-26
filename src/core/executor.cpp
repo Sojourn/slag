@@ -1,5 +1,6 @@
 #include "slag/core/executor.h"
-#include "slag/core/domain.h"
+#include "slag/core/service_interface.h"
+#include "slag/scheduling/scheduler_service_interface.h"
 #include "slag/logging.h"
 #include <stdexcept>
 
@@ -12,25 +13,24 @@ namespace slag {
         ExecutorActivation& operator=(const ExecutorActivation&) = delete;
 
     public:
-        ExecutorActivation(Region& region, Executor& executor)
-            : region_{region}
+        explicit ExecutorActivation(Executor& executor)
+            : scheduler_service_{get_scheduler_service()}
             , executor_{executor}
         {
-            region_.enter_executor(executor_);
+            scheduler_service_.enter_executor(executor_);
         }
 
         ~ExecutorActivation() {
-            region_.leave_executor(executor_);
+            scheduler_service_.leave_executor(executor_);
         }
 
     private:
-        Region&   region_;
-        Executor& executor_;
+        SchedulerServiceInterface& scheduler_service_;
+        Executor&                  executor_;
     };
 
     Executor::Executor(const Quantum& quantum)
-        : region_{region()}
-        , quantum_{quantum}
+        : quantum_{quantum}
     {
     }
 
@@ -58,7 +58,7 @@ namespace slag {
     }
 
     void Executor::run() {
-        ExecutorActivation activation{region_, *this};
+        ExecutorActivation activation{*this};
         {
             auto deadline = std::chrono::steady_clock::now() + quantum_;
 

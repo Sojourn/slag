@@ -9,6 +9,7 @@
 #include <sys/uio.h>
 #include "slag/postal/file_handle.h"
 #include "slag/postal/buffer_ledger.h"
+#include "slag/core/service_interface.h"
 #include "slag/system/primitive_operation.h"
 
 namespace slag {
@@ -18,8 +19,8 @@ namespace slag {
     public:
         using BufferEntry = NationalBufferLedgerEntry;
 
-        explicit Operation(Reactor& reactor, FileHandle file, uint64_t file_offset, BufferHandle buffer, size_t buffer_offset)
-            : PrimitiveOperation{OperationType::WRITE, reactor}
+        explicit Operation(SystemServiceInterface& system_service, FileHandle file, uint64_t file_offset, BufferHandle buffer, size_t buffer_offset)
+            : PrimitiveOperation<size_t>{OperationType::WRITE, system_service}
             , file_{std::move(file)}
             , file_offset_{file_offset}
             , buffer_{std::move(buffer)}

@@ -3,9 +3,9 @@
 
 namespace slag {
 
-    Task::Task(TaskRole role)
+    Task::Task(TaskPriority priority)
         : state_{TaskState::WAITING}
-        , role_{role}
+        , priority_{priority}
     {
     }
 
@@ -17,8 +17,8 @@ namespace slag {
         return state_;
     }
 
-    TaskRole Task::role() const {
-        return role_;
+    TaskPriority Task::priority() const {
+        return priority_;
     }
 
     bool Task::is_waiting() const {

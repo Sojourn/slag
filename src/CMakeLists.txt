@@ -23,6 +23,8 @@ set(SLAG_SOURCE_FILES
     core/task/buffered_writer_task.cpp
     memory/memory_service.cpp
     system/reactor.cpp
+    system/system_service.cpp
+    scheduling/scheduler_service.cpp
     postal/buffer.cpp
     postal/buffer_ledger.cpp
     postal/buffer_reader.cpp

@@ -3,6 +3,7 @@
 #include <cerrno>
 #include <cassert>
 #include "slag/logging.h"
+#include "slag/core/service_interface.h"
 #include "slag/system/primitive_operation.h"
 
 namespace slag {
@@ -10,8 +11,8 @@ namespace slag {
     template<>
     class Operation<OperationType::CLOSE> : public PrimitiveOperation<void> {
     public:
-        explicit Operation(Reactor& reactor, int file_descriptor)
-            : PrimitiveOperation{OperationType::CLOSE, reactor}
+        explicit Operation(SystemServiceInterface& system_service, int file_descriptor)
+            : PrimitiveOperation{OperationType::CLOSE, system_service}
             , file_descriptor_{file_descriptor}
         {
         }

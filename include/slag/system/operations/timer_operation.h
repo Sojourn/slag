@@ -2,6 +2,7 @@
 
 #include <cerrno>
 #include <cassert>
+#include "slag/core/service_interface.h"
 #include "slag/system/primitive_operation.h"
 
 namespace slag {
@@ -10,8 +11,8 @@ namespace slag {
     class Operation<OperationType::TIMER> : public PrimitiveOperation<void> {
     public:
         template<typename Rep, typename Period>
-        Operation(Reactor& reactor, const std::chrono::duration<Rep, Period>& duration)
-            : PrimitiveOperation{OperationType::TIMER, reactor}
+        Operation(SystemServiceInterface& system_service, const std::chrono::duration<Rep, Period>& duration)
+            : PrimitiveOperation{OperationType::TIMER, system_service}
             , timespec_{to_kernel_timespec(duration)}
         {
         }
