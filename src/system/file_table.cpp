@@ -1,4 +1,4 @@
-#include "slag/postal/file_table.h"
+#include "slag/system/file_table.h"
 #include "slag/system/operation_factory.h"
 #include <stdexcept>
 #include <cstring>

@@ -3,6 +3,7 @@
 #include <cerrno>
 #include <cassert>
 #include "slag/core/service_interface.h"
+#include "slag/system/file_handle.h"
 #include "slag/system/multishot_operation.h"
 
 namespace slag {

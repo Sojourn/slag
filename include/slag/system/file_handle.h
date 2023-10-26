@@ -1,5 +1,7 @@
 #pragma once
 
+#include "slag/core/service_interface.h"
+
 namespace slag {
 
     class FileHandle {
@@ -18,6 +20,10 @@ namespace slag {
         int file_descriptor();
 
         void reset();
+
+    private:
+        static void increment_reference_count(int file_descriptor);
+        static void decrement_reference_count(int file_descriptor);
 
     private:
         int file_descriptor_;

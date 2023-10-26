@@ -6,6 +6,8 @@
 #include <cassert>
 #include "slag/core/service.h"
 #include "slag/core/service_interface.h"
+#include "slag/system/file_table.h"
+#include "slag/system/file_handle.h"
 #include "slag/system/operation.h"
 #include "slag/system/operation_handle.h"
 #include "slag/system/operation_allocator.h"
@@ -57,6 +59,10 @@ namespace slag {
 
         const Metrics& metrics() const {
             return metrics_;
+        }
+
+        FileTable& file_table() {
+            return file_table_;
         }
 
     public:
@@ -148,6 +154,7 @@ namespace slag {
 
     private:
         Metrics            metrics_;
+        FileTable          file_table_;
         Selector           pending_submissions_;
         Selector           pending_deletions_;
         OperationAllocator operation_allocator_;

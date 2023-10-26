@@ -4,8 +4,6 @@
 
 namespace slag {
 
-    class Region;
-
     class FileTable {
         FileTable(FileTable&&) = delete;
         FileTable(const FileTable&) = delete;

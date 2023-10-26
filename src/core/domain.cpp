@@ -232,10 +232,6 @@ namespace slag {
         return *reactor_;
     }
 
-    FileTable& Region::file_table() {
-        return file_table_;
-    }
-
     auto Region::census_cursor() -> Census** {
         return &census_cursor_;
     }

@@ -7,9 +7,9 @@
 #include <cstddef>
 #include <cassert>
 #include <sys/uio.h>
-#include "slag/postal/file_handle.h"
 #include "slag/postal/buffer_ledger.h"
 #include "slag/core/service_interface.h"
+#include "slag/system/file_handle.h"
 #include "slag/system/primitive_operation.h"
 
 namespace slag {

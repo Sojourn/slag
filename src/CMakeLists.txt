@@ -23,6 +23,8 @@ set(SLAG_SOURCE_FILES
     core/service_interface.cpp
     core/task/buffered_writer_task.cpp
     memory/memory_service.cpp
+    system/file_handle.cpp
+    system/file_table.cpp
     system/reactor.cpp
     system/system_service.cpp
     scheduling/scheduler_service.cpp
@@ -36,8 +38,6 @@ set(SLAG_SOURCE_FILES
     postal/post_office.cpp
     postal/postal_service.cpp
     postal/operation_base.cpp
-    postal/file_handle.cpp
-    postal/file_table.cpp
     event_loop.cpp
 )
 

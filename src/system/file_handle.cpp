@@ -1,5 +1,5 @@
-#include "slag/postal/file_handle.h"
-#include "slag/core/domain.h"
+#include "slag/system/file_handle.h"
+#include "slag/core/service_registry.h"
 #include <utility>
 #include <cassert>
 
@@ -14,7 +14,7 @@ namespace slag {
         : file_descriptor_{file_descriptor}
     {
         if (*this) {
-            region().file_table().increment_reference_count(file_descriptor_);
+            increment_reference_count(file_descriptor_);
         }
     }
 
@@ -49,9 +49,7 @@ namespace slag {
 
             if (that) {
                 file_descriptor_ = that.file_descriptor_;
-                region().file_table().increment_reference_count(
-                    file_descriptor_
-                );
+                increment_reference_count(file_descriptor_);
             }
         }
 
@@ -68,10 +66,20 @@ namespace slag {
 
     void FileHandle::reset() {
         if (*this) {
-            region().file_table().decrement_reference_count(
-                std::exchange(file_descriptor_, -1)
-            );
+            decrement_reference_count(std::exchange(file_descriptor_, -1));
         }
+    }
+
+    void FileHandle::increment_reference_count(int file_descriptor) {
+        get_system_service().file_table().increment_reference_count(
+            file_descriptor
+        );
+    }
+
+    void FileHandle::decrement_reference_count(int file_descriptor) {
+        get_system_service().file_table().decrement_reference_count(
+            file_descriptor
+        );
     }
 
 }
