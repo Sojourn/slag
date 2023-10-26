@@ -20,6 +20,7 @@ set(SLAG_SOURCE_FILES
     core/selector.cpp
     core/executor.cpp
     core/service.cpp
+    core/service_interface.cpp
     core/task/buffered_writer_task.cpp
     memory/memory_service.cpp
     system/reactor.cpp

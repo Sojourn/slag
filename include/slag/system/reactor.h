@@ -3,20 +3,12 @@
 #include <array>
 #include <liburing.h>
 #include "slag/core/selector.h"
+#include "slag/system/interrupt.h"
 #include "slag/system/operation.h"
 #include "slag/system/operation_handle.h"
 #include "slag/system/operation_allocator.h"
 
 namespace slag {
-
-    // TODO: move this into a seperate class and make a reason enum.
-    class InterruptHandler {
-    protected:
-        ~InterruptHandler() = default;
-
-    public:
-        virtual void handle_interrupt(uint16_t source, uint16_t reason) = 0;
-    };
 
     class Reactor {
         Reactor(Reactor&&) = delete;

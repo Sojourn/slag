@@ -1,3 +1,6 @@
+#include "slag/system/system_service_interface.h"
+#include "slag/memory/memory_service_interface.h"
+#include "slag/scheduling/scheduler_service_interface.h"
 #include <tuple>
 #include <utility>
 #include <stdexcept>

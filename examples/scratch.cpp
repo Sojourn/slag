@@ -72,17 +72,17 @@ int main(int argc, char** argv) {
     region_config.buffer_range = std::make_pair(0, nation_config.buffer_count);
     Region region_{region_config};
 
-    EventLoop event_loop;
+    // EventLoop event_loop;
 
     auto init_task = std::make_unique<InitTask>();
-    auto shutdown_task = std::make_unique<ShutdownTask>(event_loop);
+    // auto shutdown_task = std::make_unique<ShutdownTask>(event_loop);
 
-    event_loop.bind(*init_task);
-    event_loop.bind(*shutdown_task);
-    event_loop.loop();
+    // event_loop.bind(*init_task);
+    // event_loop.bind(*shutdown_task);
+    // event_loop.loop();
 
     init_task.reset();
-    shutdown_task.reset();
+    // shutdown_task.reset();
 
     return 0;
 }

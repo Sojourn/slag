@@ -115,12 +115,6 @@ namespace slag {
         const Census& census() const;
         const Census& census(Season season) const;
 
-        EventLoop& event_loop();
-        const EventLoop& event_loop() const;
-
-        ServiceRegistry& service_registry();
-        const ServiceRegistry& service_registry() const;
-
         PostArea post_area() const;
         PostOffice& post_office();
         RegionalBufferLedger& buffer_ledger();
@@ -168,9 +162,6 @@ namespace slag {
         Season                           season_;
         Census*                          census_cursor_;
         std::array<Census, SEASON_COUNT> history_;
-
-        EventLoop                        event_loop_;
-        ServiceRegistry                  service_registry_;
 
         PostOffice                       post_office_;
         std::vector<ParcelQueueConsumer> imports_;

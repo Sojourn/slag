@@ -17,11 +17,11 @@ namespace slag {
         return get_scheduler_service(get_service_registry());
     }
 
-    SystemServiceInterface& get_system_service() {
+    SystemServiceInterface& get_system_service(ServiceRegistry& service_registry) {
         return service_registry.get_service<ServiceType::SYSTEM>();
     }
 
-    SchedulerServiceInterface& get_scheduler_service() {
+    SchedulerServiceInterface& get_scheduler_service(ServiceRegistry& service_registry) {
         return service_registry.get_service<ServiceType::SCHEDULER>();
     }
 
