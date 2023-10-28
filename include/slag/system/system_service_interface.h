@@ -28,7 +28,7 @@ namespace slag {
         explicit ServiceInterface(ServiceRegistry& service_registry)
             : Service(ServiceType::SYSTEM, service_registry)
         {
-            // TODO: do this on demand.
+            // TODO: subscribe on demand.
             for (size_t i = 0; i < INTERRUPT_REASON_COUNT; ++i) {
                 subscribe(static_cast<InterruptReason>(i));
             }
@@ -52,6 +52,15 @@ namespace slag {
         struct OperationMetrics {
             std::array<size_t, OPERATION_TYPE_COUNT> active_counts;
             std::array<size_t, OPERATION_TYPE_COUNT> daemon_counts;
+
+            OperationMetrics() {
+                for (size_t& count: active_counts) {
+                    count = 0;
+                }
+                for (size_t& count: daemon_counts) {
+                    count = 0;
+                }
+            }
 
             size_t total_active_count() const {
                 return std::accumulate(active_counts.begin(), active_counts.end(), size_t{0});
@@ -105,16 +114,24 @@ namespace slag {
     protected:
         friend class OperationBase;
 
-        // Cull a limited number of operations that are pending deletion.
-        // Returns how many were culled.
-        size_t reap_operations() {
-            std::array<Event*, 32> events;
+        size_t reap_operations(bool incremental = false) {
+            size_t total_count = 0;
 
-            size_t count = pending_deletions_.select(events);
-            for (size_t i = 0; i < count; ++i) {
-                visit([&](auto&& operation) {
-                    operation_allocator_.deallocate(operation);
-                }, *reinterpret_cast<OperationBase*>(events[i]->user_data()));
+            while (true) {
+                std::array<Event*, 32> events;
+
+                size_t count = pending_deletions_.select(events);
+                for (size_t i = 0; i < count; ++i) {
+                    visit([&](auto&& operation) {
+                        decrement_operation_count(operation);
+                        operation_allocator_.deallocate(operation);
+                    }, *reinterpret_cast<OperationBase*>(events[i]->user_data()));
+                }
+
+                total_count += count;
+                if (incremental) {
+                    break;
+                }
             }
 
             return count;

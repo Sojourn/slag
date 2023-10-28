@@ -1,5 +1,7 @@
 #pragma once
 
+#include "slag/core/task.h"
+#include "slag/core/task/proto_task.h"
 #include "slag/core/service.h"
 #include "slag/core/service_interface.h"
 #include "slag/system/reactor.h"
@@ -25,7 +27,18 @@ namespace slag {
         void handle_operation_daemonized(OperationBase& operation_base) override final;
 
     private:
-        Reactor reactor_;
+        class OperationReaper : public ProtoTask {
+        public:
+            explicit OperationReaper(SystemService& system_service);
+
+            void run() override final;
+
+        private:
+            SystemService& system_service_;
+        };
+
+        Reactor         reactor_;
+        OperationReaper reaper_;
     };
 
 }

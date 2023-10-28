@@ -12,13 +12,20 @@ namespace slag {
     public:
         Event& readable_event() override;
 
+        // Inserts an event.
+        void insert(Event& event);
+
+        // Inserts an event and sets the user data as provided.
+        void insert(Event& event, void* user_data);
+
+        // Inserts an array of potentially sparse events.
+        void insert(std::span<Event*> events);
+
+        // Inserts the object with the event corresponding to
+        // this pollable type. Also sets the user data on that
+        // event to be the address of the object.
         template<PollableType type, typename T>
         void insert(T& object);
-        void insert(Event& event);
-        void insert(Event& event, void* user_data);
-        void insert(std::span<Event*> events); // Can be sparse.
-
-        // TODO: a splice call for doing an insert.
 
         void remove(Event& event);
         void remove(std::span<Event*> events); // Can be sparse.

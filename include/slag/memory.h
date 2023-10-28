@@ -4,6 +4,9 @@
 #include <cstdint>
 #include <cstddef>
 
+#include "slag/memory/memory_service_interface.h"
+#include "slag/memory/memory_service.h"
+
 namespace slag {
 
     // Quick and dirty way to make huge pages available:

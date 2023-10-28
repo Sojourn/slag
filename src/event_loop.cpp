@@ -39,6 +39,15 @@ namespace slag {
         , stopping_{false}
         , idle_streak_{0}
     {
+        service_registry_.for_each_service([](Service& service) {
+            service.start_service();
+        });
+    }
+
+    EventLoop::~EventLoop() {
+        service_registry_.for_each_service_reverse([](Service& service) {
+            service.stop_service();
+        });
     }
 
     ServiceRegistry& EventLoop::service_registry() {

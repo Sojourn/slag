@@ -19,6 +19,7 @@ namespace slag {
 
     public:
         explicit EventLoop(ServiceRegistry& service_registry);
+        ~EventLoop();
 
         ServiceRegistry& service_registry();
         const ServiceRegistry& service_registry() const;
