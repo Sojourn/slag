@@ -134,7 +134,9 @@ namespace slag {
         InterruptOperationPayload payload;
         memcpy(&payload, &cqe.res, sizeof(payload));
 
-        interrupt_handler_->handle_interrupt(payload.source, payload.reason);
+        if (interrupt_handler_->is_subscribed(payload.reason)) {
+            interrupt_handler_->handle_interrupt(payload.source, payload.reason);
+        }
     }
 
 }

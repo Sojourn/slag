@@ -10,10 +10,7 @@ namespace slag {
 
     class ServiceRegistry;
 
-    class SystemService
-        : public ServiceInterface<ServiceType::SYSTEM>
-        , public InterruptHandler
-    {
+    class SystemService : public ServiceInterface<ServiceType::SYSTEM> {
     public:
         explicit SystemService(ServiceRegistry& service_registry);
 

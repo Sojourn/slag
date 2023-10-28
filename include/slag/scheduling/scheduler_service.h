@@ -21,12 +21,8 @@ namespace slag {
         void run() override final;
 
     private:
-        // Two executor stacks. Services must specify and are attached
-        // to the root of that stack. 
-
-        // Same to stay in the same stack.
-        Executor busy_executor_;
-        Executor idle_executor_;
+        Executor high_priority_executor_;
+        Executor idle_priority_executor_;
     };
 
 }

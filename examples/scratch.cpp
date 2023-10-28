@@ -1,12 +1,18 @@
 #include <iostream>
 #include "slag/core.h"
 #include "slag/system.h"
+#include "slag/scheduling.h"
 #include "slag/event_loop.h"
 
 using namespace slag;
 
-class InitTask : public ProtoTask {
+class TickTask : public ProtoTask {
 public:
+    TickTask()
+        : ProtoTask{TaskPriority::HIGH}
+    {
+    }
+
     void run() override final {
         SLAG_PT_BEGIN();
 
@@ -27,6 +33,10 @@ public:
 private:
     TimerOperationHandle timer_operation_;
 };
+
+template<typename TaskImpl, typename... Args>
+void run_until_complete(ServiceRegistry& service_registry, Args&&... args) {
+}
 
 class ShutdownTask : public ProtoTask {
 public:
@@ -56,33 +66,21 @@ int main(int argc, char** argv) {
     (void)argc;
     (void)argv;
 
-    Empire::Config empire_config;
-    empire_config.index = 0;
-    Empire empire_{empire_config};
+    ServiceRegistry service_registry;
+    SystemService system_service{service_registry};
+    SchedulerService scheduler_service{service_registry};
+    EventLoop event_loop{service_registry};
 
-    Nation::Config nation_config;
-    nation_config.index                 = 0;
-    nation_config.buffer_count          = 16 * 1024 + 1;
-    nation_config.region_count          = 1;
-    nation_config.parcel_queue_capacity = 512;
-    Nation nation_{nation_config};
-
-    Region::Config region_config;
-    region_config.index = 0;
-    region_config.buffer_range = std::make_pair(0, nation_config.buffer_count);
-    Region region_{region_config};
-
-    // EventLoop event_loop;
-
-    auto init_task = std::make_unique<InitTask>();
+    auto init_task = std::make_unique<TickTask>();
     // auto shutdown_task = std::make_unique<ShutdownTask>(event_loop);
 
-    // event_loop.bind(*init_task);
-    // event_loop.bind(*shutdown_task);
-    // event_loop.loop();
+    scheduler_service.schedule_task(*init_task);
+
+    event_loop.loop();
 
     init_task.reset();
     // shutdown_task.reset();
+
 
     return 0;
 }

@@ -1,11 +1,13 @@
 #pragma once
 
+#include <array>
 #include <numeric>
 #include <cstdint>
 #include <cstddef>
 #include <cassert>
 #include "slag/core/service.h"
 #include "slag/core/service_interface.h"
+#include "slag/system/interrupt.h"
 #include "slag/system/file_table.h"
 #include "slag/system/file_handle.h"
 #include "slag/system/operation.h"
@@ -18,11 +20,18 @@ namespace slag {
     class ServiceRegistry;
 
     template<>
-    class ServiceInterface<ServiceType::SYSTEM> : public Service {
+    class ServiceInterface<ServiceType::SYSTEM>
+        : public Service
+        , public InterruptHandler
+    {
     public:
         explicit ServiceInterface(ServiceRegistry& service_registry)
             : Service(ServiceType::SYSTEM, service_registry)
         {
+            // TODO: do this on demand.
+            for (size_t i = 0; i < INTERRUPT_REASON_COUNT; ++i) {
+                subscribe(static_cast<InterruptReason>(i));
+            }
         }
 
         void start_service() override {
@@ -93,7 +102,7 @@ namespace slag {
             return pending_deletions_;
         }
 
-    private:
+    protected:
         friend class OperationBase;
 
         // Cull a limited number of operations that are pending deletion.
@@ -109,6 +118,13 @@ namespace slag {
             }
 
             return count;
+        }
+
+        void handle_interrupt(uint16_t source, InterruptReason reason) override {
+            (void)source;
+            (void)reason;
+
+            // TODO: create a interrupt subscription mechanism based on reason.
         }
 
         virtual void handle_operation_started(OperationBase& operation_base) {

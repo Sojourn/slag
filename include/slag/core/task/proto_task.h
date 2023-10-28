@@ -40,8 +40,9 @@ namespace slag {
     //
     class ProtoTask : public Task {
     public:
-        ProtoTask()
-            : pt_state_{0}
+        explicit ProtoTask(TaskPriority priority = TaskPriority::SAME)
+            : Task{priority}
+            , pt_state_{0}
             , pt_event_{}
             , pt_runnable_{&pt_event_}
         {

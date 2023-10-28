@@ -14,9 +14,9 @@ namespace slag {
     };
 
     enum class TaskPriority : uint8_t {
-        SAME, // Inherit our parent task's priority.
-        BUSY, // Always run.
-        IDLE, // Only run if there are no 'busy' tasks that are runnable.
+        SAME, // Inherit priority.
+        HIGH, // Always run if possible.
+        IDLE, // Only run if there are no high-priority tasks runnable.
     };
 
     class Task

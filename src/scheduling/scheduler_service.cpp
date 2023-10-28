@@ -17,7 +17,15 @@ namespace slag {
     }
 
     bool SchedulerService::is_quiescent() const {
-        return !(busy_executor_.is_runnable() || idle_executor_.is_runnable());
+        if (high_priority_executor_.is_runnable()) {
+            return false;
+        }
+        if (idle_priority_executor_.is_runnable()) {
+            return false;
+        }
+
+        // None of our executors have runnable tasks. We are quiescent.
+        return true;
     }
 
     void SchedulerService::schedule_task(Task& task) {
@@ -27,12 +35,12 @@ namespace slag {
                 executor = &active_executor();
                 break;
             }
-            case TaskPriority::BUSY: {
-                executor = &busy_executor_;
+            case TaskPriority::HIGH: {
+                executor = &high_priority_executor_;
                 break;
             }
             case TaskPriority::IDLE: {
-                executor = &idle_executor_;
+                executor = &idle_priority_executor_;
                 break;
             }
         }
@@ -41,11 +49,11 @@ namespace slag {
     }
 
     void SchedulerService::run() {
-        if (busy_executor_.is_runnable()) {
-            busy_executor_.run();
+        if (high_priority_executor_.is_runnable()) {
+            high_priority_executor_.run();
         }
-        else if (idle_executor_.is_runnable()) {
-            idle_executor_.run();
+        else if (idle_priority_executor_.is_runnable()) {
+            idle_priority_executor_.run();
         }
         else {
             assert(is_quiescent());

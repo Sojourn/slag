@@ -1,4 +1,5 @@
 #include "slag/core/service.h"
+#include "slag/core/service_registry.h"
 
 namespace slag {
 
@@ -6,6 +7,7 @@ namespace slag {
         : type_{type}
         , service_registry_{service_registry}
     {
+        service_registry_.register_service(*this);
     }
 
     ServiceType Service::type() const {

@@ -4,12 +4,13 @@
 #include <cassert>
 #include "slag/core/service_interface.h"
 #include "slag/system/primitive_operation.h"
+#include "slag/system/interrupt.h"
 
 namespace slag {
 
     struct InterruptOperationPayload {
-        uint16_t source;
-        uint16_t reason;
+        uint16_t        source;
+        InterruptReason reason;
     };
 
     template<>
