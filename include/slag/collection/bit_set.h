@@ -8,6 +8,7 @@
 
 namespace slag {
 
+    // A dynamically sized bit vector.
     class BitSet {
     public:
         using Block = uint64_t;

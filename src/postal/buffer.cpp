@@ -11,10 +11,6 @@ namespace slag {
         // Whoever is constructing us is responsible for our initial reference.
     }
 
-    BufferHandle::BufferHandle() {
-        memset(&descriptor_, 0, sizeof(descriptor_));
-    }
-
     BufferHandle::~BufferHandle() {
         reset();
     }

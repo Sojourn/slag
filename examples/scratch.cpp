@@ -72,6 +72,11 @@ void run_until_complete(ServiceRegistry& service_registry, Args&&... args) {
     event_loop.loop();
 }
 
+// ThreadBridge connects:
+//   1. parcel queues
+//   2. buffer ownership
+//   3. interrupts
+
 int main(int argc, char** argv) {
     (void)argc;
     (void)argv;

@@ -92,7 +92,7 @@ namespace slag {
         void protect_regional_delivery(uint16_t region, BufferHandle buffer_handle);
 
         // Deliveries to this region have been confirmed up to this sequence. Remove protection for them.
-       void confirm_regional_deliveries(uint16_t region, uint64_t sequence);
+        void confirm_regional_deliveries(uint16_t region, uint64_t sequence);
 
     private:
         struct PendingExportQueue {

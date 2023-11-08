@@ -10,6 +10,9 @@
 
 namespace slag {
 
+    // Manages a set of memory banks which are given out by
+    // root allocators.
+
     class ServiceRegistry;
 
     class MemoryService : public ServiceInterface<ServiceType::MEMORY> {

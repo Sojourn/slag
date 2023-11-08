@@ -23,6 +23,9 @@ set(SLAG_SOURCE_FILES
     core/service_interface.cpp
     core/task/buffered_writer_task.cpp
     memory/memory_service.cpp
+    memory/buffer_handle.cpp
+    memory/buffer_ledger.cpp
+    memory/buffer_census.cpp
     system/file_handle.cpp
     system/file_table.cpp
     system/reactor.cpp
