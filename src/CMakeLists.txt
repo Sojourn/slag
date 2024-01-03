@@ -1,64 +1,6 @@
-set(SLAG_SOURCE_FILES
-    error.cpp
-    memory.cpp
-    address.cpp
-    util.cpp
-    trace.cpp
-    token_bucket.cpp
-    message_fragment.cpp
-    message_record_fragment.cpp
-    message_buffer_fragment.cpp
-    message_encoder.cpp
-    message.cpp
-    record_encoder.cpp
-    record_decoder.cpp
-    ../generated/record.cpp
-    core/season.cpp
-    core/domain.cpp
-    core/task.cpp
-    core/event.cpp
-    core/selector.cpp
-    core/executor.cpp
-    core/service.cpp
-    core/service_interface.cpp
-    core/task/buffered_writer_task.cpp
-    memory/memory_service.cpp
-    memory/buffer_handle.cpp
-    memory/buffer_ledger.cpp
-    memory/buffer_census.cpp
-    system/file_handle.cpp
-    system/file_table.cpp
-    system/reactor.cpp
-    system/system_service.cpp
-    scheduling/scheduler_service.cpp
-    postal/buffer.cpp
-    postal/buffer_ledger.cpp
-    postal/buffer_reader.cpp
-    postal/buffer_writer.cpp
-    postal/buffer_allocator.cpp
-    postal/cohort_buffer_allocator.cpp
-    postal/post_box.cpp
-    postal/post_office.cpp
-    postal/postal_service.cpp
-    postal/operation_base.cpp
-    event_loop.cpp
-)
+add_subdirectory(slag)
 
-set(SLAG_HEADER_FILES
-)
+add_executable(test main.cpp)
+target_link_libraries(test PUBLIC slag)
+target_compile_features(test PRIVATE cxx_std_20)
 
-add_library(slag ${SLAG_SOURCE_FILES} ${SLAG_HEADER_FILES})
-target_link_libraries(slag uring)
-target_link_libraries(slag fmt)
-target_include_directories(slag
-        PUBLIC
-            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
-        PRIVATE
-            $<CMAKE_CURRENT_SOURCE_DIR}
-        )
-
-set_target_properties(slag PROPERTIES
-        CXX_STANDARD 20
-        CXX_STANDARD_REQUIRED YES
-        CXX_EXTENSIONS NO
-        )

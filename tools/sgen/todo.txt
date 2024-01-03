@@ -1,8 +1,0 @@
-- add a type_signature() function to Node
-    - figure out what statements should return
-- all nodes should return a type()
-- should have a decl_type
-- fix memory leaks in parser.y (use a variant for the union)
-- figure out what the generated code should look like / do
-    - top-down interface is probably the most important facet
-    - could copy nlohmann

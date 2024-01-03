@@ -1,0 +1,16 @@
+Logical pointer table lets you CAS and atomically update.
+Pointers to deltas w/ background merging.
+  - Works really well with a coil design.
+Hybrid hot/cold with a bloom filter on top.
+  - Cold on-disk, hot in-memory?
+
+WAL of logical pointer table updates?
+
+// ring buffer that posts 'slabs' of messages
+// allows the ring size to flex
+// interrupts to wake receiving thread
+// include a sequence or something to protect against drops
+
+// Tasks, Task Groups, and Operations should automatically schedule themselves.
+
+// Think about giving operations priorities. Probably want to submit high priority operations before low priority ones.
