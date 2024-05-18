@@ -7,19 +7,23 @@
 #include "system.h"
 #include "event_loop.h"
 
+namespace mantle {
+    class Region;
+}
+
 namespace slag {
 
     class Application;
 
     class Thread {
+    public:
+        Thread(Application& application, std::unique_ptr<Task> task);
+        ~Thread();
+
         Thread(Thread&&) = delete;
         Thread(const Thread&) = delete;
         Thread& operator=(Thread&&) = delete;
         Thread& operator=(const Thread&) = delete;
-
-    public:
-        Thread(Application& application, std::unique_ptr<Task> task);
-        ~Thread();
 
         ThreadIndex index() const;
 

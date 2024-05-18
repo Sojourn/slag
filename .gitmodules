@@ -1,0 +1,3 @@
+[submodule "libs/mantle"]
+	path = libs/mantle
+	url = https://github.com/Sojourn/mantle

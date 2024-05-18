@@ -16,6 +16,7 @@ set(SLAG_HEADER_FILES
 )
 
 add_library(slag ${SLAG_SOURCE_FILES} ${SLAG_HEADER_FILES})
+target_link_libraries(slag mantle)
 target_link_libraries(slag uring)
 target_link_libraries(slag fmt)
 target_include_directories(slag

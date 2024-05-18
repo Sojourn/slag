@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include "mantle/mantle.h"
 #include "slag/slag.h"
 #include "slag/collections/intrusive_list.h"
 

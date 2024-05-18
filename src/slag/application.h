@@ -3,20 +3,13 @@
 #include <optional>
 #include <vector>
 #include <latch>
+#include "mantle/mantle.h"
 #include "types.h"
 
 namespace slag {
 
     class Thread;
 
-    // TODO:
-    //   - Command line parameter parsing.
-    //   - Global command queue.
-    //   - Global coordination (epochs).
-    //   - Component tree root.
-    //   - Utility threads
-    //      - Garbage collection.
-    //      - Logging.
     class Application {
         Application(Application&&) = delete;
         Application(const Application&) = delete;
@@ -31,12 +24,15 @@ namespace slag {
     private:
         friend class Thread;
 
+        mantle::Domain& domain();
+
         ThreadIndex attach(Thread& thread);
         void detach(Thread& thread);
 
         void handle_stopped(Thread& thread);
 
     private:
+        mantle::Domain            domain_;
         std::optional<std::latch> latch_;
         std::vector<Thread*>      threads_;
     };

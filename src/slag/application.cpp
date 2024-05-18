@@ -1,5 +1,6 @@
 #include "application.h"
 #include "thread.h"
+#include "mantle/mantle.h"
 #include <cstdlib>
 
 namespace slag {
@@ -34,6 +35,10 @@ namespace slag {
         }
 
         return EXIT_SUCCESS;
+    }
+
+    mantle::Domain& Application::domain() {
+        return domain_;
     }
 
     ThreadIndex Application::attach(Thread& thread) {
