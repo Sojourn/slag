@@ -13,15 +13,15 @@ namespace slag {
 
     // A per-thread context object containing references to
     // important services and data structures.
-    class Context {
+    class ThreadContext {
     public:
-        Context(Application& application, Thread& thread);
-        ~Context();
+        ThreadContext(Application& application, Thread& thread);
+        ~ThreadContext();
 
-        Context(Context&&) = delete;
-        Context(const Context&) = delete;
-        Context& operator=(Context&&) = delete;
-        Context& operator=(const Context&) = delete;
+        ThreadContext(ThreadContext&&) = delete;
+        ThreadContext(const ThreadContext&) = delete;
+        ThreadContext& operator=(ThreadContext&&) = delete;
+        ThreadContext& operator=(const ThreadContext&) = delete;
 
         Application& application();
         Thread& thread();
@@ -35,6 +35,6 @@ namespace slag {
     };
 
     bool has_context();
-    Context& get_context();
+    ThreadContext& get_context();
 
 }

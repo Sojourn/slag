@@ -52,13 +52,13 @@ namespace slag {
     };
 
     template<typename T>
-    inline T& Event::cast_user_data() {
-        return *reinterpret_cast<T*>(user_data_);
+    T& Event::cast_user_data() {
+        return *static_cast<T*>(user_data_);
     }
 
     template<typename T>
-    inline const T& Event::cast_user_data() const {
-        return *reinterpret_cast<const T*>(user_data_);
+    const T& Event::cast_user_data() const {
+        return *static_cast<const T*>(user_data_);
     }
 
 }

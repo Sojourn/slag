@@ -2,17 +2,18 @@
 
 namespace slag {
 
-    inline ResourceBase::ResourceBase(ResourceDescriptor descriptor)
-        : descriptor_(descriptor)
+    inline ResourceBase::ResourceBase(ResourceType type)
+        : mantle::Object(static_cast<uint16_t>(type))
     {
     }
 
-    inline ResourceType ResourceBase::type() const {
-        return descriptor_.type;
+    inline ResourceType ResourceBase::resource_type() const {
+        return static_cast<ResourceType>(user_data());
     }
 
-    inline ResourceDescriptor ResourceBase::descriptor() const {
-        return descriptor_;
+    template<typename ResourceVisitor>
+    void visit(ResourceVisitor&& visitor, ResourceBase& resource) {
+        abort(); // TODO
     }
 
 }

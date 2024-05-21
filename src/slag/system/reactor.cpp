@@ -1,5 +1,5 @@
 #include "reactor.h"
-#include "slag/context.h"
+#include "slag/thread_context.h"
 #include <stdexcept>
 #include <numeric>
 #include <cstring>
@@ -9,7 +9,6 @@ namespace slag {
 
     Reactor::Reactor(InterruptHandler& interrupt_handler)
         : interrupt_handler_(interrupt_handler)
-        , operation_table_(get_context().resource_table(ResourceType::OPERATION))
     {
         memset(&ring_, 0, sizeof(ring_));
 
@@ -35,8 +34,21 @@ namespace slag {
         pending_submissions_.insert<PollableType::WRITABLE>(operation);
     }
 
+    void Reactor::finalize(Operation& operation) {
+        operation.abandon();
+
+        if (!operation.is_daemonized()) {
+            if (operation.is_quiescent()) {
+                delete &operation;
+            }
+            else {
+                operation.cancel();
+            }
+        }
+    }
+
     bool Reactor::poll(bool non_blocking) {
-        size_t submission_count = prepare_submissions();
+        const size_t submission_count = prepare_submissions();
 
         if (non_blocking) {
             if (submission_count > 0) {
@@ -47,12 +59,12 @@ namespace slag {
             io_uring_submit_and_wait(&ring_, 1);
         }
 
-        size_t completion_count = process_completions();
+        const size_t completion_count = process_completions();
         return completion_count > 0;
     }
 
     size_t Reactor::prepare_submissions() {
-        size_t ready_count = pending_submissions_.ready_count();
+        const size_t ready_count = pending_submissions_.ready_count();
 
         for (size_t count = 0; count < ready_count; ++count) {
             if (struct io_uring_sqe* sqe = io_uring_get_sqe(&ring_)) {
@@ -69,11 +81,10 @@ namespace slag {
     void Reactor::prepare_submission(struct io_uring_sqe& sqe) {
         Event& event = *pending_submissions_.select();
         Operation& operation = event.cast_user_data<Operation>();
-        ResourceDescriptor operation_descriptor = operation.descriptor();
 
         OperationUserData user_data = {
-            .index = operation_descriptor.index,
-            .type  = operation.type(),
+            .index = submitted_operation_table_.insert(operation),
+            .type  = operation.operation_type(),
             .slot  = operation.allocate_slot(),
             .flags = {
                 .multishot = false,
@@ -85,8 +96,7 @@ namespace slag {
         operation.prepare(sqe, user_data);
         io_uring_sqe_set_data64(&sqe, encode(user_data));
 
-        // TODO: Support linked operations. Will need some changes here.
-        // Re-arm.
+        // Reinsert the operation in case it needs to submit again.
         pending_submissions_.insert<PollableType::WRITABLE>(operation);
     }
 
@@ -119,7 +129,7 @@ namespace slag {
     }
 
     void Reactor::process_completion(struct io_uring_cqe& cqe) {
-        OperationUserData user_data = decode(cqe.user_data);
+        const OperationUserData user_data = decode(cqe.user_data);
 
         if (user_data.flags.interrupt) {
             process_interrupt_completion(cqe, user_data);
@@ -130,23 +140,18 @@ namespace slag {
     }
 
     void Reactor::process_operation_completion(struct io_uring_cqe& cqe, const OperationUserData& user_data) {
-        bool more = cqe.flags & IORING_CQE_F_MORE;
+        const bool more = cqe.flags & IORING_CQE_F_MORE;
 
-        ResourceBase* operation_base = operation_table_.select(
-            ResourceDescriptor {
-                .owner = thread_index_,
-                .type  = ResourceType::OPERATION,
-                .index = user_data.index,
-            }
-        );
-        if (!operation_base) {
-            abort();
-        }
-
-        Operation& operation = static_cast<Operation&>(*operation_base);
+        Operation& operation = submitted_operation_table_.select(user_data.index);
         operation.handle_result(cqe.res, more, user_data);
+
         if (!more) {
+            submitted_operation_table_.remove(user_data.index);
+
             operation.deallocate_slot(user_data.slot);
+            if (operation.is_abandoned() && operation.is_quiescent()) {
+                delete &operation;
+            }
         }
     }
 

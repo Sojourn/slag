@@ -13,7 +13,7 @@ namespace slag {
 
     enum class PollableType {
 #define X(SLAG_POLLABLE_TYPE) \
-        SLAG_POLLABLE_TYPE,
+        SLAG_POLLABLE_TYPE,   \
 
         SLAG_POLLABLE_TYPES(X)
 #undef X

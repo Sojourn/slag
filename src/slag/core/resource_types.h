@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <cstddef>
 
+// TODO: ResourceCategory
+
 // TIMER
 // FILE/SOCKET
 #define SLAG_RESOURCE_TYPES(X) \
@@ -11,7 +13,7 @@
 
 namespace slag {
 
-        enum class ResourceType : uint8_t {
+        enum class ResourceType : uint16_t {
     #define X(SLAG_RESOURCE_TYPE) \
             SLAG_RESOURCE_TYPE,   \
 

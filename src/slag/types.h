@@ -5,6 +5,4 @@
 
 namespace slag {
 
-    using ThreadIndex = uint16_t;
-
 }

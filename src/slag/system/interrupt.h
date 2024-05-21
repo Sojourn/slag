@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include "slag/types.h"
+#include "mantle/mantle.h"
 
 #define SLAG_INTERRUPT_REASONS(X) \
     X(HALT)                       \
@@ -28,8 +28,8 @@ namespace slag {
     }
 
     struct Interrupt {
-        ThreadIndex     sender;
-        InterruptReason reason;
+        mantle::RegionId sender;
+        InterruptReason  reason;
     };
 
     class InterruptHandler {

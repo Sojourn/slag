@@ -8,10 +8,12 @@ namespace slag {
     Application::Application(int argc, char** argv) {
         (void)argc;
         (void)argv;
+
+        threads_.reserve(std::thread::hardware_concurrency());
     }
 
     int Application::run() {
-        if (latch_) {
+        if (shutdown_latch_) {
             throw std::runtime_error("Application is already running");
         }
         if (threads_.empty()) {
@@ -20,18 +22,18 @@ namespace slag {
 
         // Start threads and wait for them to complete.
         {
-            latch_.emplace(static_cast<std::ptrdiff_t>(threads_.size()));
+            shutdown_latch_.emplace(static_cast<std::ptrdiff_t>(threads_.size()));
 
-            for (Thread* thread: threads_) {
+            for (auto&& thread: threads_) {
                 if (thread) {
                     thread->start();
                 }
                 else {
-                    latch_->count_down();
+                    shutdown_latch_->count_down();
                 }
             }
 
-            latch_->wait();
+            shutdown_latch_->wait();
         }
 
         return EXIT_SUCCESS;
@@ -41,24 +43,10 @@ namespace slag {
         return domain_;
     }
 
-    ThreadIndex Application::attach(Thread& thread) {
-        if (latch_) {
-            throw std::runtime_error("Threads cannot be added to a running application");
-        }
-
-        ThreadIndex thread_index = threads_.size();
-        threads_.push_back(&thread);
-        return thread_index;
-    }
-
-    void Application::detach(Thread& thread) {
-        threads_.at(thread.index()) = nullptr;
-    }
-
     void Application::handle_stopped(Thread&) {
-        assert(latch_);
+        assert(shutdown_latch_);
 
-        latch_->count_down();
+        shutdown_latch_->count_down();
     }
 
 }

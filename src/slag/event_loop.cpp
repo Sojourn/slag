@@ -14,6 +14,10 @@ namespace slag {
         // TODO: poll the reactor until quiescent.
     }
 
+    Reactor& EventLoop::reactor() {
+        return reactor_;
+    }
+
     void EventLoop::loop() {
         if (looping_) {
             throw std::runtime_error("Already looping");

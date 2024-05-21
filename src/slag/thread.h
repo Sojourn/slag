@@ -4,51 +4,42 @@
 #include <thread>
 #include "types.h"
 #include "core.h"
-#include "system.h"
+#include "mantle/mantle.h"
 #include "event_loop.h"
-
-namespace mantle {
-    class Region;
-}
+#include "memory/buffer.h"
+#include "system/operation.h"
 
 namespace slag {
 
     class Application;
 
-    class Thread {
+    class Thread : public mantle::ObjectFinalizer {
     public:
         Thread(Application& application, std::unique_ptr<Task> task);
-        ~Thread();
+        virtual ~Thread();
 
         Thread(Thread&&) = delete;
         Thread(const Thread&) = delete;
         Thread& operator=(Thread&&) = delete;
         Thread& operator=(const Thread&) = delete;
 
-        ThreadIndex index() const;
+        EventLoop& event_loop();
 
         void start();
 
     private:
-        friend class Context;
-
-        ResourceTables& resource_tables();
-        EventLoop& event_loop();
-
-    private:
         void run();
 
-    private:
-        struct Components {
-            ResourceTables* resource_tables;
-            EventLoop*      event_loop;
-        };
+        void finalize(mantle::Object& object) noexcept override;
+        void finalize(Buffer& buffer) noexcept;
+        void finalize(Operation& operation) noexcept;
 
-        Application&          application_;
-        Components*           components_;
-        std::thread           thread_;
-        ThreadIndex           index_;
-        std::unique_ptr<Task> task_;
+    private:
+        Application&             application_;
+        mantle::ObjectFinalizer* finalizer_;
+        EventLoop*               event_loop_;
+        std::unique_ptr<Task>    root_task_;
+        std::thread              thread_;
     };
 
 }

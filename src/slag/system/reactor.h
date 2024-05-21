@@ -4,6 +4,7 @@
 #include <liburing.h>
 #include "slag/core.h"
 #include "operation.h"
+#include "operation_table.h"
 #include "interrupt.h"
 
 namespace slag {
@@ -24,6 +25,10 @@ namespace slag {
         // Schedule an operation for submission to the kernel.
         void schedule(Operation& operation);
 
+        // Cleanup an operation that is no longer referenced,
+        // but may still be in progress.
+        void finalize(Operation& operation);
+
         // Returns true if any operations completed.
         // Optionally block until one completes, or we receive an interrupt.
         bool poll(bool non_blocking);
@@ -40,11 +45,10 @@ namespace slag {
 
     private:
         InterruptHandler& interrupt_handler_;
-        ResourceTable&    operation_table_;
-        ThreadIndex       thread_index_;
 
         struct io_uring   ring_;
         Selector          pending_submissions_;
+        OperationTable    submitted_operation_table_;
     };
 
 }

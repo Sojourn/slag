@@ -1,5 +1,4 @@
 #include "task.h"
-#include "slag/context.h"
 #include <stdexcept>
 
 namespace slag {

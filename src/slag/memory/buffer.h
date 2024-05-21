@@ -23,8 +23,8 @@ namespace slag {
     template<>
     class Resource<ResourceType::BUFFER> : public ResourceBase {
     public:
-        explicit Resource(ResourceDescriptor descriptor)
-            : ResourceBase(descriptor)
+        explicit Resource()
+            : ResourceBase(ResourceType::BUFFER)
             , size_(0)
             , tail_(&head_)
         {
@@ -59,11 +59,12 @@ namespace slag {
         BufferSegment* tail_;
     };
 
-    using Buffer = Resource<ResourceType::BUFFER>;
+    using Buffer       = Resource<ResourceType::BUFFER>;
+    using BufferHandle = mantle::Handle<Buffer>;
 
     // TODO: Move this into a file and make it a class.
     struct BufferCursor {
-        Buffer*        buffer = nullptr;
+        BufferHandle   buffer;
         size_t         buffer_offset = 0;
 
         BufferSegment* segment = nullptr;

@@ -14,21 +14,34 @@ namespace slag {
         , public Pollable<PollableType::WRITABLE>
     {
     public:
-        explicit Resource(ResourceDescriptor descriptor, OperationType type)
-            : ResourceBase(descriptor)
-            , type_(type)
+        explicit Resource(const OperationType operation_type)
+            : ResourceBase(ResourceType::OPERATION)
+            , operation_type_(operation_type)
+            , abandoned_(false)
             , daemonized_(false)
         {
         }
 
-        OperationType type() const {
-            return type_;
+        [[nodiscard]]
+        OperationType operation_type() const {
+            return operation_type_;
         }
 
+        [[nodiscard]]
         bool is_quiescent() const {
             return working_slots_.none();
         }
 
+        [[nodiscard]]
+        bool is_abandoned() const {
+            return abandoned_;
+        }
+
+        void abandon() {
+            abandoned_ = true;
+        }
+
+        [[nodiscard]]
         bool is_daemonized() const {
             return daemonized_;
         }
@@ -40,11 +53,16 @@ namespace slag {
         // TODO: Extract this logic so it can be tested.
         // TODO: Rename these to use acquire/release verbage.
         OperationSlot allocate_slot() {
-            assert(!working_slots_.all());
-            uint32_t mask = working_slots_.to_ulong();
+            if (working_slots_.all()) {
+                // This should never happen. We should be able to statically
+                // determine the maximum number of operations that can be outstanding.
+                abort();
+            }
 
+            uint32_t mask = working_slots_.to_ulong();
             OperationSlot slot = static_cast<OperationSlot>(__builtin_ctzll(mask));
             working_slots_.set(slot);
+
             return slot;
         }
 
@@ -57,11 +75,13 @@ namespace slag {
         virtual void handle_result(int32_t result, bool complete, OperationUserData user_data) = 0;
 
     private:
-        OperationType   type_;
+        OperationType   operation_type_;
+        bool            abandoned_;
         bool            daemonized_;
-        std::bitset<32> working_slots_;
+        std::bitset<16> working_slots_;
     };
 
-    using Operation = Resource<ResourceType::OPERATION>;
+    using Operation       = Resource<ResourceType::OPERATION>;
+    using OperationHandle = mantle::Handle<Operation>;
 
 }

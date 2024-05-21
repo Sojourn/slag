@@ -1,4 +1,4 @@
-#include "context.h"
+#include "thread_context.h"
 #include "core.h"
 #include "system.h"
 #include "application.h"
@@ -8,9 +8,9 @@
 
 namespace slag {
 
-    thread_local Context* context_instance = nullptr;
+    thread_local ThreadContext* context_instance = nullptr;
 
-    Context::Context(Application& application, Thread& thread)
+    ThreadContext::ThreadContext(Application& application, Thread& thread)
         : application_(application)
         , thread_(thread)
     {
@@ -21,23 +21,19 @@ namespace slag {
         context_instance = this;
     }
 
-    Context::~Context() {
+    ThreadContext::~ThreadContext() {
         context_instance = nullptr;
     }
 
-    Application& Context::application() {
+    Application& ThreadContext::application() {
         return application_;
     }
 
-    Thread& Context::thread() {
+    Thread& ThreadContext::thread() {
         return thread_;
     }
 
-    ResourceTable& Context::resource_table(ResourceType type) {
-        return thread_.resource_tables()[to_index(type)];
-    }
-
-    EventLoop& Context::event_loop() {
+    EventLoop& ThreadContext::event_loop() {
         return thread_.event_loop();
     }
 
@@ -45,7 +41,7 @@ namespace slag {
         return static_cast<bool>(context_instance);
     }
 
-    Context& get_context() {
+    ThreadContext& get_context() {
         if (!has_context()) {
             abort();
         }

@@ -2,17 +2,20 @@ set(SLAG_SOURCE_FILES
     application.cpp
     thread.cpp
     event_loop.cpp
-    context.cpp
+    thread_context.cpp
     core/task.cpp
     core/event.cpp
     core/selector.cpp
     core/executor.cpp
-    core/resource_table.cpp
     memory/buffer.cpp
     system/reactor.cpp
+    system/operation_table.cpp
 )
 
 set(SLAG_HEADER_FILES
+    system/operation_table.h
+    system/primitive_operation.h
+    system/operations/nop_operation.h
 )
 
 add_library(slag ${SLAG_SOURCE_FILES} ${SLAG_HEADER_FILES})

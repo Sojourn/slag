@@ -17,6 +17,8 @@ namespace slag {
         EventLoop& operator=(EventLoop&&) = delete;
         EventLoop& operator=(const EventLoop&) = delete;
 
+        Reactor& reactor();
+
         void loop();
         void stop();
 

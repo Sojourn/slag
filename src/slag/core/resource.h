@@ -1,27 +1,24 @@
 #pragma once
 
-#include <compare>
-#include <cstdint>
-#include <cstddef>
-#include "slag/types.h"
-#include "slag/collections/intrusive_queue.h"
+#include "mantle/mantle.h"
 #include "resource_types.h"
 
 namespace slag {
 
-    using ResourceRecordIndex = uint32_t;
+    template<ResourceType type>
+    class Resource;
 
-    struct ResourceDescriptor {
-        ThreadIndex         owner;
-        ResourceType        type;
-        ResourceRecordIndex index;
+#define X(SLAG_RESOURCE_TYPE)                         \
+    template<>                                        \
+    class Resource<ResourceType::SLAG_RESOURCE_TYPE>; \
 
-        auto operator<=>(const ResourceDescriptor&) const = default;
-    };
+#undef X
 
-    class ResourceBase {
+    class ResourceBase : public mantle::Object {
+    protected:
+        explicit ResourceBase(ResourceType type);
+
     public:
-        explicit ResourceBase(ResourceDescriptor descriptor);
         ~ResourceBase() = default;
 
         ResourceBase(ResourceBase&&) = delete;
@@ -29,15 +26,11 @@ namespace slag {
         ResourceBase& operator=(ResourceBase&&) = delete;
         ResourceBase& operator=(const ResourceBase&) = delete;
 
-        ResourceType type() const;
-        ResourceDescriptor descriptor() const;
-
-    private:
-        ResourceDescriptor descriptor_;
+        [[nodiscard]] ResourceType resource_type() const;
     };
 
-    template<ResourceType type>
-    class Resource;
+    template<typename ResourceVisitor>
+    void visit(ResourceVisitor&& visitor, ResourceBase& resource);
 
 }
 

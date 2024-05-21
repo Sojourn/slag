@@ -23,29 +23,27 @@ namespace slag {
         : public Pollable<PollableType::RUNNABLE>
         , public Pollable<PollableType::COMPLETE>
     {
-        // The Executor needs the address of this to be fixed.
+    public:
+        explicit Task(TaskPriority priority = TaskPriority::SAME);
+
         Task(Task&&) = delete;
         Task(const Task&) = delete;
         Task& operator=(Task&&) = delete;
         Task& operator=(const Task&) = delete;
 
-    public:
-        explicit Task(TaskPriority priority = TaskPriority::SAME);
-        virtual ~Task() = default;
+        [[nodiscard]] TaskState state() const;
+        [[nodiscard]] TaskPriority priority() const;
 
-        TaskState state() const;
-        TaskPriority priority() const;
-
-        bool is_waiting() const;
-        bool is_running() const;
-        bool is_success() const;
-        bool is_failure() const;
+        [[nodiscard]] bool is_waiting() const;
+        [[nodiscard]] bool is_running() const;
+        [[nodiscard]] bool is_success() const;
+        [[nodiscard]] bool is_failure() const;
 
         using Pollable<PollableType::RUNNABLE>::is_runnable;
         using Pollable<PollableType::COMPLETE>::is_complete;
 
         // This will become set when the task has completed (success/failure).
-        Event& complete_event() override final;
+        [[nodiscard]] Event& complete_event() final;
 
         // This should execute a small, but meaningful amount of work. It will
         // be periodically called by an executor when the task indicates
@@ -81,6 +79,8 @@ namespace slag {
             case TaskState::SUCCESS: return "SUCCESS"sv;
             case TaskState::FAILURE: return "FAILURE"sv;
         }
+
+        abort();
     }
 
     constexpr bool is_terminal(TaskState state) {

@@ -30,6 +30,6 @@ int main(int argc, char** argv) {
     (void)argv;
 
     Application application(argc, argv);
-    Thread thread(application, std::make_unique<TestTask>());
+    application.spawn_thread<TestTask>();
     return application.run();
 }

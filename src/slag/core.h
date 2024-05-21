@@ -6,7 +6,5 @@
 #include "core/selector.h"
 #include "core/executor.h"
 
+#include "core/resource_types.h"
 #include "core/resource.h"
-#include "core/resource_table.h"
-#include "core/resource_handle.h"
-
