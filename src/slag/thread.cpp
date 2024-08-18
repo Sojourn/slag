@@ -35,7 +35,6 @@ namespace slag {
 
     Thread::Thread(Application& application, std::unique_ptr<Task> task)
         : application_(application)
-        , finalizer_(nullptr)
         , event_loop_(nullptr)
         , root_task_(std::move(task))
     {
@@ -89,37 +88,38 @@ namespace slag {
         region.stop();
     }
 
-    void Thread::finalize(mantle::Object& object) noexcept {
-        if (object.user_data() < static_cast<uint16_t>(RESOURCE_TYPE_COUNT)) {
-            ResourceBase& resource_base = static_cast<ResourceBase&>(object);
-            switch (resource_base.resource_type()) {
-                case ResourceType::BUFFER: {
-                    finalize(static_cast<Buffer&>(resource_base));
-                    break;
-                }
-                case ResourceType::OPERATION: {
-                    finalize(static_cast<Operation&>(resource_base));
-                    break;
-                }
+    void Thread::finalize(ObjectGroup group, std::span<Object*> objects) noexcept {
+        // Resources are finalize in batches to improve I-Cache utilization.
+        switch (static_cast<ResourceType>(group)) {
+#define X(SLAG_RESOURCE_TYPE)                                         \
+            case ResourceType::SLAG_RESOURCE_TYPE: {                  \
+                using R = Resource<ResourceType::SLAG_RESOURCE_TYPE>; \
+                for (Object* object : objects) {                      \
+                    finalize(static_cast<R&>(*object));               \
+                }                                                     \
+                break;                                                \
+            }                                                         \
+
+            SLAG_RESOURCE_TYPES(X)
+#undef X
+
+            default: {
+                abort();
+                break;
             }
-        }
-        else if (finalizer_) {
-            finalizer_->finalize(object);
-        }
-        else {
-            abort();
         }
     }
 
-    void Thread::finalize(Buffer&) noexcept {
-        abort(); // TODO
+    void Thread::finalize(Buffer& buffer) noexcept {
+        delete &buffer;
+    }
+
+    void Thread::finalize(FileDescriptor& file_descriptor) noexcept {
+        delete &file_descriptor;
     }
 
     void Thread::finalize(Operation& operation) noexcept {
-        assert(event_loop_);
-
-        Reactor& reactor = event_loop_->reactor();
-        reactor.finalize(operation);
+        delete &operation;
     }
 
 }

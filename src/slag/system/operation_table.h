@@ -1,25 +1,51 @@
 #pragma once
 
+#include <stdexcept>
+#include <compare>
 #include <vector>
+#include <cstdlib>
 #include <cstdint>
 #include <cstddef>
-#include "operation.h"
+#include "slag/core.h"
 
 namespace slag {
 
     class OperationTable {
     public:
-        using RowId = uint32_t;
+        using Index = uint32_t;
+        using Nonce = uint32_t;
 
-        explicit OperationTable(size_t initial_capacity = 16 * 1024);
+        // NOTE: A default constructed key will never match a valid key.
+        struct Key {
+            Index index;
+            Nonce nonce;
 
-        RowId insert(Operation& operation);
-        Operation& select(RowId row_id);
-        void remove(RowId row_id);
+            auto operator<=>(const Key&) const = default;
+
+            explicit operator bool() const {
+                return *this != Key{};
+            }
+        };
+
+        struct Record {
+            Operation* operation = nullptr;
+            Nonce nonce = 0;
+        };
+
+        explicit OperationTable(size_t initial_capacity = 1024);
+
+        Key insert(Operation& operation);
+        Operation& select(Key key);
+        void remove(Key key);
 
     private:
-        std::vector<Operation*> table_;
-        std::vector<uint32_t>   unused_table_rows_;
+        std::vector<Record>   table_;
+        std::vector<uint32_t> tombstones_;
     };
+
+    using OperationKey = OperationTable::Key;
+
+    uint64_t encode_operation_key(OperationKey decoded_key);
+    OperationKey decode_operation_key(uint64_t encoded_key);
 
 }

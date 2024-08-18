@@ -13,7 +13,7 @@ namespace slag {
 
     class Application;
 
-    class Thread : public mantle::ObjectFinalizer {
+    class Thread final : public Finalizer {
     public:
         Thread(Application& application, std::unique_ptr<Task> task);
         virtual ~Thread();
@@ -30,13 +30,13 @@ namespace slag {
     private:
         void run();
 
-        void finalize(mantle::Object& object) noexcept override;
+        void finalize(ObjectGroup group, std::span<Object*> objects) noexcept override;
         void finalize(Buffer& buffer) noexcept;
+        void finalize(FileDescriptor& file_descriptor) noexcept;
         void finalize(Operation& operation) noexcept;
 
     private:
         Application&             application_;
-        mantle::ObjectFinalizer* finalizer_;
         EventLoop*               event_loop_;
         std::unique_ptr<Task>    root_task_;
         std::thread              thread_;

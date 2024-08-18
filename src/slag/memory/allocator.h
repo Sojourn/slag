@@ -3,11 +3,11 @@
 #include <span>
 #include <cstdint>
 #include <cstddef>
+#include "slag/core.h"
 
 namespace slag {
 
     class Allocator {
-    public:
         virtual ~Allocator() = default;
 
         virtual std::span<std::byte> allocate(size_t size_bytes) = 0;

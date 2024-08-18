@@ -8,6 +8,7 @@
 
 namespace slag {
 
+    // TODO: Remove deadlines to make this deterministic.
     class Executor : public Task {
     public:
         Event& runnable_event() override;

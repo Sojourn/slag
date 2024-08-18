@@ -11,7 +11,7 @@ namespace slag {
         , public Pollable<PollableType::COMPLETE>
     {
     protected:
-        explicit PrimitiveOperation(const OperationType operation_type)
+        explicit PrimitiveOperation(OperationType operation_type)
             : Operation(operation_type)
             , state_(State::OPERATION_PENDING)
         {
@@ -19,18 +19,18 @@ namespace slag {
             init(cancel_user_data_);
         }
 
-        void prepare(struct io_uring_sqe& sqe, OperationUserData& user_data) final {
+        void prepare(struct io_uring_sqe& io_sqe, OperationKey op_key) final {
             switch (state_) {
                 case State::OPERATION_PENDING: {
                     state_ = State::OPERATION_WORKING;
-                    memcpy(&operation_user_data_, &user_data, sizeof(operation_user_data_));
-                    prepare_operation(sqe, user_data);
+                    operation_key_ = op_key;
+                    prepare_operation(io_sqe, op_key);
                     break;
                 }
                 case State::CANCEL_PENDING: {
                     state_ = State::CANCEL_WORKING;
-                    memcpy(&cancel_user_data_, &user_data, sizeof(cancel_user_data_));
-                    prepare_cancel(sqe, user_data);
+                    cancel_key_ = op_key;
+                    prepare_cancel(io_sqe, op_key);
                     break;
                 }
                 default: {
@@ -41,24 +41,26 @@ namespace slag {
             writable_event_.reset();
         }
 
-        virtual void prepare_operation(struct io_uring_sqe& sqe, OperationUserData& user_data) = 0;
+        virtual void prepare_operation(struct io_uring_sqe& io_sqe, OperationKey op_key) = 0;
 
-        void prepare_cancel(struct io_uring_sqe& sqe, OperationUserData& user_data) {
-            io_uring_prep_cancel64(&sqe, encode(operation_user_data_), 0);
+        void prepare_cancel(struct io_uring_sqe& io_sqe, OperationKey op_key) {
+            io_uring_prep_cancel64(&io_sqe, encode_operation_key(op_key), 0);
         }
 
-        void handle_result(int32_t result, bool complete, OperationUserData user_data) final {
-            assert(user_data.type == operation_type());
-            assert(complete || user_data.flags.multishot);
+        void handle_result(int32_t result, bool more, OperationKey op_key) final {
+            if (operation_key_ == op_key) {
+                if (!more) {
+                    operation_key_ = OperationKey{};
+                }
 
-            const bool is_operation_result = memcmp(&operation_user_data_, &user_data, sizeof(user_data)) == 0;
-            const bool is_cancel_result = memcmp(&cancel_user_data_, &user_data, sizeof(user_data)) == 0;
-
-            if (is_operation_result) {
-                handle_operation_result(result, complete, user_data);
+                handle_operation_result(result, more, op_key);
             }
-            else if (is_cancel_result) {
-                handle_cancel_result(result, complete, user_data);
+            else if (cancel_key_ == op_key) {
+                if (!more) {
+                    cancel_key_ = OperationKey{};
+                }
+
+                handle_cancel_result(result, more, op_key);
             }
             else {
                 abort();
@@ -70,13 +72,8 @@ namespace slag {
             }
         }
 
-        virtual void handle_operation_result(int32_t result, bool complete, OperationUserData user_data) = 0;
-
-        virtual void handle_cancel_result(int32_t result, bool complete, OperationUserData user_data) {
-            (void)result;
-            (void)complete;
-            (void)user_data;
-        }
+        virtual void handle_operation_result(int32_t result, bool more, OperationKey op_key) = 0;
+        virtual void handle_cancel_result(int32_t result, bool more, OperationKey op_key) = 0;
 
     private:
         enum class State {
@@ -87,11 +84,11 @@ namespace slag {
             COMPLETE,          // The operation has completed.
         };
 
-        State             state_;
-        Event             writable_event_;
-        Event             complete_event_;
-        OperationUserData operation_user_data_;
-        OperationUserData cancel_user_data_;
+        State        state_;
+        Event        writable_event_;
+        Event        complete_event_;
+        OperationKey operation_key_;
+        OperationKey cancel_key_;
     };
 
 }

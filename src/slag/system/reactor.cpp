@@ -47,7 +47,7 @@ namespace slag {
         }
     }
 
-    bool Reactor::poll(bool non_blocking) {
+    bool Reactor::poll(const bool non_blocking) {
         const size_t submission_count = prepare_submissions();
 
         if (non_blocking) {
@@ -67,8 +67,8 @@ namespace slag {
         const size_t ready_count = pending_submissions_.ready_count();
 
         for (size_t count = 0; count < ready_count; ++count) {
-            if (struct io_uring_sqe* sqe = io_uring_get_sqe(&ring_)) {
-                prepare_submission(*sqe);
+            if (struct io_uring_sqe* io_sqe = io_uring_get_sqe(&ring_)) {
+                prepare_submission(*io_sqe);
             }
             else {
                 return count; // Submission queue is full.
@@ -78,23 +78,14 @@ namespace slag {
         return ready_count;
     }
 
-    void Reactor::prepare_submission(struct io_uring_sqe& sqe) {
+    void Reactor::prepare_submission(struct io_uring_sqe& io_sqe) {
         Event& event = *pending_submissions_.select();
         Operation& operation = event.cast_user_data<Operation>();
 
-        OperationUserData user_data = {
-            .index = submitted_operation_table_.insert(operation),
-            .type  = operation.operation_type(),
-            .slot  = operation.allocate_slot(),
-            .flags = {
-                .multishot = false,
-                .interrupt = false,
-            },
-        };
-
         // Prepare the submission queue entry.
-        operation.prepare(sqe, user_data);
-        io_uring_sqe_set_data64(&sqe, encode(user_data));
+        const OperationKey op_key = submitted_operation_table_.insert(operation);
+        operation.prepare(op_key, io_sqe);
+        io_uring_sqe_set_data64(&io_sqe, encode_operation_key(op_key));
 
         // Reinsert the operation in case it needs to submit again.
         pending_submissions_.insert<PollableType::WRITABLE>(operation);
@@ -128,38 +119,38 @@ namespace slag {
         return completion_count;
     }
 
-    void Reactor::process_completion(struct io_uring_cqe& cqe) {
-        const OperationUserData user_data = decode(cqe.user_data);
+    void Reactor::process_completion(struct io_uring_cqe& io_cqe) {
+        const OperationKey op_key = decode_operation_key(io_cqe.user_data);
 
-        if (user_data.flags.interrupt) {
-            process_interrupt_completion(cqe, user_data);
+        // An invalid key is used to distinguish interrupts from operations we have submitted.
+        const bool is_interrupt = op_key == OperationKey{};
+
+        if (is_interrupt) {
+            process_interrupt_completion(io_cqe, op_key);
         }
         else {
-            process_operation_completion(cqe, user_data);
+            process_operation_completion(io_cqe, op_key);
         }
     }
 
-    void Reactor::process_operation_completion(struct io_uring_cqe& cqe, const OperationUserData& user_data) {
-        const bool more = cqe.flags & IORING_CQE_F_MORE;
+    void Reactor::process_operation_completion(struct io_uring_cqe& io_cqe, const OperationKey op_key) {
+        const bool more = io_cqe.flags & IORING_CQE_F_MORE;
 
-        Operation& operation = submitted_operation_table_.select(user_data.index);
-        operation.handle_result(cqe.res, more, user_data);
+        Operation& operation = submitted_operation_table_.select(op_key);
+        operation.handle_result(op_key, io_cqe.res, more);
 
         if (!more) {
-            submitted_operation_table_.remove(user_data.index);
+            submitted_operation_table_.remove(op_key);
 
-            operation.deallocate_slot(user_data.slot);
             if (operation.is_abandoned() && operation.is_quiescent()) {
                 delete &operation;
             }
         }
     }
 
-    void Reactor::process_interrupt_completion(struct io_uring_cqe& cqe, const OperationUserData& user_data) {
-        (void)user_data;
-
+    void Reactor::process_interrupt_completion(struct io_uring_cqe& io_cqe, const OperationKey) {
         Interrupt interrupt;
-        memcpy(&interrupt, &cqe.res, sizeof(interrupt));
+        memcpy(&interrupt, &io_cqe.res, sizeof(interrupt));
         interrupt_handler_.handle_interrupt(interrupt);
     }
 

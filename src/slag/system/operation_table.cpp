@@ -3,47 +3,78 @@
 
 namespace slag {
 
-    OperationTable::OperationTable(size_t initial_capacity) {
-        table_.resize(initial_capacity);
-        unused_table_rows_.resize(initial_capacity);
-
-        for (RowId row_id = 0; row_id < initial_capacity; ++row_id) {
-            table_[row_id] = nullptr;
-            unused_table_rows_[row_id] = initial_capacity - row_id - 1;
+    OperationTable::OperationTable(const size_t initial_capacity)
+        : table_(initial_capacity)
+        , tombstones_(initial_capacity)
+    {
+        for (size_t i = 0; i < table_.size(); ++i) {
+            tombstones_[i] = static_cast<Index>(table_.size() - i - 1);
         }
     }
 
-    auto OperationTable::insert(Operation& operation) -> RowId {
-        RowId row_id;
-
-        // Either append to the table or reuse an empty slot.
-        if (unused_table_rows_.empty()) {
-            if (table_.size() == std::numeric_limits<RowId>::max()) {
-                throw std::runtime_error("OperationTable is full");
+    auto OperationTable::insert(Operation& operation) -> Key {
+        Index index;
+        if (tombstones_.empty()) {
+            if ((table_.size() + 1) == std::numeric_limits<Index>::max()) {
+                throw std::runtime_error("Too many operations in progress");
             }
 
-            row_id = static_cast<RowId>(table_.size());
-            table_.push_back(&operation);
+            index = static_cast<Index>(table_.size());
+            table_.emplace_back();
         }
         else {
-            row_id = unused_table_rows_.back();
-            table_[row_id] = &operation;
+            index = tombstones_.back();
+            tombstones_.pop_back();
         }
 
-        return row_id;
+        Record& record = table_[index];
+        record.operation = &operation;
+        record.nonce += 1;
+
+        return {
+            .index = index,
+            .nonce = record.nonce,
+        };
     }
 
-    Operation& OperationTable::select(RowId row_id) {
-        assert(row_id < table_.size());
+    Operation& OperationTable::select(const Key key) {
+        if (key.index < table_.size()) {
+            abort();
+        }
 
-        return *table_[row_id];
+        Record& record = table_[key.index];
+        if (key.nonce != record.nonce) {
+            abort();
+        }
+
+        return *record.operation;
     }
 
-    void OperationTable::remove(RowId row_id) {
-        assert(row_id < table_.size());
+    void OperationTable::remove(const Key key) {
+        if (key.index < table_.size()) {
+            abort();
+        }
 
-        table_[row_id] = nullptr;
-        unused_table_rows_.push_back(row_id);
+        Record& record = table_[key.index];
+        if (key.nonce != record.nonce) {
+            abort();
+        }
+
+        record.operation = nullptr;
+    }
+
+    uint64_t encode_operation_key(OperationKey decoded_key) {
+        uint64_t encoded_key;
+        static_assert(sizeof(encoded_key) == sizeof(decoded_key));
+        memcpy(&encoded_key, &decoded_key, sizeof(encoded_key));
+        return encoded_key;
+    }
+
+    OperationKey decode_operation_key(uint64_t encoded_key) {
+        OperationKey decoded_key;
+        static_assert(sizeof(decoded_key) == sizeof(encoded_key));
+        memcpy(&decoded_key, &encoded_key, sizeof(decoded_key));
+        return decoded_key;
     }
 
 }

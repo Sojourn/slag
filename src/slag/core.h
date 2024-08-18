@@ -5,6 +5,5 @@
 #include "core/pollable.h"
 #include "core/selector.h"
 #include "core/executor.h"
-
-#include "core/resource_types.h"
+#include "core/object.h"
 #include "core/resource.h"

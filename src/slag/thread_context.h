@@ -1,7 +1,6 @@
 #pragma once
 
 #include <array>
-#include "core/resource_types.h"
 
 namespace slag {
 
@@ -26,7 +25,6 @@ namespace slag {
         Application& application();
         Thread& thread();
 
-        ResourceTable& resource_table(ResourceType type);
         EventLoop& event_loop();
 
     private:

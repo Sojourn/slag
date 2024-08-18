@@ -35,13 +35,13 @@ namespace slag {
 
     private:
         size_t prepare_submissions();
-        void prepare_submission(struct io_uring_sqe& sqe);
+        void prepare_submission(struct io_uring_sqe& io_sqe);
 
         size_t process_completions();
-        void process_completion(struct io_uring_cqe& cqe);
+        void process_completion(struct io_uring_cqe& io_cqe);
 
-        void process_operation_completion(struct io_uring_cqe& cqe, const OperationUserData& user_data);
-        void process_interrupt_completion(struct io_uring_cqe& cqe, const OperationUserData& user_data);
+        void process_operation_completion(struct io_uring_cqe& io_cqe, OperationKey op_key);
+        void process_interrupt_completion(struct io_uring_cqe& io_cqe, OperationKey op_key);
 
     private:
         InterruptHandler& interrupt_handler_;

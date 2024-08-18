@@ -1,37 +1,28 @@
 #pragma once
 
-#include "mantle/mantle.h"
-#include "resource_types.h"
+#include <cstdint>
+#include "slag/core/object.h"
+
+#define SLAG_RESOURCE_TYPES(X) \
+    X(BUFFER)                  \
+    X(FILE_DESCRIPTOR)         \
+    X(OPERATION)               \
 
 namespace slag {
+
+    enum class ResourceType : uint8_t {
+#define X(SLAG_RESOURCE_TYPE) \
+        SLAG_RESOURCE_TYPE,   \
+
+        SLAG_RESOURCE_TYPES(X)
+#undef X
+    };
 
     template<ResourceType type>
     class Resource;
 
-#define X(SLAG_RESOURCE_TYPE)                         \
-    template<>                                        \
-    class Resource<ResourceType::SLAG_RESOURCE_TYPE>; \
-
-#undef X
-
-    class ResourceBase : public mantle::Object {
-    protected:
-        explicit ResourceBase(ResourceType type);
-
-    public:
-        ~ResourceBase() = default;
-
-        ResourceBase(ResourceBase&&) = delete;
-        ResourceBase(const ResourceBase&) = delete;
-        ResourceBase& operator=(ResourceBase&&) = delete;
-        ResourceBase& operator=(const ResourceBase&) = delete;
-
-        [[nodiscard]] ResourceType resource_type() const;
-    };
-
-    template<typename ResourceVisitor>
-    void visit(ResourceVisitor&& visitor, ResourceBase& resource);
+    using Buffer         = Resource<ResourceType::BUFFER>;
+    using FileDescriptor = Resource<ResourceType::FILE_DESCRIPTOR>;
+    using Operation      = Resource<ResourceType::OPERATION>;
 
 }
-
-#include "resource.hpp"
