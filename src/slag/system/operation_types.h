@@ -40,11 +40,13 @@ namespace slag {
     }
 
     constexpr std::string_view to_string_view(OperationType operation_type) {
+        using namespace std::literals;
+
         switch (operation_type) {
 #define X(SLAG_OPERATION_TYPE)                         \
             case OperationType::SLAG_OPERATION_TYPE: { \
-                return #SLAG_OPERATION_TYPE;           \
-            }                                                 \
+                return #SLAG_OPERATION_TYPE##sv;       \
+            }                                          \
 
             SLAG_OPERATION_TYPES(X)
 #undef X

@@ -37,13 +37,14 @@ namespace slag {
     void Reactor::finalize(Operation& operation) {
         operation.abandon();
 
-        if (!operation.is_daemonized()) {
-            if (operation.is_quiescent()) {
-                delete &operation;
-            }
-            else {
-                operation.cancel();
-            }
+        if (operation.is_daemonized()) {
+            // This is a cleanup operation or something that we don't want to cancel.
+        }
+        else if (operation.is_quiescent()) {
+            delete &operation;
+        }
+        else {
+            operation.cancel();
         }
     }
 

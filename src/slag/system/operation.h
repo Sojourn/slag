@@ -89,15 +89,15 @@ namespace slag {
             }
         }
 
-        void prepare(OperationKey op_key, struct io_uring_sqe& sqe) {
+        void prepare(OperationKey op_key, struct io_uring_sqe& io_sqe) {
             switch (state_) {
                 case OperationState::OPERATION_PENDING: {
-                    prepare_operation(sqe);
+                    prepare_operation(io_sqe);
                     normal_op_key_ = op_key;
                     break;
                 }
                 case OperationState::CANCEL_PENDING: {
-                    prepare_cancel(sqe);
+                    prepare_cancel(io_sqe);
                     cancel_op_key_ = op_key;
                     break;
                 }
@@ -133,10 +133,10 @@ namespace slag {
         }
 
     private:
-        virtual void prepare_operation(struct io_uring_sqe& sqe) = 0;
+        virtual void prepare_operation(struct io_uring_sqe& io_sqe) = 0;
 
-        virtual void prepare_cancel(struct io_uring_sqe& sqe) {
-            io_uring_prep_cancel64(&sqe, encode_operation_key(normal_op_key_), 0);
+        virtual void prepare_cancel(struct io_uring_sqe& io_sqe) {
+            io_uring_prep_cancel64(&io_sqe, encode_operation_key(normal_op_key_), 0);
         }
 
         virtual void handle_operation_result(int32_t result, bool more) = 0;
