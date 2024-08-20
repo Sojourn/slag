@@ -7,9 +7,27 @@
 
 using namespace slag;
 
+struct PrintTask final : ProtoTask {
+    const char* message;
+
+    explicit PrintTask(const char* message)
+        : message(message)
+    {
+    }
+
+    void run() override {
+        SLAG_PT_BEGIN();
+
+        std::cout << message << std::endl;
+
+        SLAG_PT_END();
+    }
+};
+
 class TestTask : public Task {
 public:
     TestTask()
+        : print_("Hello, world!")
     {
         runnable_event_.set();
     }
@@ -24,6 +42,7 @@ public:
 
     void run() override final {
         if (!op_) {
+            get_context().event_loop().schedule(print_);
             op_ = get_context().event_loop().start_operation<NopOperation>();
             return;
         }
@@ -34,6 +53,7 @@ public:
 
 private:
     Ptr<NopOperation> op_;
+    PrintTask         print_;
     Event             runnable_event_;
 };
 
