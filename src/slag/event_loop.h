@@ -10,7 +10,7 @@ namespace slag {
 
     class EventLoop : private InterruptHandler {
     public:
-        EventLoop();
+        explicit EventLoop(Region& region);
         ~EventLoop();
 
         EventLoop(EventLoop&&) = delete;
@@ -34,6 +34,7 @@ namespace slag {
         void handle_interrupt(Interrupt interrupt) override final;
 
     private:
+        Region&      region_;
         Reactor      reactor_;
         bool         looping_;
         TaskPriority current_priority_;

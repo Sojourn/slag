@@ -7,9 +7,6 @@ namespace slag {
         : state_{TaskState::WAITING}
         , priority_{priority}
     {
-        // We can't automatically subscribe here because
-        // the implementation's constructor hasn't run yet
-        // to initialize the vtable.
     }
 
     Event& Task::complete_event() {

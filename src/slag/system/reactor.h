@@ -24,6 +24,7 @@ namespace slag {
 
         template<typename OperationImpl, typename... Args>
         Ref<OperationImpl> create_operation(Args&&... args);
+        void schedule_operation(Operation& operation);
         void destroy_operation(Operation& operation);
 
         // Returns true if any operations completed.
@@ -54,7 +55,8 @@ namespace slag {
             *(new OperationImpl(std::forward<Args>(args)...))
         );
 
-        pending_submissions_.insert<PollableType::WRITABLE>(*operation);
+        schedule_operation(*operation);
+
         return operation;
     }
 

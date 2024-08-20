@@ -71,7 +71,7 @@ namespace slag {
         mantle::Region region(application_.domain(), *this);
         RegionDriver region_driver(region);
 
-        EventLoop event_loop;
+        EventLoop event_loop(region);
         event_loop.schedule(*init_);
         event_loop.schedule(region_driver);
 

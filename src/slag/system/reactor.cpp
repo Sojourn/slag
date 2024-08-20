@@ -33,6 +33,10 @@ namespace slag {
         return ring_.ring_fd;
     }
 
+    void Reactor::schedule_operation(Operation& operation) {
+        pending_submissions_.insert<PollableType::WRITABLE>(operation);
+    }
+
     void Reactor::destroy_operation(Operation& operation) {
         assert(!operation.is_managed());
         assert(operation.is_quiescent());
@@ -80,8 +84,8 @@ namespace slag {
         operation.prepare(op_key, io_sqe);
         io_uring_sqe_set_data64(&io_sqe, encode_operation_key(op_key));
 
-        // Reinsert the operation in case it needs to submit again.
-        pending_submissions_.insert<PollableType::WRITABLE>(operation);
+        // Schedule the operation again in case it needs to submit again (cancel).
+        schedule_operation(operation);
     }
 
     size_t Reactor::process_completions() {

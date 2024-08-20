@@ -5,8 +5,9 @@
 
 namespace slag {
 
-    EventLoop::EventLoop()
-        : reactor_(*this)
+    EventLoop::EventLoop(Region& region)
+        : region_(region)
+        , reactor_(*this)
         , looping_(false)
         , current_priority_(TaskPriority::IDLE)
     {
@@ -23,11 +24,6 @@ namespace slag {
 
         looping_ = true;
         while (looping_) {
-            bool non_blocking = false;
-            non_blocking |= high_priority_executor_.is_runnable();
-            non_blocking |= idle_priority_executor_.is_runnable();
-            reactor_.poll(non_blocking);
-
             if (high_priority_executor_.is_runnable()) {
                 current_priority_ = TaskPriority::HIGH;
                 high_priority_executor_.run();
@@ -36,6 +32,21 @@ namespace slag {
                 current_priority_ = TaskPriority::IDLE;
                 idle_priority_executor_.run();
             }
+
+            // Prime the reactor before (potentially) blocking.
+            {
+                constexpr bool non_blocking = false;
+                region_.step(non_blocking);
+            }
+
+            // Check if there is I/O to submit or completions to process.
+            {
+                bool non_blocking = false;
+                non_blocking |= high_priority_executor_.is_runnable();
+                non_blocking |= idle_priority_executor_.is_runnable();
+                reactor_.poll(non_blocking);
+            }
+
         }
     }
 
