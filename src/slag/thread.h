@@ -15,7 +15,7 @@ namespace slag {
 
     class Thread final : public Finalizer {
     public:
-        Thread(Application& application, std::unique_ptr<Task> task);
+        Thread(Application& application, std::unique_ptr<Task> init);
         virtual ~Thread();
 
         Thread(Thread&&) = delete;
@@ -31,14 +31,11 @@ namespace slag {
         void run();
 
         void finalize(ObjectGroup group, std::span<Object*> objects) noexcept override;
-        void finalize(Buffer& buffer) noexcept;
-        void finalize(FileDescriptor& file_descriptor) noexcept;
-        void finalize(Operation& operation) noexcept;
 
     private:
         Application&             application_;
         EventLoop*               event_loop_;
-        std::unique_ptr<Task>    root_task_;
+        std::unique_ptr<Task>    init_;
         std::thread              thread_;
     };
 

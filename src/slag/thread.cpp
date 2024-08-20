@@ -33,10 +33,10 @@ namespace slag {
         Event           runnable_event_;
     };
 
-    Thread::Thread(Application& application, std::unique_ptr<Task> task)
+    Thread::Thread(Application& application, std::unique_ptr<Task> init)
         : application_(application)
         , event_loop_(nullptr)
-        , root_task_(std::move(task))
+        , init_(std::move(init))
     {
     }
 
@@ -69,22 +69,22 @@ namespace slag {
 
     void Thread::run() {
         mantle::Region region(application_.domain(), *this);
-        EventLoop event_loop;
-
         RegionDriver region_driver(region);
+
+        EventLoop event_loop;
+        event_loop.schedule(*init_);
         event_loop.schedule(region_driver);
-        event_loop.schedule(*root_task_);
 
         {
             ThreadContext context(application_, *this);
+
             event_loop_ = &event_loop;
-
             event_loop.loop();
-
             event_loop_ = nullptr;
+        
+            init_.reset();
         }
 
-        // Explicitly stop the event loop to ensure that all resources are finalized.
         region.stop();
     }
 
@@ -95,7 +95,7 @@ namespace slag {
             case ResourceType::SLAG_RESOURCE_TYPE: {                  \
                 using R = Resource<ResourceType::SLAG_RESOURCE_TYPE>; \
                 for (Object* object : objects) {                      \
-                    finalize(static_cast<R&>(*object));               \
+                    event_loop_->finalize(static_cast<R&>(*object));  \
                 }                                                     \
                 break;                                                \
             }                                                         \
@@ -108,18 +108,6 @@ namespace slag {
                 break;
             }
         }
-    }
-
-    void Thread::finalize(Buffer& buffer) noexcept {
-        delete &buffer;
-    }
-
-    void Thread::finalize(FileDescriptor& file_descriptor) noexcept {
-        delete &file_descriptor;
-    }
-
-    void Thread::finalize(Operation& operation) noexcept {
-        delete &operation;
     }
 
 }

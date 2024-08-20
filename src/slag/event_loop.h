@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include "core.h"
 #include "system.h"
 
@@ -17,13 +18,17 @@ namespace slag {
         EventLoop& operator=(EventLoop&&) = delete;
         EventLoop& operator=(const EventLoop&) = delete;
 
-        Reactor& reactor();
-
         void loop();
         void stop();
 
         void schedule(Task& task);
-        void schedule(Operation& operation);
+
+        template<typename OperationImpl, typename... Args>
+        Ref<OperationImpl> start_operation(Args&&... args);
+
+        void finalize(Buffer& buffer);
+        void finalize(FileDescriptor& file_descriptor);
+        void finalize(Operation& operation);
 
     private:
         void handle_interrupt(Interrupt interrupt) override final;
@@ -35,5 +40,10 @@ namespace slag {
         Executor     high_priority_executor_;
         Executor     idle_priority_executor_;
     };
+
+    template<typename OperationImpl, typename... Args>
+    Ref<OperationImpl> EventLoop::start_operation(Args&&... args) {
+        return reactor_.create_operation<OperationImpl>(std::forward<Args>(args)...);
+    }
 
 }

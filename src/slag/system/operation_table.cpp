@@ -15,11 +15,11 @@ namespace slag {
     auto OperationTable::insert(Operation& operation) -> Key {
         Index index;
         if (tombstones_.empty()) {
-            if ((table_.size() + 1) == std::numeric_limits<Index>::max()) {
+            index = static_cast<Index>(table_.size());
+            if (index == INVALID_INDEX) {
                 throw std::runtime_error("Too many operations in progress");
             }
 
-            index = static_cast<Index>(table_.size());
             table_.emplace_back();
         }
         else {
@@ -38,7 +38,7 @@ namespace slag {
     }
 
     Operation& OperationTable::select(const Key key) {
-        if (key.index < table_.size()) {
+        if (table_.size() <= key.index) {
             abort();
         }
 
@@ -51,7 +51,7 @@ namespace slag {
     }
 
     void OperationTable::remove(const Key key) {
-        if (key.index < table_.size()) {
+        if (table_.size() <= key.index) {
             abort();
         }
 
@@ -71,9 +71,17 @@ namespace slag {
     }
 
     OperationKey decode_operation_key(uint64_t encoded_key) {
+        struct {
+            uint32_t index;
+            uint32_t nonce;
+        } primitive_decoded_key;
+
+        static_assert(sizeof(primitive_decoded_key) == sizeof(encoded_key));
+        memcpy(&primitive_decoded_key, &encoded_key, sizeof(primitive_decoded_key));
+
         OperationKey decoded_key;
-        static_assert(sizeof(decoded_key) == sizeof(encoded_key));
-        memcpy(&decoded_key, &encoded_key, sizeof(decoded_key));
+        decoded_key.index = primitive_decoded_key.index;
+        decoded_key.nonce = primitive_decoded_key.nonce;
         return decoded_key;
     }
 

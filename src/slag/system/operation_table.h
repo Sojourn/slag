@@ -15,16 +15,18 @@ namespace slag {
         using Index = uint32_t;
         using Nonce = uint32_t;
 
-        // NOTE: A default constructed key will never match a valid key.
-        struct Key {
-            Index index;
-            Nonce nonce;
+        static constexpr Index INVALID_INDEX = std::numeric_limits<Index>::max();
+        static constexpr Nonce INVALID_NONCE = std::numeric_limits<Nonce>::max();
 
-            auto operator<=>(const Key&) const = default;
+        struct Key {
+            Index index = INVALID_INDEX;
+            Nonce nonce = INVALID_NONCE;
 
             explicit operator bool() const {
                 return *this != Key{};
             }
+
+            auto operator<=>(const Key&) const = default;
         };
 
         struct Record {
@@ -32,6 +34,7 @@ namespace slag {
             Nonce nonce = 0;
         };
 
+    public:
         explicit OperationTable(size_t initial_capacity = 1024);
 
         Key insert(Operation& operation);

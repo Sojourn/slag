@@ -19,6 +19,10 @@ namespace slag {
             close();
         }
 
+        explicit operator bool() const {
+            return file_descriptor_ >= 0;
+        }
+
         int borrow() {
             return file_descriptor_;
         }

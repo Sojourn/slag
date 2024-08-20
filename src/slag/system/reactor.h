@@ -22,12 +22,9 @@ namespace slag {
         // Returns a file descriptor that can be used to notify this ring.
         int borrow_file_descriptor();
 
-        // Schedule an operation for submission to the kernel.
-        void schedule(Operation& operation);
-
-        // Cleanup an operation that is no longer referenced,
-        // but may still be in progress.
-        void finalize(Operation& operation);
+        template<typename OperationImpl, typename... Args>
+        Ref<OperationImpl> create_operation(Args&&... args);
+        void destroy_operation(Operation& operation);
 
         // Returns true if any operations completed.
         // Optionally block until one completes, or we receive an interrupt.
@@ -50,5 +47,15 @@ namespace slag {
         Selector          pending_submissions_;
         OperationTable    submitted_operation_table_;
     };
+
+    template<typename OperationImpl, typename... Args>
+    Ref<OperationImpl> Reactor::create_operation(Args&&... args) {
+        auto operation = bind(
+            *(new OperationImpl(std::forward<Args>(args)...))
+        );
+
+        pending_submissions_.insert<PollableType::WRITABLE>(*operation);
+        return operation;
+    }
 
 }

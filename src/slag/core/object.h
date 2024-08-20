@@ -14,4 +14,6 @@ namespace slag {
     using mantle::Object;
     using mantle::ObjectGroup;
 
+    using mantle::bind;
+
 }

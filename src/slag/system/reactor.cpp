@@ -7,6 +7,9 @@
 
 namespace slag {
 
+    // An invalid operation key is used to distinguish an interrupt from a normal operation.
+    static constexpr OperationKey INTERRUPT_OPERATION_KEY;
+
     Reactor::Reactor(InterruptHandler& interrupt_handler)
         : interrupt_handler_(interrupt_handler)
     {
@@ -30,22 +33,11 @@ namespace slag {
         return ring_.ring_fd;
     }
 
-    void Reactor::schedule(Operation& operation) {
-        pending_submissions_.insert<PollableType::WRITABLE>(operation);
-    }
+    void Reactor::destroy_operation(Operation& operation) {
+        assert(!operation.is_managed());
+        assert(operation.is_quiescent());
 
-    void Reactor::finalize(Operation& operation) {
-        operation.abandon();
-
-        if (operation.is_daemonized()) {
-            // This is a cleanup operation or something that we don't want to cancel.
-        }
-        else if (operation.is_quiescent()) {
-            delete &operation;
-        }
-        else {
-            operation.cancel();
-        }
+        delete &operation;
     }
 
     bool Reactor::poll(const bool non_blocking) {
@@ -123,10 +115,7 @@ namespace slag {
     void Reactor::process_completion(struct io_uring_cqe& io_cqe) {
         const OperationKey op_key = decode_operation_key(io_cqe.user_data);
 
-        // An invalid key is used to distinguish interrupts from operations we have submitted.
-        const bool is_interrupt = op_key == OperationKey{};
-
-        if (is_interrupt) {
+        if (op_key == INTERRUPT_OPERATION_KEY) {
             process_interrupt_completion(io_cqe, op_key);
         }
         else {
@@ -144,12 +133,14 @@ namespace slag {
             submitted_operation_table_.remove(op_key);
 
             if (operation.is_abandoned() && operation.is_quiescent()) {
-                delete &operation;
+                destroy_operation(operation);
             }
         }
     }
 
-    void Reactor::process_interrupt_completion(struct io_uring_cqe& io_cqe, const OperationKey) {
+    void Reactor::process_interrupt_completion(struct io_uring_cqe& io_cqe, const OperationKey op_key) {
+        assert(op_key == INTERRUPT_OPERATION_KEY);
+
         Interrupt interrupt;
         memcpy(&interrupt, &io_cqe.res, sizeof(interrupt));
         interrupt_handler_.handle_interrupt(interrupt);

@@ -1,5 +1,7 @@
 #include "event_loop.h"
-#include <iostream>
+#include "slag/memory.h"
+#include "slag/system.h"
+#include <stdexcept>
 
 namespace slag {
 
@@ -12,10 +14,6 @@ namespace slag {
 
     EventLoop::~EventLoop() {
         // TODO: poll the reactor until quiescent.
-    }
-
-    Reactor& EventLoop::reactor() {
-        return reactor_;
     }
 
     void EventLoop::loop() {
@@ -59,8 +57,31 @@ namespace slag {
         }
     }
 
-    void EventLoop::schedule(Operation& operation) {
-        reactor_.schedule(operation);
+    void EventLoop::finalize(Buffer& buffer) {
+        // TODO: Manage buffer pools.
+        delete &buffer;
+    }
+
+    void EventLoop::finalize(FileDescriptor& file_descriptor) {
+        if (file_descriptor) {
+            start_operation<CloseOperation>(file_descriptor.release())->daemonize();
+        }
+
+        delete &file_descriptor;
+    }
+
+    void EventLoop::finalize(Operation& operation) {
+        operation.abandon();
+
+        if (operation.is_daemonized()) {
+            // This is a cleanup operation or something that we don't want to cancel.
+        }
+        else if (operation.is_quiescent()) {
+            reactor_.destroy_operation(operation);
+        }
+        else {
+            operation.cancel();
+        }
     }
 
     void EventLoop::handle_interrupt(Interrupt interrupt) {

@@ -7,7 +7,7 @@
 
 namespace slag {
 
-    enum class OperationState {
+    enum class OperationState : uint8_t {
         OPERATION_PENDING, // Waiting to submit the operation.
         OPERATION_WORKING, // Waiting for the operation to complete.
         CANCEL_PENDING,    // Waiting to submit the cancel operation.
@@ -18,9 +18,9 @@ namespace slag {
     template<>
     class Resource<ResourceType::OPERATION> 
         : public Object
-        , public Pollable<PollableType::COMPLETE> // Ready after the operation has completed.
-        , public Pollable<PollableType::READABLE> // Ready when the result is partially or fully available.
         , public Pollable<PollableType::WRITABLE> // Ready when the operation can be submitted. Used internally.
+        , public Pollable<PollableType::READABLE> // Ready when the result is partially or fully available.
+        , public Pollable<PollableType::COMPLETE> // Ready after the operation has completed.
     {
     public:
         explicit Resource(const OperationType operation_type)
@@ -33,26 +33,20 @@ namespace slag {
             writable_event_.set();
         }
 
-        [[nodiscard]]
+        virtual ~Resource() = default;
+
         OperationType type() const {
             return type_;
         }
 
-        [[nodiscard]]
         OperationState state() const {
             return state_;
         }
 
-        [[nodiscard]]
         bool is_quiescent() const {
-            if (normal_op_key_ || cancel_op_key_) {
-                return false;
-            }
-
-            return true;
+            return !key_ && !cancel_key_;
         }
 
-        [[nodiscard]]
         bool is_abandoned() const {
             return abandoned_;
         }
@@ -61,7 +55,6 @@ namespace slag {
             abandoned_ = true;
         }
 
-        [[nodiscard]]
         bool is_daemonized() const {
             return daemonized_;
         }
@@ -70,12 +63,24 @@ namespace slag {
             daemonized_ = true;
         }
 
+        Event& writable_event() override {
+            return writable_event_;
+        }
+
+        Event& readable_event() override {
+            return readable_event_;
+        }
+
+        Event& complete_event() override {
+            return complete_event_;
+        }
+
         void cancel() {
             switch (state_) {
                 case OperationState::OPERATION_PENDING: {
                     // The operation has not been submitted yet, and can be canceled immediately.
                     constexpr bool more = false;
-                    handle_result(normal_op_key_, -ECANCELED, more);
+                    handle_result(key_, -ECANCELED, more);
                     break;
                 }
                 case OperationState::OPERATION_WORKING: {
@@ -93,31 +98,33 @@ namespace slag {
             switch (state_) {
                 case OperationState::OPERATION_PENDING: {
                     prepare_operation(io_sqe);
-                    normal_op_key_ = op_key;
+                    key_ = op_key;
                     break;
                 }
                 case OperationState::CANCEL_PENDING: {
                     prepare_cancel(io_sqe);
-                    cancel_op_key_ = op_key;
+                    cancel_key_ = op_key;
                     break;
                 }
                 default: {
                     abort();
                 }
             }
+
+            writable_event_.reset();
         }
 
         void handle_result(OperationKey op_key, int32_t result, bool more) {
-            if (normal_op_key_ == op_key) {
+            if (key_ == op_key) {
                 if (!more) {
-                    normal_op_key_ = OperationKey{};
+                    key_ = OperationKey{};
                 }
 
                 handle_operation_result(result, more);
             }
-            else if (cancel_op_key_ == op_key) {
+            else if (cancel_key_ == op_key) {
                 if (!more) {
-                    cancel_op_key_ = OperationKey{};
+                    cancel_key_ = OperationKey{};
                 }
 
                 handle_cancel_result(result, more);
@@ -136,25 +143,22 @@ namespace slag {
         virtual void prepare_operation(struct io_uring_sqe& io_sqe) = 0;
 
         virtual void prepare_cancel(struct io_uring_sqe& io_sqe) {
-            io_uring_prep_cancel64(&io_sqe, encode_operation_key(normal_op_key_), 0);
+            io_uring_prep_cancel64(&io_sqe, encode_operation_key(key_), 0);
         }
 
         virtual void handle_operation_result(int32_t result, bool more) = 0;
-
-        virtual void handle_cancel_result(int32_t result, bool more) {
-            (void)result;
-            (void)more;
-        }
+        virtual void handle_cancel_result(int32_t result, bool more) = 0;
 
     private:
-        OperationType   type_;
-        OperationState  state_;
-        bool            abandoned_;
-        bool            daemonized_;
-        OperationKey    normal_op_key_;
-        OperationKey    cancel_op_key_;
-        Event           writable_event_;
-        Event           complete_event_;
+        OperationType  type_;
+        OperationState state_;
+        bool           abandoned_;
+        bool           daemonized_;
+        OperationKey   key_;
+        OperationKey   cancel_key_;
+        Event          writable_event_;
+        Event          readable_event_;
+        Event          complete_event_;
     };
 
 }

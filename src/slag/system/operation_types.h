@@ -8,6 +8,7 @@
 
 #define SLAG_OPERATION_TYPES(X) \
     X(NOP)                      \
+    X(CLOSE)                    \
 
     // X(OPEN)
     // X(CLOSE)

@@ -6,10 +6,11 @@
 
 namespace slag {
 
-    class NopOperation final : public Operation {
+    class CloseOperation final : public Operation {
     public:
-        NopOperation()
-            : Operation(OperationType::NOP)
+        CloseOperation(int file_descriptor)
+            : Operation(OperationType::CLOSE)
+            , file_descriptor_(file_descriptor)
             , result_(-EAGAIN)
         {
         }
@@ -20,7 +21,7 @@ namespace slag {
 
     private:
         void prepare_operation(struct io_uring_sqe& io_sqe) override {
-            io_uring_prep_nop(&io_sqe);
+            io_uring_prep_close(&io_sqe, file_descriptor_);
         }
 
         void handle_operation_result(int32_t result, bool more) override {
@@ -38,6 +39,7 @@ namespace slag {
         }
 
     private:
+        int     file_descriptor_;
         int32_t result_;
     };
 
