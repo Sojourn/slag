@@ -7,3 +7,5 @@
 
 #include "system/operations/nop_operation.h"
 #include "system/operations/close_operation.h"
+#include "system/operations/poll_multishot_operation.h"
+

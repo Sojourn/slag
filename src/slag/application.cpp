@@ -12,6 +12,10 @@ namespace slag {
         threads_.reserve(std::thread::hardware_concurrency());
     }
 
+    Domain& Application::domain() {
+        return domain_;
+    }
+
     int Application::run() {
         if (shutdown_latch_) {
             throw std::runtime_error("Application is already running");
@@ -37,10 +41,6 @@ namespace slag {
         }
 
         return EXIT_SUCCESS;
-    }
-
-    mantle::Domain& Application::domain() {
-        return domain_;
     }
 
     void Application::handle_stopped(Thread&) {

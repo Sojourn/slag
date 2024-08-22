@@ -46,6 +46,14 @@ namespace slag {
         }
     }
 
+    Application& Thread::application() {
+        return application_;
+    }
+
+    EventLoop& Thread::event_loop() {
+        return *event_loop_;
+    }
+
     void Thread::start() {
         if (thread_.joinable()) {
             throw std::runtime_error("Thread is already running");
@@ -63,17 +71,8 @@ namespace slag {
         });
     }
 
-    EventLoop& Thread::event_loop() {
-        return *event_loop_;
-    }
-
     void Thread::run() {
-        mantle::Region region(application_.domain(), *this);
-        RegionDriver region_driver(region);
-
-        EventLoop event_loop(region);
-        event_loop.schedule(*init_);
-        event_loop.schedule(region_driver);
+        EventLoop event_loop(*this, std::move(init_));
 
         {
             ThreadContext context(application_, *this);
@@ -81,32 +80,6 @@ namespace slag {
             event_loop_ = &event_loop;
             event_loop.loop();
             event_loop_ = nullptr;
-        
-            init_.reset();
-        }
-
-        region.stop();
-    }
-
-    void Thread::finalize(ObjectGroup group, std::span<Object*> objects) noexcept {
-        // Resources are finalize in batches to improve I-Cache utilization.
-        switch (static_cast<ResourceType>(group)) {
-#define X(SLAG_RESOURCE_TYPE)                                         \
-            case ResourceType::SLAG_RESOURCE_TYPE: {                  \
-                using R = Resource<ResourceType::SLAG_RESOURCE_TYPE>; \
-                for (Object* object : objects) {                      \
-                    event_loop_->finalize(static_cast<R&>(*object));  \
-                }                                                     \
-                break;                                                \
-            }                                                         \
-
-            SLAG_RESOURCE_TYPES(X)
-#undef X
-
-            default: {
-                abort();
-                break;
-            }
         }
     }
 

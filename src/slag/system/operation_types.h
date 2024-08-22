@@ -9,6 +9,7 @@
 #define SLAG_OPERATION_TYPES(X) \
     X(NOP)                      \
     X(CLOSE)                    \
+    X(POLL_MULTISHOT)           \
 
     // X(OPEN)
     // X(CLOSE)

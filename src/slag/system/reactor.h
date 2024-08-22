@@ -44,9 +44,9 @@ namespace slag {
     private:
         InterruptHandler& interrupt_handler_;
 
-        struct io_uring   ring_;
-        Selector          pending_submissions_;
-        OperationTable    submitted_operation_table_;
+        struct io_uring ring_;
+        Selector        pending_submissions_;
+        OperationTable  submitted_operation_table_;
     };
 
     template<typename OperationImpl, typename... Args>

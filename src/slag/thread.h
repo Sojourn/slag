@@ -13,24 +13,23 @@ namespace slag {
 
     class Application;
 
-    class Thread final : public Finalizer {
+    class Thread {
     public:
         Thread(Application& application, std::unique_ptr<Task> init);
-        virtual ~Thread();
+        ~Thread();
 
         Thread(Thread&&) = delete;
         Thread(const Thread&) = delete;
         Thread& operator=(Thread&&) = delete;
         Thread& operator=(const Thread&) = delete;
 
+        Application& application();
         EventLoop& event_loop();
 
         void start();
 
     private:
         void run();
-
-        void finalize(ObjectGroup group, std::span<Object*> objects) noexcept override;
 
     private:
         Application&             application_;

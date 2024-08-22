@@ -3,8 +3,8 @@
 #include <optional>
 #include <vector>
 #include <latch>
-#include "mantle/mantle.h"
-#include "types.h"
+#include "slag/core.h"
+#include "slag/types.h"
 
 namespace slag {
 
@@ -19,6 +19,8 @@ namespace slag {
     public:
         Application(int argc, char** argv);
 
+        Domain& domain();
+
         template<typename RootTask, typename... RootTaskArgs>
         RootTask& spawn_thread(RootTaskArgs... root_task_args);
 
@@ -27,12 +29,10 @@ namespace slag {
     private:
         friend class Thread;
 
-        mantle::Domain& domain();
-
         void handle_stopped(Thread& thread);
 
     private:
-        mantle::Domain                       domain_;
+        Domain                               domain_;
         std::vector<std::unique_ptr<Thread>> threads_;
         std::optional<std::latch>            shutdown_latch_;
     };

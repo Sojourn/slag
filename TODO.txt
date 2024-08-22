@@ -1,1 +1,2 @@
 - `EventLoop` should have a manually managed `PollOperation` to drive the `Region`.
+- Add an `EventLoop::State` w/ {INITIAL, STARTING, LOOPING, STOPPING, STOPPED} states.

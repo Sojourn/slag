@@ -8,9 +8,12 @@ namespace slag {
 
     class Thread;
 
-    class EventLoop : private InterruptHandler {
+    class EventLoop final
+        : private Finalizer
+        , private InterruptHandler
+    {
     public:
-        explicit EventLoop(Region& region);
+        EventLoop(Thread& thread, std::unique_ptr<Task> init);
         ~EventLoop();
 
         EventLoop(EventLoop&&) = delete;
@@ -26,6 +29,9 @@ namespace slag {
         template<typename OperationImpl, typename... Args>
         Ref<OperationImpl> start_operation(Args&&... args);
 
+    private:
+        void finalize(ObjectGroup group, std::span<Object*> objects) noexcept override;
+
         void finalize(Buffer& buffer);
         void finalize(FileDescriptor& file_descriptor);
         void finalize(Operation& operation);
@@ -34,12 +40,17 @@ namespace slag {
         void handle_interrupt(Interrupt interrupt) override final;
 
     private:
-        Region&      region_;
-        Reactor      reactor_;
-        bool         looping_;
-        TaskPriority current_priority_;
-        Executor     high_priority_executor_;
-        Executor     idle_priority_executor_;
+        Thread&               thread_;
+        Region                region_;
+        Reactor               reactor_;
+        bool                  looping_;
+
+        std::unique_ptr<Task> region_driver_;
+        std::unique_ptr<Task> init_;
+
+        TaskPriority          current_priority_;
+        Executor              high_priority_executor_;
+        Executor              idle_priority_executor_;
     };
 
     template<typename OperationImpl, typename... Args>
