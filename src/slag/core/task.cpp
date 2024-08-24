@@ -1,12 +1,28 @@
 #include "task.h"
+#include "executor.h"
+#include "slag/event_loop.h"
+#include "slag/thread_context.h"
 #include <stdexcept>
 
 namespace slag {
 
     Task::Task(TaskPriority priority)
-        : state_{TaskState::WAITING}
-        , priority_{priority}
+        : Task(get_event_loop().executor(priority))
     {
+    }
+
+    Task::Task(Executor& executor)
+        : state_{TaskState::WAITING}
+    {
+        runnable_event_.set();
+
+        // This will use `Task::runnable_event` and not an overridden one since
+        // our dynamic type is still `Task`.
+        executor.schedule(*this);
+    }
+
+    Event& Task::runnable_event() {
+        return runnable_event_;
     }
 
     Event& Task::complete_event() {
@@ -15,10 +31,6 @@ namespace slag {
 
     TaskState Task::state() const {
         return state_;
-    }
-
-    TaskPriority Task::priority() const {
-        return priority_;
     }
 
     bool Task::is_waiting() const {
@@ -35,6 +47,16 @@ namespace slag {
 
     bool Task::is_failure() const {
         return state_ == TaskState::FAILURE;
+    }
+
+    void Task::cancel() {
+        kill();
+    }
+
+    void Task::kill() {
+        if (is_valid_transition(state_, TaskState::FAILURE)) {
+            set_state(TaskState::FAILURE);
+        }
     }
 
     void Task::set_success(bool success) {

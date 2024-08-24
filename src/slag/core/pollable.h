@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include "slag/core/event.h"
+#include "slag/core/object.h"
 
 #define SLAG_POLLABLE_TYPES(X) \
     X(READABLE)                \

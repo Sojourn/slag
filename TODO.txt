@@ -1,2 +1,9 @@
-- `EventLoop` should have a manually managed `PollOperation` to drive the `Region`.
 - Add an `EventLoop::State` w/ {INITIAL, STARTING, LOOPING, STOPPING, STOPPED} states.
+- Add an `OperationImpl<T>` intermediate class so we can do factory construction with perfect forwarding.
+- Make `RegionDriver::poll_op_` a `Ptr<PollMultishotOperation>`. I _think_ it should be safe.
+- Remove `core.h`, `system.h`, etc.
+
+- Improve the concept of an executor's budget.
+    - Datastructure for the current loop iteration? Frame?
+
+- Loop needs to shut everything down. Can't finalize in the destructor.

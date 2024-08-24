@@ -1,5 +1,6 @@
 #pragma once
 
+#include <future>
 #include <memory>
 #include <thread>
 #include "types.h"
@@ -8,6 +9,7 @@
 #include "event_loop.h"
 #include "memory/buffer.h"
 #include "system/operation.h"
+#include "thread_context.h"
 
 namespace slag {
 
@@ -15,7 +17,7 @@ namespace slag {
 
     class Thread {
     public:
-        Thread(Application& application, std::unique_ptr<Task> init);
+        Thread(Application& application);
         ~Thread();
 
         Thread(Thread&&) = delete;
@@ -26,16 +28,32 @@ namespace slag {
         Application& application();
         EventLoop& event_loop();
 
-        void start();
+        template<typename TaskImpl, typename... Args>
+        void run(Args&&... args);
 
     private:
-        void run();
-
-    private:
-        Application&             application_;
-        EventLoop*               event_loop_;
-        std::unique_ptr<Task>    init_;
-        std::thread              thread_;
+        Application& application_;
+        EventLoop    event_loop_;
+        std::thread  thread_;
     };
+
+    template<typename TaskImpl, typename... Args>
+    void Thread::run(Args&&... args) {
+        if (thread_.joinable()) {
+            throw std::runtime_error("Thread is already running");
+        }
+
+        thread_ = std::thread([this](Args&&... args) {
+            try {
+                ThreadContext context(*this);
+
+                event_loop_.run<TaskImpl>(std::forward<Args>(args)...);
+            }
+            catch (const std::exception& ex) {
+                std::cerr << ex.what() << std::endl;
+                abort();
+            }
+        }, std::forward<Args>(args)...);
+    }
 
 }

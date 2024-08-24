@@ -10,9 +10,8 @@ namespace slag {
 
     thread_local ThreadContext* context_instance = nullptr;
 
-    ThreadContext::ThreadContext(Application& application, Thread& thread)
-        : application_(application)
-        , thread_(thread)
+    ThreadContext::ThreadContext(Thread& thread)
+        : thread_(thread)
     {
         if (context_instance) {
             throw std::runtime_error("Context already bound");
@@ -26,7 +25,7 @@ namespace slag {
     }
 
     Application& ThreadContext::application() {
-        return application_;
+        return thread_.application();
     }
 
     Thread& ThreadContext::thread() {
@@ -35,6 +34,10 @@ namespace slag {
 
     EventLoop& ThreadContext::event_loop() {
         return thread_.event_loop();
+    }
+
+    Reactor& ThreadContext::reactor() {
+        return thread_.event_loop().reactor();
     }
 
     bool has_context() {

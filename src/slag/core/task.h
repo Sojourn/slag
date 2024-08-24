@@ -6,6 +6,8 @@
 
 namespace slag {
 
+    class Executor;
+
     enum class TaskState : uint8_t {
         WAITING, // The task is waiting on an event, or to be scheduled.
         RUNNING, // The task is actively running.
@@ -25,6 +27,7 @@ namespace slag {
     {
     public:
         explicit Task(TaskPriority priority = TaskPriority::SAME);
+        explicit Task(Executor& executor);
 
         Task(Task&&) = delete;
         Task(const Task&) = delete;
@@ -32,7 +35,6 @@ namespace slag {
         Task& operator=(const Task&) = delete;
 
         [[nodiscard]] TaskState state() const;
-        [[nodiscard]] TaskPriority priority() const;
 
         [[nodiscard]] bool is_waiting() const;
         [[nodiscard]] bool is_running() const;
@@ -42,8 +44,11 @@ namespace slag {
         using Pollable<PollableType::RUNNABLE>::is_runnable;
         using Pollable<PollableType::COMPLETE>::is_complete;
 
+        // This will become set when the task is capable of making progress.
+        Event& runnable_event() override;
+
         // This will become set when the task has completed (success/failure).
-        [[nodiscard]] Event& complete_event() final;
+        Event& complete_event() override final;
 
         // This should execute a small, but meaningful amount of work. It will
         // be periodically called by an executor when the task indicates
@@ -53,6 +58,12 @@ namespace slag {
         // if they previously succeeded.
         //
         virtual void run() = 0;
+
+        // Attempt to stop the task.
+        virtual void cancel();
+
+        // Force the task to stop immediately.
+        void kill();
 
     protected:
         void set_success(bool success);
@@ -66,7 +77,7 @@ namespace slag {
 
     private:
         TaskState    state_;
-        TaskPriority priority_;
+        Event        runnable_event_;
         Event        complete_event_;
     };
 

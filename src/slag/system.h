@@ -4,8 +4,4 @@
 #include "system/operation.h"
 #include "system/interrupt.h"
 #include "system/file_descriptor.h"
-
-#include "system/operations/nop_operation.h"
-#include "system/operations/close_operation.h"
-#include "system/operations/poll_multishot_operation.h"
-
+#include "system/operation_factory.h"

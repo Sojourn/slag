@@ -24,37 +24,21 @@ struct PrintTask final : ProtoTask {
     }
 };
 
-class TestTask : public Task {
-public:
-    TestTask()
-        : print_("Hello, world!")
-    {
-        runnable_event_.set();
-    }
-
-    Event& runnable_event() override final {
-        if (op_) {
-            return op_->complete_event();
-        }
-
-        return runnable_event_;
-    }
+struct TestTask : ProtoTask {
+    Ptr<NopOperation>        op_;
+    std::optional<PrintTask> print_;
 
     void run() override final {
-        if (!op_) {
-            get_context().event_loop().schedule(print_);
-            op_ = get_context().event_loop().start_operation<NopOperation>();
-            return;
+        SLAG_PT_BEGIN();
+        {
+            op_ = start_nop_operation();
+            SLAG_PT_WAIT_COMPLETE(*op_);
+
+            print_.emplace("Hello, World!");
+            SLAG_PT_WAIT_COMPLETE(*print_);
         }
-
-        get_context().event_loop().stop();
-        set_success(true);
+        SLAG_PT_END();
     }
-
-private:
-    Ptr<NopOperation> op_;
-    PrintTask         print_;
-    Event             runnable_event_;
 };
 
 int main(int argc, char** argv) {
@@ -63,5 +47,6 @@ int main(int argc, char** argv) {
 
     Application application(argc, argv);
     application.spawn_thread<TestTask>();
-    return application.run();
+
+    return EXIT_SUCCESS;
 }

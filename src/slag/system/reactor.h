@@ -51,13 +51,9 @@ namespace slag {
 
     template<typename OperationImpl, typename... Args>
     Ref<OperationImpl> Reactor::create_operation(Args&&... args) {
-        auto operation = bind(
+        return bind(
             *(new OperationImpl(std::forward<Args>(args)...))
         );
-
-        schedule_operation(*operation);
-
-        return operation;
     }
 
 }

@@ -43,10 +43,15 @@ namespace slag {
         explicit ProtoTask(TaskPriority priority = TaskPriority::SAME)
             : Task{priority}
             , pt_state_{0}
-            , pt_event_{}
-            , pt_runnable_{&pt_event_}
+            , pt_runnable_{nullptr}
         {
-            pt_event_.set();
+        }
+
+        explicit ProtoTask(Executor& executor)
+            : Task{executor}
+            , pt_state_(0)
+            , pt_runnable_{nullptr}
+        {
         }
 
         Event& runnable_event() override final {
@@ -55,7 +60,6 @@ namespace slag {
 
     protected:
         int    pt_state_;
-        Event  pt_event_;
         Event* pt_runnable_;
     };
 

@@ -3,6 +3,7 @@
 #include <memory>
 #include "core.h"
 #include "system.h"
+#include "drivers/region_driver.h"
 
 namespace slag {
 
@@ -13,7 +14,7 @@ namespace slag {
         , private InterruptHandler
     {
     public:
-        EventLoop(Thread& thread, std::unique_ptr<Task> init);
+        explicit EventLoop(Thread& thread);
         ~EventLoop();
 
         EventLoop(EventLoop&&) = delete;
@@ -21,13 +22,14 @@ namespace slag {
         EventLoop& operator=(EventLoop&&) = delete;
         EventLoop& operator=(const EventLoop&) = delete;
 
-        void loop();
-        void stop();
+        bool is_running() const;
 
-        void schedule(Task& task);
+        Reactor& reactor();
+        Executor& executor(TaskPriority priority);
 
-        template<typename OperationImpl, typename... Args>
-        Ref<OperationImpl> start_operation(Args&&... args);
+        template<typename RootTask, typename... Args>
+        void run(Args&&... args);
+        void stop(bool force = false);
 
     private:
         void finalize(ObjectGroup group, std::span<Object*> objects) noexcept override;
@@ -39,23 +41,36 @@ namespace slag {
     private:
         void handle_interrupt(Interrupt interrupt) override final;
 
+        void loop();
+
     private:
-        Thread&               thread_;
-        Region                region_;
-        Reactor               reactor_;
-        bool                  looping_;
+        using InterruptVector = std::array<Event, INTERRUPT_REASON_COUNT>;
 
-        std::unique_ptr<Task> region_driver_;
-        std::unique_ptr<Task> init_;
+        Thread&                       thread_;
+        Region                        region_;
+        Reactor                       reactor_;
+        InterruptVector               interrupt_events_;
 
-        TaskPriority          current_priority_;
-        Executor              high_priority_executor_;
-        Executor              idle_priority_executor_;
+        TaskPriority                  current_priority_;
+        Executor                      high_priority_executor_;
+        Executor                      idle_priority_executor_;
+
+        std::optional<RegionDriver>   region_driver_;
+        std::unique_ptr<Task>         root_task_;
     };
 
-    template<typename OperationImpl, typename... Args>
-    Ref<OperationImpl> EventLoop::start_operation(Args&&... args) {
-        return reactor_.create_operation<OperationImpl>(std::forward<Args>(args)...);
+    template<typename RootTask, typename... Args>
+    void EventLoop::run(Args&&... args) {
+        if (root_task_) {
+            throw std::runtime_error("Already looping");
+        }
+
+        // Construction of drivers is deferred until we have a `ThreadContext`.
+        region_driver_.emplace(region_, reactor_);
+
+        root_task_ = std::make_unique<RootTask>(std::forward<Args>(args)...);
+
+        loop();
     }
 
 }
