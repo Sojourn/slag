@@ -1,6 +1,6 @@
 #pragma once
 
-#include "application.h"
+#include "runtime.h"
 #include "thread.h"
 #include "thread_context.h"
 

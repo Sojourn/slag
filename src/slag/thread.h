@@ -13,11 +13,11 @@
 
 namespace slag {
 
-    class Application;
+    class Runtime;
 
     class Thread {
     public:
-        Thread(Application& application);
+        Thread(Runtime& runtime);
         ~Thread();
 
         Thread(Thread&&) = delete;
@@ -25,14 +25,14 @@ namespace slag {
         Thread& operator=(Thread&&) = delete;
         Thread& operator=(const Thread&) = delete;
 
-        Application& application();
+        Runtime& runtime();
         EventLoop& event_loop();
 
         template<typename TaskImpl, typename... Args>
         void run(Args&&... args);
 
     private:
-        Application& application_;
+        Runtime&     runtime_;
         EventLoop*   event_loop_;
         std::thread  thread_;
     };

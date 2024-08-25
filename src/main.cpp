@@ -45,8 +45,8 @@ int main(int argc, char** argv) {
     (void)argc;
     (void)argv;
 
-    Application application(argc, argv);
-    application.spawn_thread<TestTask>();
+    Runtime runtime(argc, argv);
+    runtime.spawn_thread<TestTask>();
 
     return EXIT_SUCCESS;
 }

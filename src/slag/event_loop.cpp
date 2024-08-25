@@ -1,5 +1,5 @@
 #include "event_loop.h"
-#include "slag/application.h"
+#include "slag/runtime.h"
 #include "slag/thread.h"
 #include "slag/memory.h"
 #include "slag/system.h"
@@ -10,7 +10,7 @@ namespace slag {
 
     EventLoop::EventLoop(Thread& thread)
         : thread_(thread)
-        , region_(thread.application().domain(), *this)
+        , region_(thread.runtime().domain(), *this)
         , reactor_(*this)
         , current_priority_(TaskPriority::HIGH) // This will give the root task high-priority.
     {
@@ -24,8 +24,12 @@ namespace slag {
         return static_cast<bool>(root_task_);
     }
 
+    Thread& EventLoop::thread() {
+        return thread_;
+    }
+
     Region& EventLoop::region() {
-        return region_:
+        return region_;
     }
 
     Reactor& EventLoop::reactor() {

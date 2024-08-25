@@ -1,11 +1,11 @@
-#include "application.h"
+#include "runtime.h"
 #include "thread.h"
 #include "mantle/mantle.h"
 #include <cstdlib>
 
 namespace slag {
 
-    Application::Application(int argc, char** argv)
+    Runtime::Runtime(int argc, char** argv)
         : region_(domain_, *this)
     {
         (void)argc;
@@ -14,15 +14,15 @@ namespace slag {
         threads_.reserve(std::thread::hardware_concurrency());
     }
 
-    Application::~Application() {
+    Runtime::~Runtime() {
         region_.stop();
     }
 
-    Domain& Application::domain() {
+    Domain& Runtime::domain() {
         return domain_;
     }
 
-    void Application::finalize(ObjectGroup, std::span<Object*>) noexcept {
+    void Runtime::finalize(ObjectGroup, std::span<Object*>) noexcept {
         abort(); // Override this if needed.
     }
 

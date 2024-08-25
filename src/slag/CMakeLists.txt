@@ -1,5 +1,5 @@
 set(SLAG_SOURCE_FILES
-    application.cpp
+    runtime.cpp
     thread.cpp
     event_loop.cpp
     thread_context.cpp

@@ -11,15 +11,15 @@ namespace slag {
 
     class Thread;
 
-    class Application : public Finalizer {
+    class Runtime : public Finalizer {
     public:
-        Application(int argc, char** argv);
-        ~Application();
+        Runtime(int argc, char** argv);
+        ~Runtime();
 
-        Application(Application&&) = delete;
-        Application(const Application&) = delete;
-        Application& operator=(Application&&) = delete;
-        Application& operator=(const Application&) = delete;
+        Runtime(Runtime&&) = delete;
+        Runtime(const Runtime&) = delete;
+        Runtime& operator=(Runtime&&) = delete;
+        Runtime& operator=(const Runtime&) = delete;
 
         Domain& domain();
 
@@ -36,7 +36,7 @@ namespace slag {
     };
 
     template<typename RootTask, typename... Args>
-    void Application::spawn_thread(Args&&... args) {
+    void Runtime::spawn_thread(Args&&... args) {
         auto&& thread = threads_.emplace_back(std::make_unique<Thread>(*this));
 
         thread->run<RootTask>(std::forward<Args>(args)...);

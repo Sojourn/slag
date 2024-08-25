@@ -1,7 +1,7 @@
 #include "thread_context.h"
 #include "core.h"
 #include "system.h"
-#include "application.h"
+#include "runtime.h"
 #include "thread.h"
 #include <stdexcept>
 #include <cassert>
@@ -24,8 +24,8 @@ namespace slag {
         context_instance = nullptr;
     }
 
-    Application& ThreadContext::application() {
-        return thread_.application();
+    Runtime& ThreadContext::runtime() {
+        return thread_.runtime();
     }
 
     Thread& ThreadContext::thread() {

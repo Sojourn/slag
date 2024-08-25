@@ -4,7 +4,7 @@
 
 namespace slag {
 
-    class Application;
+    class Runtime;
     class Thread;
     class EventLoop;
     class Reactor;
@@ -21,7 +21,7 @@ namespace slag {
         ThreadContext& operator=(ThreadContext&&) = delete;
         ThreadContext& operator=(const ThreadContext&) = delete;
 
-        Application& application();
+        Runtime& runtime();
         Thread& thread();
         EventLoop& event_loop();
         Reactor& reactor();
@@ -33,8 +33,8 @@ namespace slag {
     bool has_context();
     ThreadContext& get_context();
 
-    inline Application& get_application() {
-        return get_context().application();
+    inline Runtime& get_runtime() {
+        return get_context().runtime();
     }
 
     inline Thread& get_thread() {

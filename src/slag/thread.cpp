@@ -1,13 +1,13 @@
 #include "thread.h"
 #include "thread_context.h"
-#include "application.h"
+#include "runtime.h"
 #include "memory/buffer.h"
 #include "system/operation.h"
 
 namespace slag {
 
-    Thread::Thread(Application& application)
-        : application_(application)
+    Thread::Thread(Runtime& runtime)
+        : runtime_(runtime)
         , event_loop_(nullptr)
     {
     }
@@ -18,8 +18,8 @@ namespace slag {
         }
     }
 
-    Application& Thread::application() {
-        return application_;
+    Runtime& Thread::runtime() {
+        return runtime_;
     }
 
     EventLoop& Thread::event_loop() {
