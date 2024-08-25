@@ -1,7 +1,8 @@
-- Add an `EventLoop::State` w/ {INITIAL, STARTING, LOOPING, STOPPING, STOPPED} states.
 - Add an `OperationImpl<T>` intermediate class so we can do factory construction with perfect forwarding.
 - Make `RegionDriver::poll_op_` a `Ptr<PollMultishotOperation>`. I _think_ it should be safe.
 - Remove `core.h`, `system.h`, etc.
+- Make the `Application` do signal handling.
+    - Define an interrupt the application can use to cancel a thread's root task.
 
 - Improve the concept of an executor's budget.
     - Datastructure for the current loop iteration? Frame?

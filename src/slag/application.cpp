@@ -5,13 +5,9 @@
 
 namespace slag {
 
-    struct DummyFinalizer final : public Finalizer {
-        void finalize(ObjectGroup, std::span<Object*>) noexcept override {
-            abort();
-        }
-    };
-
-    Application::Application(int argc, char** argv) {
+    Application::Application(int argc, char** argv)
+        : region_(domain_, *this)
+    {
         (void)argc;
         (void)argv;
 
@@ -19,15 +15,15 @@ namespace slag {
     }
 
     Application::~Application() {
-        // Create a dummy region if needed to prevent the domain from waiting forever.
-        if (threads_.empty() && !Region::thread_local_instance()) {
-            DummyFinalizer finalizer;
-            Region region(domain_, finalizer);
-        }
+        region_.stop();
     }
 
     Domain& Application::domain() {
         return domain_;
+    }
+
+    void Application::finalize(ObjectGroup, std::span<Object*>) noexcept {
+        abort(); // Override this if needed.
     }
 
 }

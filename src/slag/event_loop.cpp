@@ -109,10 +109,27 @@ namespace slag {
     }
 
     void EventLoop::handle_interrupt(Interrupt interrupt) {
-        interrupt_events_[to_index(interrupt.reason)].set();
+        interrupt_vector_[to_index(interrupt.reason)].set();
+
+        switch (interrupt.reason) {
+            case InterruptReason::HALT: {
+                constexpr bool force = true;
+                stop(force);
+                break;
+            }
+            case InterruptReason::STOP: {
+                constexpr bool force = false;
+                stop(force);
+                break;
+            }
+            default: {
+                break;
+            }
+        }
     }
 
     void EventLoop::loop() {
+        // TODO: Use a feedback loop to calibrate these for different workloads.
         constexpr size_t high_priority_budget = 32;
         constexpr size_t idle_priority_budget = 1;
 

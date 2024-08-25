@@ -33,7 +33,7 @@ namespace slag {
 
     private:
         Application& application_;
-        EventLoop    event_loop_;
+        EventLoop*   event_loop_;
         std::thread  thread_;
     };
 
@@ -46,8 +46,12 @@ namespace slag {
         thread_ = std::thread([this](Args&&... args) {
             try {
                 ThreadContext context(*this);
-
-                event_loop_.run<TaskImpl>(std::forward<Args>(args)...);
+                EventLoop event_loop(*this);
+                {
+                    event_loop_ = &event_loop;
+                    event_loop_->run<TaskImpl>(std::forward<Args>(args)...);
+                    event_loop_ = nullptr;
+                }
             }
             catch (const std::exception& ex) {
                 std::cerr << ex.what() << std::endl;

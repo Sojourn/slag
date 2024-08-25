@@ -49,7 +49,7 @@ namespace slag {
         Thread&                       thread_;
         Region                        region_;
         Reactor                       reactor_;
-        InterruptVector               interrupt_events_;
+        InterruptVector               interrupt_vector_;
 
         TaskPriority                  current_priority_;
         Executor                      high_priority_executor_;
@@ -62,7 +62,7 @@ namespace slag {
     template<typename RootTask, typename... Args>
     void EventLoop::run(Args&&... args) {
         if (root_task_) {
-            throw std::runtime_error("Already looping");
+            throw std::runtime_error("Already running");
         }
 
         // Construction of drivers is deferred until we have a `ThreadContext`.

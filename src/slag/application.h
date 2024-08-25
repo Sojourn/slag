@@ -11,7 +11,7 @@ namespace slag {
 
     class Thread;
 
-    class Application {
+    class Application : public Finalizer {
     public:
         Application(int argc, char** argv);
         ~Application();
@@ -27,7 +27,11 @@ namespace slag {
         void spawn_thread(Args&&... args);
 
     private:
+        void finalize(ObjectGroup group, std::span<Object*> objects) noexcept override;
+
+    private:
         Domain                               domain_;
+        Region                               region_;
         std::vector<std::unique_ptr<Thread>> threads_;
     };
 

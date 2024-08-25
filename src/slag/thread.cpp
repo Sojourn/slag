@@ -8,7 +8,7 @@ namespace slag {
 
     Thread::Thread(Application& application)
         : application_(application)
-        , event_loop_(*this)
+        , event_loop_(nullptr)
     {
     }
 
@@ -23,7 +23,11 @@ namespace slag {
     }
 
     EventLoop& Thread::event_loop() {
-        return event_loop_;
+        if (LIKELY(event_loop_)) {
+            return *event_loop_;
+        }
+
+        abort();
     }
 
 }
