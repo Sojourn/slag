@@ -12,7 +12,7 @@ namespace slag {
         : thread_(thread)
         , region_(thread.application().domain(), *this)
         , reactor_(*this)
-        , current_priority_(TaskPriority::IDLE)
+        , current_priority_(TaskPriority::HIGH) // This will give the root task high-priority.
     {
     }
 
@@ -22,6 +22,10 @@ namespace slag {
 
     bool EventLoop::is_running() const {
         return static_cast<bool>(root_task_);
+    }
+
+    Region& EventLoop::region() {
+        return region_:
     }
 
     Reactor& EventLoop::reactor() {

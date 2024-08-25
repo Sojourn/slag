@@ -24,6 +24,7 @@ namespace slag {
 
         bool is_running() const;
 
+        Region& region();
         Reactor& reactor();
         Executor& executor(TaskPriority priority);
 
