@@ -8,7 +8,12 @@ namespace slag {
     }
 
     void Executor::schedule(Task& task) {
-        selector_.insert<PollableType::RUNNABLE>(task);
+        Event& event = task.runnable_event();
+        if (UNLIKELY(event.is_linked())) {
+            event.unlink();
+        }
+
+        selector_.insert(event, &task);
     }
 
     void Executor::run(const size_t budget) {
