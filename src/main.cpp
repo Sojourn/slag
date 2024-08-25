@@ -2,8 +2,6 @@
 
 #include "mantle/mantle.h"
 #include "slag/slag.h"
-#include "slag/collections/intrusive_list.h"
-#include "slag/thread_context.h"
 
 using namespace slag;
 

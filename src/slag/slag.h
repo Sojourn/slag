@@ -2,7 +2,7 @@
 
 #include "runtime.h"
 #include "thread.h"
-#include "thread_context.h"
+#include "context.h"
 
 #include "core.h"
 #include "memory.h"

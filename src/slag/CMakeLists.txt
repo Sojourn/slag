@@ -1,8 +1,8 @@
 set(SLAG_SOURCE_FILES
     runtime.cpp
     thread.cpp
+    context.cpp
     event_loop.cpp
-    thread_context.cpp
     core/task.cpp
     core/event.cpp
     core/selector.cpp

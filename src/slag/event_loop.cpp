@@ -1,6 +1,7 @@
 #include "event_loop.h"
 #include "slag/runtime.h"
 #include "slag/thread.h"
+#include "slag/context.h"
 #include "slag/memory.h"
 #include "slag/system.h"
 #include "slag/core.h"
@@ -8,24 +9,20 @@
 
 namespace slag {
 
-    EventLoop::EventLoop(Thread& thread)
-        : thread_(thread)
-        , region_(thread.runtime().domain(), *this)
+    EventLoop::EventLoop(Domain& domain)
+        : region_(domain, *this)
         , reactor_(*this)
         , current_priority_(TaskPriority::HIGH) // This will give the root task high-priority.
     {
+        get_context().attach(*this);
     }
 
     EventLoop::~EventLoop() {
-        // FIXME: Properly shut down the reactor to plug some leaks.
+        get_context().detach(*this);
     }
 
     bool EventLoop::is_running() const {
         return static_cast<bool>(root_task_);
-    }
-
-    Thread& EventLoop::thread() {
-        return thread_;
     }
 
     Region& EventLoop::region() {

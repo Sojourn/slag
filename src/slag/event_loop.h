@@ -7,14 +7,12 @@
 
 namespace slag {
 
-    class Thread;
-
     class EventLoop final
         : private Finalizer
         , private InterruptHandler
     {
     public:
-        explicit EventLoop(Thread& thread);
+        explicit EventLoop(Domain& domain);
         ~EventLoop();
 
         EventLoop(EventLoop&&) = delete;
@@ -24,7 +22,6 @@ namespace slag {
 
         bool is_running() const;
 
-        Thread& thread();
         Region& region();
         Reactor& reactor();
         Executor& executor(TaskPriority priority);
@@ -48,7 +45,6 @@ namespace slag {
     private:
         using InterruptVector = std::array<Event, INTERRUPT_REASON_COUNT>;
 
-        Thread&                       thread_;
         Region                        region_;
         Reactor                       reactor_;
         InterruptVector               interrupt_vector_;

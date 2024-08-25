@@ -1,6 +1,6 @@
 #pragma once
 
-#include "slag/thread_context.h"
+#include "slag/context.h"
 #include "slag/core/object.h"
 #include "reactor.h"
 #include "operations/nop_operation.h"

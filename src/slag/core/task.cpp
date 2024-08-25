@@ -1,7 +1,7 @@
 #include "task.h"
 #include "executor.h"
+#include "slag/context.h"
 #include "slag/event_loop.h"
-#include "slag/thread_context.h"
 #include <stdexcept>
 
 namespace slag {

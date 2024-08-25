@@ -1,5 +1,4 @@
 #include "reactor.h"
-#include "slag/thread_context.h"
 #include <stdexcept>
 #include <numeric>
 #include <cstring>
