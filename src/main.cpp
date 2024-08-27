@@ -43,6 +43,16 @@ int main(int argc, char** argv) {
     (void)argc;
     (void)argv;
 
+    ThreadGraph graph;
+    graph.add_edge({0, 1});
+    graph.add_edge({1, 2});
+    graph.add_edge({2, 3});
+    graph.add_edge({3, 0});
+
+    ThreadRouteTable routes = build_thread_route_table(graph, 0);
+    (void)routes;
+    asm("int $3");
+
     Runtime runtime(argc, argv);
     runtime.spawn_thread<TestTask>();
 

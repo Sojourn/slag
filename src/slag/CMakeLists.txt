@@ -2,6 +2,7 @@ set(SLAG_SOURCE_FILES
     runtime.cpp
     thread.cpp
     context.cpp
+    topology.cpp
     event_loop.cpp
     core/task.cpp
     core/event.cpp
