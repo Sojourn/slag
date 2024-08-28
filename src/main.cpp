@@ -49,12 +49,14 @@ int main(int argc, char** argv) {
     graph.add_edge({2, 3});
     graph.add_edge({3, 0});
 
-    ThreadRouteTable routes = build_thread_route_table(graph, 0);
-    (void)routes;
-    asm("int $3");
+    // ThreadRouteTable routes = build_thread_route_table(graph, 0);
 
-    Runtime runtime(argc, argv);
-    runtime.spawn_thread<TestTask>();
+    Runtime runtime(graph);
+    runtime.spawn_thread<TestTask>(ThreadConfig {
+        .index          = 0,
+        .name           = "controller",
+        .cpu_affinities = std::nullopt,
+    });
 
     return EXIT_SUCCESS;
 }

@@ -5,7 +5,8 @@
 #include <latch>
 #include "slag/core.h"
 #include "slag/types.h"
-#include "thread.h"
+#include "slag/thread.h"
+#include "slag/topology.h"
 
 namespace slag {
 
@@ -13,7 +14,7 @@ namespace slag {
 
     class Runtime : public Finalizer {
     public:
-        Runtime(int argc, char** argv);
+        explicit Runtime(const ThreadGraph& thread_graph);
         ~Runtime();
 
         Runtime(Runtime&&) = delete;
@@ -24,7 +25,7 @@ namespace slag {
         Domain& domain();
 
         template<typename RootTask, typename... Args>
-        void spawn_thread(Args&&... args);
+        void spawn_thread(const ThreadConfig& config, Args&&... args);
 
     private:
         void finalize(ObjectGroup group, std::span<Object*> objects) noexcept override;
@@ -32,12 +33,14 @@ namespace slag {
     private:
         Domain                               domain_;
         Region                               region_;
+
         std::vector<std::unique_ptr<Thread>> threads_;
+        ThreadGraph                          thread_graph_;
     };
 
     template<typename RootTask, typename... Args>
-    void Runtime::spawn_thread(Args&&... args) {
-        auto&& thread = threads_.emplace_back(std::make_unique<Thread>(*this));
+    void Runtime::spawn_thread(const ThreadConfig& config, Args&&... args) {
+        auto&& thread = threads_.emplace_back(std::make_unique<Thread>(*this, config));
 
         thread->run<RootTask>(std::forward<Args>(args)...);
     }

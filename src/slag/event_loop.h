@@ -28,6 +28,7 @@ namespace slag {
 
         template<typename RootTask, typename... Args>
         void run(Args&&... args);
+        void run(std::unique_ptr<Task> root_task);
         void stop(bool force = false);
 
     private:
@@ -63,12 +64,7 @@ namespace slag {
             throw std::runtime_error("Already running");
         }
 
-        // Construction of drivers is deferred until we have a `ThreadContext`.
-        region_driver_.emplace(region_, reactor_);
-
-        root_task_ = std::make_unique<RootTask>(std::forward<Args>(args)...);
-
-        loop();
+        run(std::make_unique<RootTask>(std::forward<Args>(args)...));
     }
 
 }

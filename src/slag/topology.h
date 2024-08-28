@@ -10,6 +10,8 @@
 
 namespace slag {
 
+    // TODO: Rename the file to thread_graph/thread_route, possibly splitting into two different files.
+
     using ThreadIndex = uint8_t;
     using ThreadMask = uint64_t;
 
@@ -29,6 +31,9 @@ namespace slag {
         ThreadMask nodes() const;
         ThreadMask adjacent_nodes(ThreadIndex thread_index) const;
 
+        size_t edge_count() const;
+        std::optional<size_t> edge_index(Edge edge) const;
+
         bool has_edge(Edge edge) const;
         void add_edge(Edge edge);
 
@@ -46,9 +51,7 @@ namespace slag {
         void add_hop(ThreadIndex next);
 
     private:
-        static constexpr size_t MAX_HOPS = 16;
-
-        alignas(16) ThreadIndex hops_[MAX_HOPS];
+        std::array<ThreadIndex, 8> hops_;
     };
 
     using ThreadRouteTable = std::array<ThreadRoute, MAX_THREAD_COUNT>;
@@ -63,6 +66,13 @@ namespace slag {
         }
     }
 
+    // Computes shortest paths from an origin thread to all other threads in a graph.
+    // TODO: Add a cost model better than naive #hops.
+    //       - NUMA node.
+    //       - Shared L2/L3 caches.
+    //       - CPU time to route away from (idle? busy?) threads.
+    // TODO: Think about supporting multiple routes to a target and load balancing.
+    //
     inline ThreadRouteTable build_thread_route_table(const ThreadGraph& graph, const ThreadIndex origin) {
         size_t route_costs[MAX_THREAD_COUNT];
         for (size_t& cost : route_costs) {
@@ -82,7 +92,7 @@ namespace slag {
             visited_set |= (1ull << source);
 
             for_each_thread(graph.adjacent_nodes(source), [&](const ThreadIndex target) {
-                const size_t edge_cost = 1; // TODO: Use a NUMA/cache aware cost heuristic.
+                const size_t edge_cost = 1;
                 const size_t source_route_cost = route_costs[source];
                 const size_t proposed_route_cost = source_route_cost + edge_cost;
 

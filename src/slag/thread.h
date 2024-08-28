@@ -1,6 +1,8 @@
 #pragma once
 
-#include <future>
+#include <optional>
+#include <span>
+#include <string>
 #include <memory>
 #include <thread>
 #include "types.h"
@@ -10,14 +12,21 @@
 #include "event_loop.h"
 #include "memory/buffer.h"
 #include "system/operation.h"
+#include "topology.h"
 
 namespace slag {
 
     class Runtime;
 
+    struct ThreadConfig {
+        ThreadIndex index = INVALID_THREAD_INDEX;
+        std::optional<std::string> name;
+        std::optional<std::span<size_t>> cpu_affinities = std::nullopt;
+    };
+
     class Thread {
     public:
-        Thread(Runtime& runtime);
+        Thread(Runtime& runtime, const ThreadConfig& config);
         ~Thread();
 
         Thread(Thread&&) = delete;
@@ -34,6 +43,7 @@ namespace slag {
     private:
         Runtime&     runtime_;
         EventLoop*   event_loop_;
+        ThreadConfig config_;
         std::thread  thread_;
     };
 
@@ -45,6 +55,10 @@ namespace slag {
 
         thread_ = std::thread([this](Args&&... args) {
             try {
+                if (config_.cpu_affinities) {
+                    mantle::set_cpu_affinity(*config_.cpu_affinities);
+                }
+
                 Context context(runtime_);
                 context.attach(*this);
 

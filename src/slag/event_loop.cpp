@@ -51,6 +51,17 @@ namespace slag {
         }
     }
 
+    void EventLoop::run(std::unique_ptr<Task> root_task) {
+        if (root_task_) {
+            throw std::runtime_error("Already running");
+        }
+
+        region_driver_.emplace(region_, reactor_);
+        root_task_ = std::move(root_task);
+
+        loop();
+    }
+
     void EventLoop::stop(bool force) {
         if (root_task_) {
             if (force) {

@@ -21,6 +21,34 @@ namespace slag {
         return adjacency_matrix_[thread_index];
     }
 
+    size_t ThreadGraph::edge_count() const {
+        size_t result = 0;
+
+        for (ThreadIndex thread_index = 0; thread_index < MAX_THREAD_COUNT; ++thread_index) {
+            result += __builtin_popcountll(adjacency_matrix_[thread_index]);
+        }
+
+        return result;
+    }
+
+    std::optional<size_t> ThreadGraph::edge_index(const Edge edge) const {
+        size_t result = 0;
+
+        // Count the number of edges in preceding rows.
+        for (ThreadIndex thread_index = 0; thread_index < edge.source; ++thread_index) {
+            result += __builtin_popcountll(adjacent_nodes(thread_index));
+        }
+
+        // Count the number of edges in preceding columns.
+        for (ThreadIndex thread_index = 0; thread_index < edge.target; ++thread_index) {
+            if (adjacency_matrix_[edge.source] & (1ull << thread_index)) {
+                result += 1;
+            }
+        }
+
+        return std::nullopt;
+    }
+
     bool ThreadGraph::has_edge(const Edge edge) const {
         assert(edge.source != edge.target);
         assert(edge.source < MAX_THREAD_COUNT);
@@ -53,7 +81,7 @@ namespace slag {
 
     // NOTE: This can be done in constant time with SIMD.
     std::optional<ThreadIndex> ThreadRoute::next_hop(ThreadIndex current) const {
-        for (size_t i = 0; i < (MAX_HOPS - 1); ++i) {
+        for (size_t i = 0; i < (hops_.size() - 1); ++i) {
             if (hops_[i] == current) {
                 return hops_[i + 1];
             }
@@ -64,7 +92,7 @@ namespace slag {
 
     // NOTE: This can be done in constant time with SIMD.
     void ThreadRoute::add_hop(ThreadIndex next) {
-        for (size_t i = 0; i < MAX_HOPS; ++i) {
+        for (size_t i = 0; i < hops_.size(); ++i) {
             if (hops_[i] == INVALID_THREAD_INDEX) {
                 hops_[i] = next;
                 return;

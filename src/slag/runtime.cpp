@@ -5,13 +5,10 @@
 
 namespace slag {
 
-    Runtime::Runtime(int argc, char** argv)
+    Runtime::Runtime(const ThreadGraph& thread_graph)
         : region_(domain_, *this)
+        , thread_graph_(thread_graph)
     {
-        (void)argc;
-        (void)argv;
-
-        threads_.reserve(std::thread::hardware_concurrency());
     }
 
     Runtime::~Runtime() {

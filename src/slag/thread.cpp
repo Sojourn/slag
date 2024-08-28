@@ -6,9 +6,10 @@
 
 namespace slag {
 
-    Thread::Thread(Runtime& runtime)
+    Thread::Thread(Runtime& runtime, const ThreadConfig& config)
         : runtime_(runtime)
         , event_loop_(nullptr)
+        , config_(config)
     {
     }
 
