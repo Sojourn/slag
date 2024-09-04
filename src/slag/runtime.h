@@ -12,15 +12,22 @@ namespace slag {
 
     class Thread;
 
+    struct RuntimeConfig {
+        ThreadGraph                      thread_topology;
+        std::optional<std::span<size_t>> gc_cpu_affinities = std::nullopt;
+    };
+
     class Runtime : public Finalizer {
     public:
-        explicit Runtime(const ThreadGraph& thread_graph);
+        explicit Runtime(const RuntimeConfig& config);
         ~Runtime();
 
         Runtime(Runtime&&) = delete;
         Runtime(const Runtime&) = delete;
         Runtime& operator=(Runtime&&) = delete;
         Runtime& operator=(const Runtime&) = delete;
+
+        const RuntimeConfig& config() const;
 
         Domain& domain();
 
@@ -31,11 +38,10 @@ namespace slag {
         void finalize(ObjectGroup group, std::span<Object*> objects) noexcept override;
 
     private:
+        RuntimeConfig                        config_;
         Domain                               domain_;
         Region                               region_;
-
         std::vector<std::unique_ptr<Thread>> threads_;
-        ThreadGraph                          thread_graph_;
     };
 
     template<typename RootTask, typename... Args>

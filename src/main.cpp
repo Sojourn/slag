@@ -39,24 +39,41 @@ struct TestTask : ProtoTask {
     }
 };
 
+struct NopTask : ProtoTask {
+    void run() override final {
+        SLAG_PT_BEGIN();
+        {
+            // Nop.
+        }
+        SLAG_PT_END();
+    }
+};
+
 int main(int argc, char** argv) {
     (void)argc;
     (void)argv;
 
-    ThreadGraph graph;
-    graph.add_edge({0, 1});
-    graph.add_edge({1, 2});
-    graph.add_edge({2, 3});
-    graph.add_edge({3, 0});
+    RuntimeConfig config;
 
-    // ThreadRouteTable routes = build_thread_route_table(graph, 0);
+    // Four threads in a ring.
+    config.thread_topology.add_edge({0, 1});
+    config.thread_topology.add_edge({1, 2});
+    config.thread_topology.add_edge({2, 3});
+    config.thread_topology.add_edge({3, 0});
 
-    Runtime runtime(graph);
+    Runtime runtime(config);
     runtime.spawn_thread<TestTask>(ThreadConfig {
         .index          = 0,
         .name           = "controller",
         .cpu_affinities = std::nullopt,
     });
+    for (ThreadIndex thread_index = 1; thread_index < 4; ++thread_index) {
+        runtime.spawn_thread<NopTask>(ThreadConfig {
+            .index          = thread_index,
+            .name           = "worker",
+            .cpu_affinities = std::nullopt,
+        });
+    }
 
     return EXIT_SUCCESS;
 }

@@ -5,14 +5,19 @@
 
 namespace slag {
 
-    Runtime::Runtime(const ThreadGraph& thread_graph)
-        : region_(domain_, *this)
-        , thread_graph_(thread_graph)
+    Runtime::Runtime(const RuntimeConfig& config)
+        : config_(config)
+        , domain_(config_.gc_cpu_affinities)
+        , region_(domain_, *this)
     {
     }
 
     Runtime::~Runtime() {
         region_.stop();
+    }
+
+    const RuntimeConfig& Runtime::config() const {
+        return config_;
     }
 
     Domain& Runtime::domain() {

@@ -10,10 +10,10 @@
 
 namespace slag {
 
-    // TODO: Rename the file to thread_graph/thread_route, possibly splitting into two different files.
+    // TODO: Widen `ThreadIndex` to 16-bits.
 
     using ThreadIndex = uint8_t;
-    using ThreadMask = uint64_t;
+    using ThreadMask  = uint64_t;
 
     constexpr size_t MAX_THREAD_COUNT = 64;
     constexpr size_t INVALID_THREAD_INDEX = std::numeric_limits<ThreadIndex>::max();
