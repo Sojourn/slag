@@ -1,13 +1,14 @@
 #pragma once
 
 #include <array>
-#include "slag/core/object.h"
+#include "slag/object.h"
 
 namespace slag {
 
     class Runtime;
     class Thread;
     class EventLoop;
+    class Router;
     class Reactor;
 
     // A directory of important runtime and thread services.
@@ -26,6 +27,7 @@ namespace slag {
         Thread& thread();
         EventLoop& event_loop();
         Region& region();
+        Router& router();
         Reactor& reactor();
 
     private:
@@ -53,6 +55,7 @@ namespace slag {
     Thread& get_thread();
     EventLoop& get_event_loop();
     Region& get_region();
+    Router& get_router();
     Reactor& get_reactor();
 
 }

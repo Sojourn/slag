@@ -1,7 +1,7 @@
 #pragma once
 
 #include "slag/context.h"
-#include "slag/core/object.h"
+#include "slag/object.h"
 #include "reactor.h"
 #include "operations/nop_operation.h"
 #include "operations/close_operation.h"

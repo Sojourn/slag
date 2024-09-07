@@ -6,8 +6,8 @@
 #include <cstdint>
 #include <cstddef>
 
-#include "slag/core/object.h"
-#include "slag/core/resource.h"
+#include "slag/object.h"
+#include "slag/resource.h"
 
 namespace slag {
 

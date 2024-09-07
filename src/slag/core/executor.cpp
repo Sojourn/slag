@@ -9,7 +9,7 @@ namespace slag {
 
     void Executor::schedule(Task& task) {
         Event& event = task.runnable_event();
-        if (UNLIKELY(event.is_linked())) {
+        if (event.is_linked()) {
             event.unlink();
         }
 
@@ -32,8 +32,6 @@ namespace slag {
                 task->run();
             }
             catch (const std::exception& ex) {
-                // TODO: Better error handling / logging.
-                std::cerr << ex.what() << std::endl;
                 task->cancel();
             }
 

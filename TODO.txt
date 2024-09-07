@@ -8,3 +8,6 @@
     - Datastructure for the current loop iteration? Frame?
 
 - Loop needs to shut everything down. Can't finalize in the destructor.
+
+- Move object.h and resource.h out of core
+- Rename core to sched or something

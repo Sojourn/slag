@@ -29,6 +29,14 @@ namespace slag {
         return region_;
     }
 
+    Router& EventLoop::router() {
+        if (!router_) {
+            throw std::runtime_error("Router is not available");
+        }
+
+        return *router_;
+    }
+
     Reactor& EventLoop::reactor() {
         return reactor_;
     }
@@ -94,6 +102,19 @@ namespace slag {
                 abort();
                 break;
             }
+        }
+    }
+
+    void EventLoop::finalize(Managed& managed) {
+        delete &managed;
+    }
+
+    void EventLoop::finalize(Message& message) {
+        if (router_) {
+            router_->finalize(message);
+        }
+        else {
+            delete &message;
         }
     }
 
@@ -177,6 +198,7 @@ namespace slag {
         }
 
         // Cleanup.
+        router_.reset();
         region_driver_.reset();
     }
 

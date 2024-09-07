@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cassert>
-#include "slag/core/object.h"
+#include "slag/object.h"
 #include "slag/core/proto_task.h"
 #include "slag/system/reactor.h"
 #include "slag/system/file_descriptor.h"

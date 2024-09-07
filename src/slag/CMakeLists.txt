@@ -11,6 +11,7 @@ set(SLAG_SOURCE_FILES
     memory/buffer.cpp
     system/reactor.cpp
     system/operation_table.cpp
+    bus/bus.cpp
 )
 
 set(SLAG_HEADER_FILES

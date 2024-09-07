@@ -1,12 +1,15 @@
 #pragma once
 
+#include "slag/object.h"
+#include "slag/resource.h"
+
 #include <stdexcept>
 #include <compare>
 #include <vector>
+#include <limits>
 #include <cstdlib>
 #include <cstdint>
 #include <cstddef>
-#include "slag/core.h"
 
 namespace slag {
 

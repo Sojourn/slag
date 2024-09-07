@@ -52,6 +52,10 @@ namespace slag {
         return event_loop().region();
     }
 
+    Router& Context::router() {
+        return event_loop().router();
+    }
+
     Reactor& Context::reactor() {
         return event_loop().reactor();
     }
@@ -112,9 +116,12 @@ namespace slag {
         return get_context().region();
     }
 
+    Router& get_router() {
+        return get_context().router();
+    }
+
     Reactor& get_reactor() {
         return get_context().reactor();
     }
-
 
 }

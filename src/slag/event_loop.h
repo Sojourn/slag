@@ -1,9 +1,13 @@
 #pragma once
 
+#include "slag/core.h"
+#include "slag/bus.h"
+#include "slag/system.h"
+#include "slag/object.h"
+#include "slag/resource.h"
+#include "slag/drivers/region_driver.h"
+
 #include <memory>
-#include "core.h"
-#include "system.h"
-#include "drivers/region_driver.h"
 
 namespace slag {
 
@@ -23,6 +27,7 @@ namespace slag {
         bool is_running() const;
 
         Region& region();
+        Router& router();
         Reactor& reactor();
         Executor& executor(TaskPriority priority);
 
@@ -34,6 +39,8 @@ namespace slag {
     private:
         void finalize(ObjectGroup group, std::span<Object*> objects) noexcept override;
 
+        void finalize(Managed& managed);
+        void finalize(Message& message);
         void finalize(Buffer& buffer);
         void finalize(FileDescriptor& file_descriptor);
         void finalize(Operation& operation);
@@ -47,6 +54,7 @@ namespace slag {
         using InterruptVector = std::array<Event, INTERRUPT_REASON_COUNT>;
 
         Region                        region_;
+        std::optional<Router>         router_;
         Reactor                       reactor_;
         InterruptVector               interrupt_vector_;
 
