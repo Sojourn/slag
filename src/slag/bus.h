@@ -22,14 +22,14 @@ namespace slag {
 
     using Message = Resource<ResourceType::MESSAGE>;
 
-    struct Address {
+    struct ChannelId {
         uint32_t valid         :  1                      = 0;
         uint32_t reserved      :  1                      = 0;
         uint32_t thread_index  : 10                      = 0;
         uint32_t channel_nonce : SLAG_CHANNEL_NONCE_BITS = 0;
         uint32_t channel_index                           = 0;
     };
-    static_assert(sizeof(Address) == 8);
+    static_assert(sizeof(ChannelId) == 8);
 
     template<>
     class Resource<ResourceType::MESSAGE> : public Object {
@@ -39,14 +39,14 @@ namespace slag {
         {
         }
 
-        Address origin() const {
+        ChannelId origin() const {
             return origin_;
         }
 
     private:
         friend class Router;
 
-        bool bind(Address origin) {
+        bool bind(ChannelId origin) {
             if (origin_.valid) {
                 return false; // Already bound.
             }
@@ -56,12 +56,12 @@ namespace slag {
         }
 
     private:
-        Address origin_;
+        ChannelId origin_;
     };
 
     struct alignas(32) Packet {
-        Address      src_addr;
-        Address      dst_addr;
+        ChannelId    src_chid;
+        ChannelId    dst_chid;
         ThreadRoute  route;
         Ref<Message> msg;
     };
@@ -74,6 +74,7 @@ namespace slag {
 
     private:
         // TODO: Use a SPSC queue.
+
         std::mutex         mutex_;
         std::deque<Packet> packets_;
     };
@@ -119,7 +120,7 @@ namespace slag {
         void attach(Channel& channel);
         void detach(Channel& channel);
 
-        void send(Channel& channel, Address dst_addr, Ref<Message> message);
+        void send(Channel& channel, ChannelId dst_chid, Ref<Message> message);
         Ptr<Message> receive(Channel& channel);
 
         void finalize(Message& message);
@@ -148,7 +149,7 @@ namespace slag {
         };
 
         ChannelState& get_state(const Channel& channel);
-        ChannelState* get_state(Address address);
+        ChannelState* get_state(ChannelId chid);
 
     private:
         std::shared_ptr<Fabric>   fabric_;
@@ -177,22 +178,22 @@ namespace slag {
         Channel& operator=(Channel&&) = delete;
         Channel& operator=(const Channel&) = delete;
 
-        Address address() const;
+        ChannelId id() const;
 
         Event& readable_event() override;
         Event& writable_event() override;
 
-        void send(Address dst_addr, Ref<Message> msg);
+        void send(ChannelId dst_chid, Ref<Message> msg);
         Ptr<Message> receive();
 
     private:
         friend class Router;
 
-        void bind(Address address);
+        void bind(ChannelId chid);
 
     private:
-        Router& router_;
-        Address address_;
+        Router&   router_;
+        ChannelId id_;
     };
 
 }

@@ -61,7 +61,7 @@ namespace slag {
             state = &channel_states_[channel_index];
         }
 
-        channel.bind(Address {
+        channel.bind(ChannelId {
             .valid         = 1,
             .reserved      = 0,
             .thread_index  = thread_index_,
@@ -84,15 +84,15 @@ namespace slag {
 
         state.nonce += 1;
         if (state.nonce < (1ull << SLAG_CHANNEL_NONCE_BITS)) {
-            unused_channel_states_.push_back(channel.address().channel_index);
+            unused_channel_states_.push_back(channel.id().channel_index);
         }
         else {
             // Retire this state instead of repeating a nonce.
         }
     }
 
-    void Router::send(Channel& channel, Address dst_addr, Ref<Message> message) {
-        if (message->bind(channel.address())) {
+    void Router::send(Channel& channel, ChannelId dst_chid, Ref<Message> message) {
+        if (message->bind(channel.id())) {
             ChannelState& src_state = get_state(channel);
             src_state.outstanding_message_count += 1;
             if (src_state.outstanding_message_count >= src_state.outstanding_message_limit) {
@@ -101,13 +101,13 @@ namespace slag {
         }
 
         Packet packet = {
-            .src_addr = channel.address(),
-            .dst_addr = dst_addr,
-            .route    = thread_routes_[dst_addr.thread_index],
+            .src_chid = channel.id(),
+            .dst_chid = dst_chid,
+            .route    = thread_routes_[dst_chid.thread_index],
             .msg      = message,
         };
 
-        if (thread_index_ == dst_addr.thread_index) {
+        if (thread_index_ == dst_chid.thread_index) {
             deliver(packet);
         }
         else {
@@ -147,7 +147,7 @@ namespace slag {
     }
 
     void Router::forward(Packet packet) {
-        assert(thread_index_ != packet.dst_addr.thread_index);
+        assert(thread_index_ != packet.dst_chid.thread_index);
 
         if (std::optional<ThreadIndex> next_thread_index = packet.route.next_hop(thread_index_)) {
             if (Link* link = tx_links_[*next_thread_index]) {
@@ -163,9 +163,9 @@ namespace slag {
     }
 
     void Router::deliver(Packet packet) {
-        assert(thread_index_ == packet.dst_addr.thread_index);
+        assert(thread_index_ == packet.dst_chid.thread_index);
 
-        if (ChannelState* state = get_state(packet.dst_addr); LIKELY(state)) {
+        if (ChannelState* state = get_state(packet.dst_chid); LIKELY(state)) {
             state->rx_queue.event.set();
             state->rx_queue.queue.push_back(packet);
         }
@@ -175,30 +175,30 @@ namespace slag {
     }
 
     auto Router::get_state(const Channel& channel) -> ChannelState& {
-        const Address address = channel.address();
-        assert(address.valid);
-        assert(address.reserved == 0);
-        assert(address.thread_index == thread_index_);
-        assert(address.channel_index < channel_states_.size());
+        const ChannelId chid = channel.id();
+        assert(chid.valid);
+        assert(chid.reserved == 0);
+        assert(chid.thread_index == thread_index_);
+        assert(chid.channel_index < channel_states_.size());
 
-        ChannelState& state = channel_states_[address.channel_index];
-        assert(address.channel_nonce == state.nonce);
+        ChannelState& state = channel_states_[chid.channel_index];
+        assert(chid.channel_nonce == state.nonce);
 
         return state;
     }
 
-    auto Router::get_state(Address address) -> ChannelState* {
+    auto Router::get_state(ChannelId chid) -> ChannelState* {
         bool is_safe = true;
-        is_safe &= address.valid;
-        is_safe &= address.reserved == 0;
-        is_safe &= address.thread_index == thread_index_;
-        is_safe &= address.channel_index < channel_states_.size();
+        is_safe &= chid.valid;
+        is_safe &= chid.reserved == 0;
+        is_safe &= chid.thread_index == thread_index_;
+        is_safe &= chid.channel_index < channel_states_.size();
         if (!is_safe) {
             return nullptr;
         }
 
-        ChannelState& state = channel_states_[address.channel_index];
-        if (address.channel_nonce != state.nonce) {
+        ChannelState& state = channel_states_[chid.channel_index];
+        if (chid.channel_nonce != state.nonce) {
             return nullptr;
         }
 
@@ -215,8 +215,8 @@ namespace slag {
         router_.detach(*this);
     }
 
-    Address Channel::address() const {
-        return address_;
+    ChannelId Channel::id() const {
+        return id_;
     }
 
     Event& Channel::readable_event() {
@@ -231,16 +231,16 @@ namespace slag {
         return state.ready;
     }
 
-    void Channel::send(Address dst_addr, Ref<Message> msg) {
-        router_.send(*this, dst_addr, msg);
+    void Channel::send(ChannelId dst_chid, Ref<Message> msg) {
+        router_.send(*this, dst_chid, msg);
     }
 
     Ptr<Message> Channel::receive() {
         return router_.receive(*this);
     }
 
-    void Channel::bind(Address address) {
-        address_ = address;
+    void Channel::bind(ChannelId chid) {
+        id_ = chid;
     }
 
 }
