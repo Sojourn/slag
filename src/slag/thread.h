@@ -67,6 +67,10 @@ namespace slag {
                 {
                     EventLoop event_loop(context.domain(), std::move(fabric_));
 
+                    // We don't want to hold onto any extra references to this
+                    // so that it can be garbage collected during event loop shutdown.
+                    assert(!fabric_);
+
                     event_loop_ = &event_loop;
                     event_loop_->run<TaskImpl>(std::forward<Args>(args)...);
                     event_loop_ = nullptr;
