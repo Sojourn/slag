@@ -16,7 +16,7 @@ namespace slag {
         , private InterruptHandler
     {
     public:
-        explicit EventLoop(Domain& domain);
+        EventLoop(Domain& domain, std::shared_ptr<Fabric> fabric);
         ~EventLoop();
 
         EventLoop(EventLoop&&) = delete;
@@ -54,7 +54,7 @@ namespace slag {
         using InterruptVector = std::array<Event, INTERRUPT_REASON_COUNT>;
 
         Region                        region_;
-        std::optional<Router>         router_;
+        Router                        router_;
         Reactor                       reactor_;
         InterruptVector               interrupt_vector_;
 

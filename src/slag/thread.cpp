@@ -8,8 +8,8 @@ namespace slag {
 
     Thread::Thread(Runtime& runtime, const ThreadConfig& config)
         : runtime_(runtime)
-        , event_loop_(nullptr)
         , config_(config)
+        , fabric_(runtime_.fabric())
     {
     }
 
@@ -17,6 +17,10 @@ namespace slag {
         if (thread_.joinable()) {
             thread_.join();
         }
+    }
+
+    const ThreadConfig& Thread::config() const {
+        return config_;
     }
 
     Runtime& Thread::runtime() {

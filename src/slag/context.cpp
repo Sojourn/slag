@@ -12,6 +12,8 @@ namespace slag {
 
     Context::Context(Runtime& runtime)
         : runtime_(runtime)
+        , thread_(nullptr)
+        , event_loop_(nullptr)
     {
         if (local_context_instance) {
             throw std::runtime_error("Too many contexts");

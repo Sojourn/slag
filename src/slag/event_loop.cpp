@@ -9,8 +9,9 @@
 
 namespace slag {
 
-    EventLoop::EventLoop(Domain& domain)
+    EventLoop::EventLoop(Domain& domain, std::shared_ptr<Fabric> fabric)
         : region_(domain, *this)
+        , router_(std::move(fabric), get_thread().config().index)
         , reactor_(*this)
         , current_priority_(TaskPriority::HIGH) // This will give the root task high-priority.
     {
@@ -30,11 +31,7 @@ namespace slag {
     }
 
     Router& EventLoop::router() {
-        if (!router_) {
-            throw std::runtime_error("Router is not available");
-        }
-
-        return *router_;
+        return router_;
     }
 
     Reactor& EventLoop::reactor() {
@@ -110,12 +107,7 @@ namespace slag {
     }
 
     void EventLoop::finalize(Message& message) {
-        if (router_) {
-            router_->finalize(message);
-        }
-        else {
-            delete &message;
-        }
+        router_.finalize(message);
     }
 
     void EventLoop::finalize(Buffer& buffer) {
@@ -198,7 +190,6 @@ namespace slag {
         }
 
         // Cleanup.
-        router_.reset();
         region_driver_.reset();
     }
 

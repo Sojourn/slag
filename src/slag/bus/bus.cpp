@@ -19,17 +19,17 @@ namespace slag {
         return packet;
     }
 
-    Router::Router(Fabric& fabric, ThreadIndex thread_index)
+    Router::Router(std::shared_ptr<Fabric> fabric, ThreadIndex thread_index)
         : fabric_(fabric)
         , thread_index_(thread_index)
-        , thread_routes_(fabric.routes(thread_index))
+        , thread_routes_(fabric->routes(thread_index))
         , tx_links_(MAX_THREAD_COUNT)
         , tx_link_mask_(0)
         , rx_links_(MAX_THREAD_COUNT)
         , rx_link_mask_(0)
     {
         for (ThreadIndex thread_index = 0; thread_index < MAX_THREAD_COUNT; ++thread_index) {
-            if (Link* link = fabric_.link(thread_index_, thread_index)) {
+            if (Link* link = fabric_->link(thread_index_, thread_index)) {
                 tx_links_[thread_index] = link;
                 tx_link_mask_ |= (1ull << thread_index);
             }
@@ -37,7 +37,7 @@ namespace slag {
                 tx_links_[thread_index] = nullptr;
             }
 
-            if (Link* link = fabric_.link(thread_index, thread_index_)) {
+            if (Link* link = fabric_->link(thread_index, thread_index_)) {
                 rx_links_[thread_index] = link;
                 rx_link_mask_ |= (1ull << thread_index);
             }

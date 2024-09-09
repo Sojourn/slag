@@ -7,6 +7,7 @@
 #include "slag/types.h"
 #include "slag/thread.h"
 #include "slag/topology.h"
+#include "slag/bus.h"
 
 namespace slag {
 
@@ -31,6 +32,8 @@ namespace slag {
 
         Domain& domain();
 
+        std::shared_ptr<Fabric> fabric();
+
         template<typename RootTask, typename... Args>
         void spawn_thread(const ThreadConfig& config, Args&&... args);
 
@@ -41,6 +44,7 @@ namespace slag {
         RuntimeConfig                        config_;
         Domain                               domain_;
         Region                               region_;
+        std::shared_ptr<Fabric>              fabric_;
         std::vector<std::unique_ptr<Thread>> threads_;
     };
 

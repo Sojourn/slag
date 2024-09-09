@@ -73,11 +73,12 @@ namespace slag {
         std::optional<Packet> receive();
 
     private:
+        // TODO: Use a SPSC queue.
         std::mutex         mutex_;
         std::deque<Packet> packets_;
     };
 
-    class Fabric : public Managed {
+    class Fabric {
     public:
         explicit Fabric(const ThreadGraph& thread_topology)
             : thread_topology_(thread_topology)
@@ -107,13 +108,13 @@ namespace slag {
         }
 
     private:
-        ThreadGraph                        thread_topology_;
+        const ThreadGraph                  thread_topology_;
         std::vector<std::unique_ptr<Link>> links_;
     };
 
     class Router {
     public:
-        Router(Fabric& fabric, ThreadIndex thread_index);
+        Router(std::shared_ptr<Fabric> fabric, ThreadIndex thread_index);
 
         void attach(Channel& channel);
         void detach(Channel& channel);
@@ -150,7 +151,7 @@ namespace slag {
         ChannelState* get_state(Address address);
 
     private:
-        Fabric&                   fabric_;
+        std::shared_ptr<Fabric>   fabric_;
         ThreadIndex               thread_index_;
         ThreadRouteTable          thread_routes_;
 

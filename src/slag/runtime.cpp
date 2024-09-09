@@ -9,10 +9,12 @@ namespace slag {
         : config_(config)
         , domain_(config_.gc_cpu_affinities)
         , region_(domain_, *this)
+        , fabric_(std::make_shared<Fabric>(config_.thread_topology))
     {
     }
 
     Runtime::~Runtime() {
+        fabric_.reset();
         region_.stop();
     }
 
@@ -24,8 +26,22 @@ namespace slag {
         return domain_;
     }
 
-    void Runtime::finalize(ObjectGroup, std::span<Object*>) noexcept {
-        abort(); // Override this if needed.
+    std::shared_ptr<Fabric> Runtime::fabric() {
+        return fabric_;
+    }
+
+    void Runtime::finalize(ObjectGroup group, std::span<Object*> objects) noexcept {
+        switch (static_cast<ResourceType>(group)) {
+            case ResourceType::MANAGED: {
+                for (Object* object : objects) {
+                    delete static_cast<Managed*>(object);
+                }
+                break;
+            }
+            default: {
+                abort();
+            }
+        }
     }
 
 }

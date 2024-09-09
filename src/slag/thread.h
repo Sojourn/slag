@@ -34,6 +34,8 @@ namespace slag {
         Thread& operator=(Thread&&) = delete;
         Thread& operator=(const Thread&) = delete;
 
+        const ThreadConfig& config() const;
+
         Runtime& runtime();
         EventLoop& event_loop();
 
@@ -41,10 +43,11 @@ namespace slag {
         void run(Args&&... args);
 
     private:
-        Runtime&     runtime_;
-        EventLoop*   event_loop_;
-        ThreadConfig config_;
-        std::thread  thread_;
+        Runtime&                runtime_;
+        EventLoop*              event_loop_;
+        ThreadConfig            config_;
+        std::shared_ptr<Fabric> fabric_;
+        std::thread             thread_;
     };
 
     template<typename TaskImpl, typename... Args>
@@ -53,7 +56,7 @@ namespace slag {
             throw std::runtime_error("Thread is already running");
         }
 
-        thread_ = std::thread([this](Args&&... args) {
+        thread_ = std::thread([this](Args&&... args) mutable {
             try {
                 if (config_.cpu_affinities) {
                     mantle::set_cpu_affinity(*config_.cpu_affinities);
@@ -61,9 +64,9 @@ namespace slag {
 
                 Context context(runtime_);
                 context.attach(*this);
-
-                EventLoop event_loop(context.domain());
                 {
+                    EventLoop event_loop(context.domain(), std::move(fabric_));
+
                     event_loop_ = &event_loop;
                     event_loop_->run<TaskImpl>(std::forward<Args>(args)...);
                     event_loop_ = nullptr;
