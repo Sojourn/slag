@@ -8,14 +8,18 @@ namespace slag {
     Runtime::Runtime(const RuntimeConfig& config)
         : config_(config)
         , domain_(config_.gc_cpu_affinities)
-        , region_(domain_, *this)
         , fabric_(std::make_shared<Fabric>(config_.thread_topology))
     {
     }
 
     Runtime::~Runtime() {
+        if (threads_.empty()) {
+            // Unblock the domain so we can shutdown.
+            Region dummy_region(domain_, *this);
+            dummy_region.stop();
+        }
+
         fabric_.reset();
-        region_.stop();
     }
 
     const RuntimeConfig& Runtime::config() const {
@@ -30,18 +34,8 @@ namespace slag {
         return fabric_;
     }
 
-    void Runtime::finalize(ObjectGroup group, std::span<Object*> objects) noexcept {
-        switch (static_cast<ResourceType>(group)) {
-            case ResourceType::MANAGED: {
-                for (Object* object : objects) {
-                    delete static_cast<Managed*>(object);
-                }
-                break;
-            }
-            default: {
-                abort();
-            }
-        }
+    void Runtime::finalize(ObjectGroup, std::span<Object*>) noexcept {
+        abort();
     }
 
 }

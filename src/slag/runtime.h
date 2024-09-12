@@ -43,7 +43,6 @@ namespace slag {
     private:
         RuntimeConfig                        config_;
         Domain                               domain_;
-        Region                               region_;
         std::shared_ptr<Fabric>              fabric_;
         std::vector<std::unique_ptr<Thread>> threads_;
     };

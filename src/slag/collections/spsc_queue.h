@@ -80,7 +80,7 @@ namespace slag {
         [[nodiscard]] bool insert(std::span<const T> items);
 
         // This will make insertions visible to the consumer. It will be automatically
-        // called after a number of inserts to prevent livelocking.
+        // called after a number of inserts to prevent live-locking.
         SpscQueueSequence flush();
 
         // Flushes any unsynchronized insertions and detaches this from the queue.

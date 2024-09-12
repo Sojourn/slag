@@ -58,6 +58,8 @@ namespace slag {
 
     template<typename Visitor>
     void for_each_thread(ThreadMask mask, Visitor&& visitor) {
+        static_assert(sizeof(mask) == sizeof(uint64_t));
+
         const size_t count = __builtin_popcountll(mask);
         for (size_t i = 0; i < count; ++i) {
             const ThreadIndex thread_index = static_cast<ThreadIndex>(__builtin_ctzll(mask));

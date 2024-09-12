@@ -1,12 +1,13 @@
 #pragma once
 
-#include <cassert>
 #include "slag/object.h"
-#include "slag/core/proto_task.h"
+#include "slag/core.h"
 #include "slag/system/reactor.h"
 #include "slag/system/file_descriptor.h"
 #include "slag/system/operation_factory.h"
 #include "slag/system/operations/poll_multishot_operation.h"
+
+#include <cassert>
 
 namespace slag {
 

@@ -3,48 +3,34 @@
 
 namespace slag {
 
-    void Link::send(Packet packet) {
-        std::scoped_lock lock(mutex_);
-        packets_.push_back(packet);
-    }
-
-    std::optional<Packet> Link::receive() {
-        std::scoped_lock lock(mutex_);
-        if (packets_.empty()) {
-            return std::nullopt;
-        }            
-
-        Packet packet = packets_.front();
-        packets_.pop_front();
-        return packet;
-    }
-
     Router::Router(std::shared_ptr<Fabric> fabric, ThreadIndex thread_index)
         : fabric_(fabric)
         , thread_index_(thread_index)
         , thread_routes_(fabric->routes(thread_index))
-        , tx_links_(MAX_THREAD_COUNT)
-        , tx_link_mask_(0)
         , rx_links_(MAX_THREAD_COUNT)
         , rx_link_mask_(0)
+        , tx_links_(MAX_THREAD_COUNT)
+        , tx_link_mask_(0)
+        , temp_packet_array_(512)
     {
         for (ThreadIndex thread_index = 0; thread_index < MAX_THREAD_COUNT; ++thread_index) {
-            if (Link* link = fabric_->link(thread_index_, thread_index)) {
-                tx_links_[thread_index] = link;
-                tx_link_mask_ |= (1ull << thread_index);
-            }
-            else {
-                tx_links_[thread_index] = nullptr;
-            }
-
             if (Link* link = fabric_->link(thread_index, thread_index_)) {
-                rx_links_[thread_index] = link;
+                rx_links_[thread_index] = SpscQueueConsumer<Packet>(link->queue());
                 rx_link_mask_ |= (1ull << thread_index);
             }
-            else {
-                rx_links_[thread_index] = nullptr;
+            if (Link* link = fabric_->link(thread_index_, thread_index)) {
+                tx_links_[thread_index] = SpscQueueProducer<Packet>(link->queue());
+                tx_link_mask_ |= (1ull << thread_index);
             }
         }
+    }
+
+    Event& Router::readable_event() {
+        return rx_backlog_event_;
+    }
+
+    Event& Router::writable_event() {
+        return tx_backlog_event_;
     }
 
     void Router::attach(Channel& channel) {
@@ -73,14 +59,12 @@ namespace slag {
     void Router::detach(Channel& channel) {
         ChannelState& state = get_state(channel);
 
-        for (PacketQueue* packet_queue : {&state.rx_queue, &state.tx_queue}) {
-            packet_queue->event.reset();
-            packet_queue->queue.clear();
-        }
-
-        state.ready.set();
+        state.writable_event.set();
         state.outstanding_message_count = 0;
-        state.outstanding_message_limit = 1024; // TODO: Make this configurable.
+        state.outstanding_message_limit = ChannelState::DEFAULT_OUTSTANDING_MESSAGE_LIMIT;
+
+        state.rx_queue.event.reset();
+        state.rx_queue.queue.clear();
 
         state.nonce += 1;
         if (state.nonce < (1ull << SLAG_CHANNEL_NONCE_BITS)) {
@@ -96,23 +80,16 @@ namespace slag {
             ChannelState& src_state = get_state(channel);
             src_state.outstanding_message_count += 1;
             if (src_state.outstanding_message_count >= src_state.outstanding_message_limit) {
-                src_state.ready.reset();
+                src_state.writable_event.reset();
             }
         }
 
-        Packet packet = {
+        route(Packet {
             .src_chid = channel.id(),
             .dst_chid = dst_chid,
             .route    = thread_routes_[dst_chid.thread_index],
             .msg      = message,
-        };
-
-        if (thread_index_ == dst_chid.thread_index) {
-            deliver(packet);
-        }
-        else {
-            forward(packet);
-        }
+        });
     }
 
     Ptr<Message> Router::receive(Channel& channel) {
@@ -130,6 +107,46 @@ namespace slag {
         return msg;
     }
 
+    void Router::poll() {
+        bool done = true;
+
+        for_each_thread(rx_link_mask_, [&](const ThreadIndex thread_index) {
+            std::span<Packet*> packets = {
+                temp_packet_array_.data(),
+                temp_packet_array_.size(),
+            };
+
+            if (size_t packet_count = rx_links_[thread_index].poll(packets)) {
+                for (size_t packet_index = 0; packet_index < packet_count; ++packet_index) {
+                    route(*packets[packet_index]);
+                }
+
+                // Not done unless all rx-links have been exhausted.
+                done = false;
+            }
+        });
+
+        rx_backlog_event_.set(!done);
+    }
+
+    void Router::flush() {
+        while (!tx_backlog_.empty()) {
+            if (Packet& packet = tx_backlog_.front(); forward(packet)) {
+                tx_backlog_.pop_front();
+            }
+            else {
+                // The link is at capacity.
+                break;
+            }
+        }
+
+        for_each_thread(tx_link_mask_, [&](const ThreadIndex thread_index) {
+            tx_links_[thread_index].flush();
+        });
+
+        tx_backlog_event_.set(!tx_backlog_.empty());
+    }
+
     void Router::finalize(Message& message) {
         // Not sent or
         assert(!message.origin().valid || (message.origin().thread_index == thread_index_));
@@ -139,26 +156,27 @@ namespace slag {
 
             state->outstanding_message_count -= 1;
             if (state->outstanding_message_count < state->outstanding_message_limit) {
-                state->ready.set();
+                state->writable_event.set();
             }
         }
 
         delete &message;
     }
 
-    void Router::forward(Packet packet) {
-        assert(thread_index_ != packet.dst_chid.thread_index);
+    void Router::route(Packet packet) {
+        if (UNLIKELY(!packet.route.first_hop())) {
+            return; // The packet is unroutable.
+        }
 
-        if (std::optional<ThreadIndex> next_thread_index = packet.route.next_hop(thread_index_)) {
-            if (Link* link = tx_links_[*next_thread_index]) {
-                link->send(packet);
-            }
-            else {
-                abort(); // Invalid route.
-            }
+        if (thread_index_ == packet.dst_chid.thread_index) {
+            deliver(packet);
+        }
+        else if (tx_backlog_.empty() && forward(packet)) {
+            // The packet was sent.
         }
         else {
-            // No route.
+            tx_backlog_.push_back(packet);
+            tx_backlog_event_.set();
         }
     }
 
@@ -172,6 +190,25 @@ namespace slag {
         else {
             // The channel was destroyed.
         }
+    }
+
+    bool Router::forward(Packet packet) {
+        assert(thread_index_ != packet.dst_chid.thread_index);
+
+        if (std::optional<ThreadIndex> next_thread_index = packet.route.next_hop(thread_index_)) {
+            SpscQueueProducer<Packet>& producer = tx_links_[*next_thread_index];
+            if (producer.insert(packet)) {
+                return true;
+            }
+            else {
+                // Link is at capacity.
+            }
+        }
+        else {
+            // No route.
+        }
+
+        return false;
     }
 
     auto Router::get_state(const Channel& channel) -> ChannelState& {
@@ -228,7 +265,7 @@ namespace slag {
     Event& Channel::writable_event() {
         Router::ChannelState& state = router_.get_state(*this);
 
-        return state.ready;
+        return state.writable_event;
     }
 
     void Channel::send(ChannelId dst_chid, Ref<Message> msg) {

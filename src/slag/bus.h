@@ -4,6 +4,7 @@
 #include "slag/object.h"
 #include "slag/resource.h"
 #include "slag/topology.h"
+#include "slag/collections/spsc_queue.h"
 
 #include <optional>
 #include <array>
@@ -69,14 +70,17 @@ namespace slag {
 
     class alignas(64) Link {
     public:
-        void send(Packet packet);
-        std::optional<Packet> receive();
+        Link()
+            : queue_(16 * 1024) // TODO: Make this configurable.
+        {
+        }
+
+        SpscQueue<Packet>& queue() {
+            return queue_;
+        }
 
     private:
-        // TODO: Use a SPSC queue.
-
-        std::mutex         mutex_;
-        std::deque<Packet> packets_;
+        SpscQueue<Packet> queue_;
     };
 
     class Fabric {
@@ -113,9 +117,20 @@ namespace slag {
         std::vector<std::unique_ptr<Link>> links_;
     };
 
-    class Router {
+    class Router final
+        : public Pollable<PollableType::READABLE>
+        , public Pollable<PollableType::WRITABLE>
+    {
     public:
         Router(std::shared_ptr<Fabric> fabric, ThreadIndex thread_index);
+
+        virtual ~Router() = default;
+
+        // This event is set when the router is ready to be polled.
+        Event& readable_event() override;
+
+        // This event is set when the router is ready to be flushed.
+        Event& writable_event() override;
 
         void attach(Channel& channel);
         void detach(Channel& channel);
@@ -123,51 +138,63 @@ namespace slag {
         void send(Channel& channel, ChannelId dst_chid, Ref<Message> message);
         Ptr<Message> receive(Channel& channel);
 
+        void poll();
+        void flush();
+
         void finalize(Message& message);
 
     private:
+        void route(Packet packet);
         void deliver(Packet packet);
-        void forward(Packet packet);
+        bool forward(Packet packet);
 
     private:
         friend class Channel;
+        friend class ChannelDriver;
 
         struct PacketQueue {
-            Event              event;
+            Event              event; // Set when the queue is non-empty.
             std::deque<Packet> queue;
         };
 
         struct ChannelState {
+            static constexpr uint32_t DEFAULT_OUTSTANDING_MESSAGE_LIMIT = 1024;
+
             uint32_t    nonce = 0;
 
-            Event       ready;
+            Event       writable_event;
             uint32_t    outstanding_message_count = 0;
-            uint32_t    outstanding_message_limit = 0;
+            uint32_t    outstanding_message_limit = DEFAULT_OUTSTANDING_MESSAGE_LIMIT;
 
             PacketQueue rx_queue;
-            PacketQueue tx_queue;
         };
 
         ChannelState& get_state(const Channel& channel);
         ChannelState* get_state(ChannelId chid);
 
     private:
-        std::shared_ptr<Fabric>   fabric_;
-        ThreadIndex               thread_index_;
-        ThreadRouteTable          thread_routes_;
+        std::shared_ptr<Fabric>                fabric_;
+        ThreadIndex                            thread_index_;
+        ThreadRouteTable                       thread_routes_;
 
-        std::vector<Link*>        tx_links_;
-        ThreadMask                tx_link_mask_;
-        std::vector<Link*>        rx_links_;
-        ThreadMask                rx_link_mask_;
+        std::vector<SpscQueueConsumer<Packet>> rx_links_;
+        ThreadMask                             rx_link_mask_;
 
-        std::vector<ChannelState> channel_states_;
-        std::vector<uint32_t>     unused_channel_states_;
+        std::vector<SpscQueueProducer<Packet>> tx_links_;
+        ThreadMask                             tx_link_mask_;
+
+        Event                                  rx_backlog_event_;
+        Event                                  tx_backlog_event_;
+        std::deque<Packet>                     tx_backlog_;
+
+        std::vector<ChannelState>              channel_states_;
+        std::vector<uint32_t>                  unused_channel_states_;
+        std::vector<Packet*>                   temp_packet_array_;
     };
 
     class Channel final
-        : public Pollable<PollableType::READABLE>
-        , public Pollable<PollableType::WRITABLE>
+        : public Pollable<PollableType::READABLE> // Pending data.
+        , public Pollable<PollableType::WRITABLE> // Able to send (not backpressured).
     {
     public:
         Channel();
