@@ -50,7 +50,6 @@ namespace slag {
     }
 
     bool ThreadGraph::has_edge(const Edge edge) const {
-        assert(edge.source != edge.target);
         assert(edge.source < MAX_THREAD_COUNT);
         assert(edge.target < MAX_THREAD_COUNT);
 
@@ -58,9 +57,12 @@ namespace slag {
     }
 
     void ThreadGraph::add_edge(const Edge edge) {
-        assert(edge.source != edge.target);
         assert(edge.source < MAX_THREAD_COUNT);
         assert(edge.target < MAX_THREAD_COUNT);
+
+        if (edge.source == edge.target) {
+            throw std::runtime_error("Self-edges are not supported");
+        }
 
         adjacency_matrix_[edge.source] |= (1ull << edge.target);
     }

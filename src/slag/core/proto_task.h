@@ -15,18 +15,38 @@
     }                    \
     return;              \
 
-#define SLAG_PT_WAIT(resource, pollable_type)                                          \
+#define SLAG_PT_YIELD()                         \
+    [[fallthrough]]; case __LINE__:             \
+    if (pt_yield_) {                            \
+        pt_yield_ = false;                      \
+    }                                           \
+    else {                                      \
+        pt_yield_ = true;                       \
+        pt_state_ = __LINE__;                   \
+        pt_runnable_ = &Task::runnable_event(); \
+        return;                                 \
+    }                                           \
+
+#define SLAG_PT_WAIT_EVENT(event)   \
+    pt_state_ = __LINE__;           \
+    [[fallthrough]]; case __LINE__: \
+    if (!event.is_set()) {          \
+        pt_runnable_ = &event;      \
+        return;                     \
+    }                               \
+
+#define SLAG_PT_WAIT_POLLABLE(pollable, pollable_type)                                 \
     pt_state_ = __LINE__;                                                              \
     [[fallthrough]]; case __LINE__:                                                    \
-    if (Event& event = get_pollable_event<pollable_type>(resource); !event.is_set()) { \
+    if (Event& event = get_pollable_event<pollable_type>(pollable); !event.is_set()) { \
         pt_runnable_ = &event;                                                         \
         return;                                                                        \
     }                                                                                  \
 
-#define SLAG_PT_WAIT_READABLE(resource) SLAG_PT_WAIT(resource, PollableType::READABLE)
-#define SLAG_PT_WAIT_WRITABLE(resource) SLAG_PT_WAIT(resource, PollableType::WRITABLE)
-#define SLAG_PT_WAIT_RUNNABLE(resource) SLAG_PT_WAIT(resource, PollableType::RUNNABLE)
-#define SLAG_PT_WAIT_COMPLETE(resource) SLAG_PT_WAIT(resource, PollableType::COMPLETE)
+#define SLAG_PT_WAIT_READABLE(pollable) SLAG_PT_WAIT_POLLABLE(pollable, PollableType::READABLE)
+#define SLAG_PT_WAIT_WRITABLE(pollable) SLAG_PT_WAIT_POLLABLE(pollable, PollableType::WRITABLE)
+#define SLAG_PT_WAIT_RUNNABLE(pollable) SLAG_PT_WAIT_POLLABLE(pollable, PollableType::RUNNABLE)
+#define SLAG_PT_WAIT_COMPLETE(pollable) SLAG_PT_WAIT_POLLABLE(pollable, PollableType::COMPLETE)
 
 namespace slag {
 
@@ -43,6 +63,7 @@ namespace slag {
         explicit ProtoTask(TaskPriority priority = TaskPriority::SAME)
             : Task{priority}
             , pt_state_{0}
+            , pt_yield_{false}
             , pt_runnable_{nullptr}
         {
         }
@@ -50,6 +71,7 @@ namespace slag {
         explicit ProtoTask(Executor& executor)
             : Task{executor}
             , pt_state_(0)
+            , pt_yield_{false}
             , pt_runnable_{nullptr}
         {
         }
@@ -60,6 +82,7 @@ namespace slag {
 
     protected:
         int    pt_state_;
+        bool   pt_yield_;
         Event* pt_runnable_;
     };
 

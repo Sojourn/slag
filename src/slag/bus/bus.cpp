@@ -11,6 +11,7 @@ namespace slag {
         , rx_link_mask_(0)
         , tx_links_(MAX_THREAD_COUNT)
         , tx_link_mask_(0)
+        , tx_send_mask_(0)
         , temp_packet_array_(512)
     {
         for (ThreadIndex thread_index = 0; thread_index < MAX_THREAD_COUNT; ++thread_index) {
@@ -23,10 +24,6 @@ namespace slag {
                 tx_link_mask_ |= (1ull << thread_index);
             }
         }
-    }
-
-    Event& Router::readable_event() {
-        return rx_backlog_event_;
     }
 
     Event& Router::writable_event() {
@@ -107,8 +104,8 @@ namespace slag {
         return msg;
     }
 
-    void Router::poll() {
-        bool done = true;
+    bool Router::poll() {
+        size_t total_packet_count = 0;
 
         for_each_thread(rx_link_mask_, [&](const ThreadIndex thread_index) {
             std::span<Packet*> packets = {
@@ -121,30 +118,41 @@ namespace slag {
                     route(*packets[packet_index]);
                 }
 
-                // Not done unless all rx-links have been exhausted.
-                done = false;
+                total_packet_count += packet_count;
             }
         });
 
-        rx_backlog_event_.set(!done);
+        return total_packet_count > 0;
     }
 
     void Router::flush() {
-        while (!tx_backlog_.empty()) {
-            if (Packet& packet = tx_backlog_.front(); forward(packet)) {
-                tx_backlog_.pop_front();
+        // Flush packets from the backlog.
+        {
+            while (!tx_backlog_.empty()) {
+                if (Packet& packet = tx_backlog_.front(); forward(packet)) {
+                    tx_backlog_.pop_front();
+                }
+                else {
+                    // The link is at capacity.
+                    break;
+                }
             }
-            else {
-                // The link is at capacity.
-                break;
-            }
+
+            tx_backlog_event_.set(!tx_backlog_.empty());
         }
 
-        for_each_thread(tx_link_mask_, [&](const ThreadIndex thread_index) {
-            tx_links_[thread_index].flush();
-        });
+        // Publish and notify threads that their end of the links can be read.
+        {
+            // Links try to batch sends and need to be explicitly flushed before we interrupt the target threads.
+            for_each_thread(tx_send_mask_, [&](const ThreadIndex thread_index) {
+                tx_links_[thread_index].flush();
 
-        tx_backlog_event_.set(!tx_backlog_.empty());
+                // start_interrupt_operation(Interrupt {
+                // }).daemonize();
+            });
+
+            tx_send_mask_ = 0;
+        }
     }
 
     void Router::finalize(Message& message) {
@@ -198,6 +206,7 @@ namespace slag {
         if (std::optional<ThreadIndex> next_thread_index = packet.route.next_hop(thread_index_)) {
             SpscQueueProducer<Packet>& producer = tx_links_[*next_thread_index];
             if (producer.insert(packet)) {
+                tx_send_mask_ |= (1ull << *next_thread_index);
                 return true;
             }
             else {

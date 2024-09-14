@@ -49,6 +49,17 @@ struct NopTask : ProtoTask {
     }
 };
 
+struct PingTask : ProtoTask {
+    Channel channel;
+
+    void run() override final {
+        SLAG_PT_BEGIN();
+        {
+        }
+        SLAG_PT_END();
+    }
+};
+
 int main(int argc, char** argv) {
     (void)argc;
     (void)argv;

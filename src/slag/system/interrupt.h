@@ -1,11 +1,21 @@
 #pragma once
 
 #include <cstdint>
-#include "mantle/mantle.h"
+#include "slag/core.h"
+#include "slag/topology.h"
+
+#define SLAG_LIB_INTERRUPT_REASONS(X) \
+    X(HALT)                           \
+    X(STOP)                           \
+    X(LINK)                           \
+
+#ifndef SLAG_APP_INTERRUPT_REASONS
+#  define SLAG_APP_INTERRUPT_REASONS(X)
+#endif
 
 #define SLAG_INTERRUPT_REASONS(X) \
-    X(HALT)                       \
-    X(STOP)                       \
+    SLAG_LIB_INTERRUPT_REASONS(X) \
+    SLAG_APP_INTERRUPT_REASONS(X) \
 
 namespace slag {
 
@@ -28,8 +38,8 @@ namespace slag {
     }
 
     struct Interrupt {
-        mantle::RegionId sender;
-        InterruptReason  reason;
+        ThreadIndex     source;
+        InterruptReason reason;
     };
 
     class InterruptHandler {
@@ -38,5 +48,12 @@ namespace slag {
 
         virtual void handle_interrupt(Interrupt interrupt) = 0;
     };
+
+    // TODO: Add more information about the interrupt.
+    // struct Interrupt {
+    //     Event      event;
+    //     ThreadMask sources;
+    // };
+    using InterruptVector = std::array<Event, INTERRUPT_REASON_COUNT>;
 
 }

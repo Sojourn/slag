@@ -56,12 +56,18 @@ namespace slag {
         }
     }
 
+    InterruptVector& EventLoop::interrupt_vector() {
+        return interrupt_vector_;
+    }
+
     void EventLoop::run(std::unique_ptr<Task> root_task) {
         if (root_task_) {
             throw std::runtime_error("Already running");
         }
 
         region_driver_.emplace(region_, reactor_);
+        router_driver_.emplace(*this);
+
         root_task_ = std::move(root_task);
 
         loop();

@@ -6,6 +6,7 @@
 #include "operations/nop_operation.h"
 #include "operations/close_operation.h"
 #include "operations/poll_multishot_operation.h"
+#include "operations/interrupt_operation.h"
 
 namespace slag {
 
@@ -32,6 +33,15 @@ namespace slag {
         Reactor& reactor = get_reactor();
 
         auto op = reactor.create_operation<PollMultishotOperation>(std::forward<Args>(args)...);
+        reactor.schedule_operation(*op);
+        return op;
+    }
+
+    template<typename... Args>
+    inline Ref<InterruptOperation> start_interrupt_operation(Args&&... args) {
+        Reactor& reactor = get_reactor();
+
+        auto op = reactor.create_operation<InterruptOperation>(std::forward<Args>(args)...);
         reactor.schedule_operation(*op);
         return op;
     }

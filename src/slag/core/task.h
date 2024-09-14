@@ -15,6 +15,9 @@ namespace slag {
         FAILURE, // The task has completed with an unspecified error.
     };
 
+    // CRIT,
+    // HIGH,
+    // NORM,
     enum class TaskPriority : uint8_t {
         SAME, // Inherit priority.
         HIGH, // Interleave with servicing the event loop.

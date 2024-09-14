@@ -5,7 +5,8 @@
 #include "slag/system.h"
 #include "slag/object.h"
 #include "slag/resource.h"
-#include "slag/drivers/region_driver.h"
+#include "slag/driver/region_driver.h"
+#include "slag/driver/router_driver.h"
 
 #include <memory>
 
@@ -31,6 +32,8 @@ namespace slag {
         Reactor& reactor();
         Executor& executor(TaskPriority priority);
 
+        InterruptVector& interrupt_vector();
+
         template<typename RootTask, typename... Args>
         void run(Args&&... args);
         void run(std::unique_ptr<Task> root_task);
@@ -51,8 +54,6 @@ namespace slag {
         void loop();
 
     private:
-        using InterruptVector = std::array<Event, INTERRUPT_REASON_COUNT>;
-
         Region                        region_;
         Router                        router_;
         Reactor                       reactor_;
@@ -63,6 +64,7 @@ namespace slag {
         Executor                      idle_priority_executor_;
 
         std::optional<RegionDriver>   region_driver_;
+        std::optional<RouterDriver>   router_driver_;
         std::unique_ptr<Task>         root_task_;
     };
 

@@ -118,16 +118,12 @@ namespace slag {
     };
 
     class Router final
-        : public Pollable<PollableType::READABLE>
-        , public Pollable<PollableType::WRITABLE>
+        : public Pollable<PollableType::WRITABLE>
     {
     public:
         Router(std::shared_ptr<Fabric> fabric, ThreadIndex thread_index);
 
         virtual ~Router() = default;
-
-        // This event is set when the router is ready to be polled.
-        Event& readable_event() override;
 
         // This event is set when the router is ready to be flushed.
         Event& writable_event() override;
@@ -138,9 +134,12 @@ namespace slag {
         void send(Channel& channel, ChannelId dst_chid, Ref<Message> message);
         Ptr<Message> receive(Channel& channel);
 
-        void poll();
+        // Returns true if any packets were processed.
+        bool poll();
+
         void flush();
 
+        // TODO: create_message/destroy_message API to match the reactor.
         void finalize(Message& message);
 
     private:
@@ -182,8 +181,8 @@ namespace slag {
 
         std::vector<SpscQueueProducer<Packet>> tx_links_;
         ThreadMask                             tx_link_mask_;
+        ThreadMask                             tx_send_mask_;
 
-        Event                                  rx_backlog_event_;
         Event                                  tx_backlog_event_;
         std::deque<Packet>                     tx_backlog_;
 

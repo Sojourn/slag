@@ -10,6 +10,7 @@
     X(NOP)                      \
     X(CLOSE)                    \
     X(POLL_MULTISHOT)           \
+    X(INTERRUPT)                \
 
     // X(OPEN)
     // X(CLOSE)

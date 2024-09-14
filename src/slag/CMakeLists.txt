@@ -11,6 +11,7 @@ set(SLAG_SOURCE_FILES
     memory/buffer.cpp
     system/reactor.cpp
     system/operation_table.cpp
+    driver/router_driver.cpp
     bus/bus.cpp
 )
 
