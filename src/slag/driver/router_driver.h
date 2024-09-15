@@ -1,9 +1,12 @@
 #pragma once
 
+#include "slag/types.h"
 #include "slag/object.h"
 #include "slag/core.h"
 #include "slag/bus.h"
+#include "slag/system/interrupt.h"
 
+#include <chrono>
 #include <cassert>
 
 namespace slag {
@@ -22,9 +25,9 @@ namespace slag {
             void run() override;
 
         private:
-            EventLoop& event_loop_;
-            Router&    router_;
-            Event&     interrupt_event_;
+            EventLoop&      event_loop_;
+            Router&         router_;
+            InterruptState& interrupt_state_;
         };
 
         class TxWorker final : public ProtoTask {

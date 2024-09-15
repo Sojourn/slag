@@ -31,8 +31,8 @@ namespace slag {
         const RuntimeConfig& config() const;
 
         Domain& domain();
-
         std::shared_ptr<Fabric> fabric();
+        std::shared_ptr<Reactor> reactor(ThreadIndex thread_index);
 
         template<typename RootTask, typename... Args>
         void spawn_thread(const ThreadConfig& config, Args&&... args);
@@ -41,17 +41,25 @@ namespace slag {
         void finalize(ObjectGroup group, std::span<Object*> objects) noexcept override;
 
     private:
-        RuntimeConfig                        config_;
-        Domain                               domain_;
-        std::shared_ptr<Fabric>              fabric_;
-        std::vector<std::unique_ptr<Thread>> threads_;
+        using ThreadArray = std::array<std::unique_ptr<Thread>, MAX_THREAD_COUNT>;
+        using ReactorArray = std::array<std::shared_ptr<Reactor>, MAX_THREAD_COUNT>;
+
+        RuntimeConfig           config_;
+        Domain                  domain_;
+        std::shared_ptr<Fabric> fabric_;
+        ReactorArray            reactors_;
+        ThreadArray             threads_;
     };
 
     template<typename RootTask, typename... Args>
     void Runtime::spawn_thread(const ThreadConfig& config, Args&&... args) {
-        auto&& thread = threads_.emplace_back(std::make_unique<Thread>(*this, config));
+        if (threads_[config.index]) {
+            throw std::runtime_error("Thread has already been started");
+        }
 
-        thread->run<RootTask>(std::forward<Args>(args)...);
+        reactors_[config.index] = std::make_shared<Reactor>();
+        threads_[config.index] = std::make_unique<Thread>(*this, config);
+        threads_[config.index]->run<RootTask>(std::forward<Args>(args)...);
     }
 
 }

@@ -9,10 +9,10 @@
 
 namespace slag {
 
-    EventLoop::EventLoop(Domain& domain, std::shared_ptr<Fabric> fabric)
+    EventLoop::EventLoop(Domain& domain, std::shared_ptr<Fabric> fabric, std::shared_ptr<Reactor> reactor)
         : region_(domain, *this)
         , router_(std::move(fabric), get_thread().config().index)
-        , reactor_(*this)
+        , reactor_(std::move(reactor))
         , current_priority_(TaskPriority::HIGH) // This will give the root task high-priority.
     {
         get_context().attach(*this);
@@ -35,7 +35,7 @@ namespace slag {
     }
 
     Reactor& EventLoop::reactor() {
-        return reactor_;
+        return *reactor_;
     }
 
     Executor& EventLoop::executor(TaskPriority priority) {
@@ -56,16 +56,13 @@ namespace slag {
         }
     }
 
-    InterruptVector& EventLoop::interrupt_vector() {
-        return interrupt_vector_;
-    }
-
     void EventLoop::run(std::unique_ptr<Task> root_task) {
         if (root_task_) {
             throw std::runtime_error("Already running");
         }
 
-        region_driver_.emplace(region_, reactor_);
+        shutdown_driver_.emplace(*this);
+        region_driver_.emplace(*this);
         router_driver_.emplace(*this);
 
         root_task_ = std::move(root_task);
@@ -136,30 +133,10 @@ namespace slag {
             // This is a cleanup operation or something that we don't want to cancel.
         }
         else if (operation.is_quiescent()) {
-            reactor_.destroy_operation(operation);
+            reactor_->destroy_operation(operation);
         }
         else {
             operation.cancel();
-        }
-    }
-
-    void EventLoop::handle_interrupt(Interrupt interrupt) {
-        interrupt_vector_[to_index(interrupt.reason)].set();
-
-        switch (interrupt.reason) {
-            case InterruptReason::HALT: {
-                constexpr bool force = true;
-                stop(force);
-                break;
-            }
-            case InterruptReason::STOP: {
-                constexpr bool force = false;
-                stop(force);
-                break;
-            }
-            default: {
-                break;
-            }
         }
     }
 
@@ -181,7 +158,7 @@ namespace slag {
                 non_blocking |= high_priority_executor_.is_runnable();
                 non_blocking |= idle_priority_executor_.is_runnable();
 
-                reactor_.poll(non_blocking);
+                reactor_->poll(non_blocking);
             }
 
             // Execute tasks for awhile.

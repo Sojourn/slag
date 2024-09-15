@@ -42,18 +42,11 @@ namespace slag {
         InterruptReason reason;
     };
 
-    class InterruptHandler {
-    public:
-        virtual ~InterruptHandler() = default;
-
-        virtual void handle_interrupt(Interrupt interrupt) = 0;
+    struct InterruptState {
+        ThreadMask sources;
+        Event      event;
     };
 
-    // TODO: Add more information about the interrupt.
-    // struct Interrupt {
-    //     Event      event;
-    //     ThreadMask sources;
-    // };
-    using InterruptVector = std::array<Event, INTERRUPT_REASON_COUNT>;
+    using InterruptVector = std::array<InterruptState, INTERRUPT_REASON_COUNT>;
 
 }

@@ -34,6 +34,14 @@ namespace slag {
         return fabric_;
     }
 
+    std::shared_ptr<Reactor> Runtime::reactor(ThreadIndex thread_index) {
+        if (std::shared_ptr<Reactor>& reactor = reactors_.at(thread_index)) {
+            return reactor;
+        }
+
+        throw std::runtime_error("Inactive reactor");
+    }
+
     void Runtime::finalize(ObjectGroup, std::span<Object*>) noexcept {
         abort();
     }

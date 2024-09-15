@@ -104,10 +104,10 @@ namespace slag {
         return msg;
     }
 
-    bool Router::poll() {
+    bool Router::poll(const ThreadMask sources) {
         size_t total_packet_count = 0;
 
-        for_each_thread(rx_link_mask_, [&](const ThreadIndex thread_index) {
+        for_each_thread(sources & rx_link_mask_, [&](const ThreadIndex thread_index) {
             std::span<Packet*> packets = {
                 temp_packet_array_.data(),
                 temp_packet_array_.size(),

@@ -5,6 +5,7 @@
 #include "slag/system.h"
 #include "slag/object.h"
 #include "slag/resource.h"
+#include "slag/driver/shutdown_driver.h"
 #include "slag/driver/region_driver.h"
 #include "slag/driver/router_driver.h"
 
@@ -12,12 +13,9 @@
 
 namespace slag {
 
-    class EventLoop final
-        : private Finalizer
-        , private InterruptHandler
-    {
+    class EventLoop final : private Finalizer {
     public:
-        EventLoop(Domain& domain, std::shared_ptr<Fabric> fabric);
+        EventLoop(Domain& domain, std::shared_ptr<Fabric> fabric, std::shared_ptr<Reactor> reactor);
         ~EventLoop();
 
         EventLoop(EventLoop&&) = delete;
@@ -32,11 +30,10 @@ namespace slag {
         Reactor& reactor();
         Executor& executor(TaskPriority priority);
 
-        InterruptVector& interrupt_vector();
-
         template<typename RootTask, typename... Args>
         void run(Args&&... args);
         void run(std::unique_ptr<Task> root_task);
+
         void stop(bool force = false);
 
     private:
@@ -49,22 +46,22 @@ namespace slag {
         void finalize(Operation& operation);
 
     private:
-        void handle_interrupt(Interrupt interrupt) override final;
-
         void loop();
 
     private:
         Region                        region_;
         Router                        router_;
-        Reactor                       reactor_;
+        std::shared_ptr<Reactor>      reactor_;
         InterruptVector               interrupt_vector_;
 
         TaskPriority                  current_priority_;
         Executor                      high_priority_executor_;
         Executor                      idle_priority_executor_;
 
+        std::optional<ShutdownDriver> shutdown_driver_;
         std::optional<RegionDriver>   region_driver_;
         std::optional<RouterDriver>   router_driver_;
+
         std::unique_ptr<Task>         root_task_;
     };
 

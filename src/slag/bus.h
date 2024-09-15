@@ -135,7 +135,7 @@ namespace slag {
         Ptr<Message> receive(Channel& channel);
 
         // Returns true if any packets were processed.
-        bool poll();
+        bool poll(ThreadMask sources = (MAX_THREAD_COUNT - 1));
 
         void flush();
 

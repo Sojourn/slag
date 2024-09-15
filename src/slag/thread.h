@@ -43,11 +43,12 @@ namespace slag {
         void run(Args&&... args);
 
     private:
-        Runtime&                runtime_;
-        EventLoop*              event_loop_;
-        ThreadConfig            config_;
-        std::shared_ptr<Fabric> fabric_;
-        std::thread             thread_;
+        Runtime&                 runtime_;
+        EventLoop*               event_loop_;
+        ThreadConfig             config_;
+        std::shared_ptr<Fabric>  fabric_;
+        std::shared_ptr<Reactor> reactor_;
+        std::thread              thread_;
     };
 
     template<typename TaskImpl, typename... Args>
@@ -65,7 +66,7 @@ namespace slag {
                 Context context(runtime_);
                 context.attach(*this);
                 {
-                    EventLoop event_loop(context.domain(), std::move(fabric_));
+                    EventLoop event_loop(context.domain(), std::move(fabric_), std::move(reactor_));
 
                     // We don't want to hold onto any extra references to this
                     // so that it can be garbage collected during event loop shutdown.

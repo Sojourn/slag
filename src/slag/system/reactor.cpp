@@ -9,9 +9,7 @@ namespace slag {
     // An invalid operation key is used to distinguish an interrupt from a normal operation.
     static constexpr OperationKey INTERRUPT_OPERATION_KEY;
 
-    Reactor::Reactor(InterruptHandler& interrupt_handler)
-        : interrupt_handler_(interrupt_handler)
-    {
+    Reactor::Reactor() {
         memset(&ring_, 0, sizeof(ring_));
 
         int result;
@@ -30,6 +28,14 @@ namespace slag {
 
     int Reactor::borrow_file_descriptor() {
         return ring_.ring_fd;
+    }
+
+    InterruptVector& Reactor::interrupt_vector() {
+        return interrupt_vector_;
+    }
+
+    InterruptState& Reactor::interrupt_state(InterruptReason reason) {
+        return interrupt_vector_[to_index(reason)];
     }
 
     void Reactor::schedule_operation(Operation& operation) {
@@ -146,7 +152,10 @@ namespace slag {
 
         Interrupt interrupt;
         memcpy(&interrupt, &io_cqe.res, sizeof(interrupt));
-        interrupt_handler_.handle_interrupt(interrupt);
+
+        InterruptState& state = interrupt_vector_[to_index(interrupt.reason)];
+        state.sources |= (1ull << interrupt.source);
+        state.event.set();
     }
 
 }

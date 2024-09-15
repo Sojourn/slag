@@ -10,6 +10,7 @@ namespace slag {
         : runtime_(runtime)
         , config_(config)
         , fabric_(runtime_.fabric())
+        , reactor_(runtime_.reactor(config_.index))
     {
     }
 

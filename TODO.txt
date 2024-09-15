@@ -9,3 +9,4 @@
 - Rename core to sched or something
 
 - Thread spawning should wait until the root task has been initialized, and propagate exceptions from it.
+- Interrupt operation keys need some though--probably can't insert them in the operation table
