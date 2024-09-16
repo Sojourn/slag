@@ -15,11 +15,6 @@ namespace slag {
         , reactor_(std::move(reactor))
         , current_priority_(TaskPriority::HIGH) // This will give the root task high-priority.
     {
-        get_context().attach(*this);
-    }
-
-    EventLoop::~EventLoop() {
-        get_context().detach(*this);
     }
 
     bool EventLoop::is_running() const {

@@ -5,56 +5,15 @@
 
 using namespace slag;
 
-struct PrintTask final : ProtoTask {
-    const char* message;
-
-    explicit PrintTask(const char* message)
-        : message(message)
-    {
+struct Worker : ProtoTask {
+    Worker() {
+        throw std::runtime_error("Error!");
     }
 
-    void run() override {
-        SLAG_PT_BEGIN();
-
-        std::cout << message << std::endl;
-
-        SLAG_PT_END();
-    }
-};
-
-struct TestTask : ProtoTask {
-    Ptr<NopOperation>        op_;
-    std::optional<PrintTask> print_;
-
-    void run() override final {
-        SLAG_PT_BEGIN();
-        {
-            op_ = start_nop_operation();
-            SLAG_PT_WAIT_COMPLETE(*op_);
-
-            print_.emplace("Hello, World!");
-            SLAG_PT_WAIT_COMPLETE(*print_);
-        }
-        SLAG_PT_END();
-    }
-};
-
-struct NopTask : ProtoTask {
     void run() override final {
         SLAG_PT_BEGIN();
         {
             // Nop.
-        }
-        SLAG_PT_END();
-    }
-};
-
-struct PingTask : ProtoTask {
-    Channel channel;
-
-    void run() override final {
-        SLAG_PT_BEGIN();
-        {
         }
         SLAG_PT_END();
     }
@@ -72,19 +31,20 @@ int main(int argc, char** argv) {
     config.thread_topology.add_edge({2, 3});
     config.thread_topology.add_edge({3, 0});
 
-    Runtime runtime(config);
-    runtime.spawn_thread<TestTask>(ThreadConfig {
-        .index          = 0,
-        .name           = "controller",
-        .cpu_affinities = std::nullopt,
-    });
-    for (ThreadIndex thread_index = 1; thread_index < 4; ++thread_index) {
-        runtime.spawn_thread<NopTask>(ThreadConfig {
-            .index          = thread_index,
-            .name           = "worker",
-            .cpu_affinities = std::nullopt,
-        });
+    try {
+        Runtime runtime(config);
+        for (ThreadIndex thread_index = 0; thread_index < 4; ++thread_index) {
+            runtime.spawn_thread<Worker>(ThreadConfig {
+                .index          = thread_index,
+                .name           = "worker",
+                .cpu_affinities = std::nullopt,
+            });
+        }
+    }
+    catch (const std::exception& ex) {
+        std::cerr << "Caught: " << ex.what() << std::endl;
     }
 
     return EXIT_SUCCESS;
 }
+    

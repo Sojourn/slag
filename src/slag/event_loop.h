@@ -16,7 +16,7 @@ namespace slag {
     class EventLoop final : private Finalizer {
     public:
         EventLoop(Domain& domain, std::shared_ptr<Fabric> fabric, std::shared_ptr<Reactor> reactor);
-        ~EventLoop();
+        ~EventLoop() = default;
 
         EventLoop(EventLoop&&) = delete;
         EventLoop(const EventLoop&) = delete;

@@ -10,9 +10,9 @@ namespace slag {
 
     thread_local Context* local_context_instance = nullptr;
 
-    Context::Context(Runtime& runtime)
+    Context::Context(Runtime& runtime, Thread& thread)
         : runtime_(runtime)
-        , thread_(nullptr)
+        , thread_(thread)
         , event_loop_(nullptr)
     {
         if (local_context_instance) {
@@ -31,11 +31,7 @@ namespace slag {
     }
 
     Thread& Context::thread() {
-        if (LIKELY(thread_)) {
-            return *thread_;
-        }
-
-        throw std::runtime_error("No thread");
+        return thread_;
     }
 
     Domain& Context::domain() {
@@ -43,11 +39,7 @@ namespace slag {
     }
 
     EventLoop& Context::event_loop() {
-        if (LIKELY(event_loop_)) {
-            return *event_loop_;
-        }
-
-        throw std::runtime_error("No event loop");
+        return thread_.event_loop();
     }
 
     Region& Context::region() {
@@ -60,30 +52,6 @@ namespace slag {
 
     Reactor& Context::reactor() {
         return event_loop().reactor();
-    }
-
-    void Context::attach(EventLoop& event_loop) {
-        assert(!event_loop_);
-
-        event_loop_ = &event_loop;
-    }
-
-    void Context::detach(EventLoop& event_loop) {
-        assert(event_loop_ == &event_loop);
-
-        event_loop_ = nullptr;
-    }
-
-    void Context::attach(Thread& thread) {
-        assert(!thread_);
-
-        thread_ = &thread;
-    }
-
-    void Context::detach(Thread& thread) {
-        assert(thread_ == &thread);
-
-        thread_ = nullptr;
     }
 
     bool has_context() {

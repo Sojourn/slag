@@ -14,7 +14,7 @@ namespace slag {
     // A directory of important runtime and thread services.
     class Context {
     public:
-        explicit Context(Runtime& runtime);
+        explicit Context(Runtime& runtime, Thread& thread);
         ~Context();
 
         Context(Context&&) = delete;
@@ -31,20 +31,8 @@ namespace slag {
         Reactor& reactor();
 
     private:
-        friend class Thread;
-
-        void attach(Thread& thread);
-        void detach(Thread& thread);
-
-    private:
-        friend class EventLoop;
-
-        void attach(EventLoop& event_loop);
-        void detach(EventLoop& event_loop);
-
-    private:
         Runtime&   runtime_;
-        Thread*    thread_;
+        Thread&    thread_;
         EventLoop* event_loop_;
     };
 

@@ -7,6 +7,8 @@
 #include "slag/collections/spsc_queue.h"
 
 #include <optional>
+#include <string>
+#include <unordered_map>
 #include <array>
 #include <deque>
 #include <vector>
@@ -112,9 +114,41 @@ namespace slag {
             }
         }
 
+        std::optional<ChannelId> find_channel(const std::string& name) const {
+            std::scoped_lock lock(channel_mutex_);
+
+            if (auto it = channel_table_.find(name); it != channel_table_.end()) {
+                return it->second;
+            }
+
+            return std::nullopt;
+        }
+
+        void bind_channel(const std::string& name, ChannelId chid) {
+            std::scoped_lock lock(channel_mutex_);
+
+            ChannelId& row = channel_table_[name];
+            if (UNLIKELY(row.valid)) {
+                throw std::runtime_error("Channel already bound to name");
+            }
+
+            row = chid;
+        }
+
+        void unbind_channel(const std::string& name) {
+            std::scoped_lock lock(channel_mutex_);
+
+            auto it = channel_table_.find(name);
+            assert(it != channel_table_.end());
+            channel_table_.erase(it);
+        }
+
     private:
-        const ThreadGraph                  thread_topology_;
-        std::vector<std::unique_ptr<Link>> links_;
+        const ThreadGraph                          thread_topology_;
+        std::vector<std::unique_ptr<Link>>         links_;
+
+        mutable std::mutex                         channel_mutex_;
+        std::unordered_map<std::string, ChannelId> channel_table_;
     };
 
     class Router final
@@ -193,10 +227,11 @@ namespace slag {
 
     class Channel final
         : public Pollable<PollableType::READABLE> // Pending data.
-        , public Pollable<PollableType::WRITABLE> // Able to send (not backpressured).
+        , public Pollable<PollableType::WRITABLE> // Able to send (not back-pressured).
     {
     public:
         Channel();
+        explicit Channel(const std::string& name);
         ~Channel();
 
         Channel(Channel&&) = delete;
@@ -205,6 +240,7 @@ namespace slag {
         Channel& operator=(const Channel&) = delete;
 
         ChannelId id() const;
+        const std::optional<std::string>& name() const;
 
         Event& readable_event() override;
         Event& writable_event() override;
@@ -218,8 +254,9 @@ namespace slag {
         void bind(ChannelId chid);
 
     private:
-        Router&   router_;
+        Router& router_;
         ChannelId id_;
+        std::optional<std::string> name_;
     };
 
 }

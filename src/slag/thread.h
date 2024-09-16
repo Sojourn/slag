@@ -1,18 +1,21 @@
 #pragma once
 
-#include <optional>
-#include <span>
-#include <string>
-#include <memory>
-#include <thread>
 #include "types.h"
 #include "core.h"
 #include "context.h"
-#include "mantle/mantle.h"
 #include "event_loop.h"
 #include "memory/buffer.h"
 #include "system/operation.h"
 #include "topology.h"
+
+#include "mantle/mantle.h"
+
+#include <optional>
+#include <future>
+#include <span>
+#include <string>
+#include <memory>
+#include <thread>
 
 namespace slag {
 
@@ -39,50 +42,52 @@ namespace slag {
         Runtime& runtime();
         EventLoop& event_loop();
 
-        template<typename TaskImpl, typename... Args>
+        template<typename RootTask, typename... Args>
         void run(Args&&... args);
 
     private:
-        Runtime&                 runtime_;
-        EventLoop*               event_loop_;
-        ThreadConfig             config_;
-        std::shared_ptr<Fabric>  fabric_;
-        std::shared_ptr<Reactor> reactor_;
-        std::thread              thread_;
+        Runtime&                   runtime_;
+        ThreadConfig               config_;
+        std::shared_ptr<Fabric>    fabric_;
+        std::shared_ptr<Reactor>   reactor_;
+        std::unique_ptr<EventLoop> event_loop_;
+        std::thread                thread_;
     };
 
-    template<typename TaskImpl, typename... Args>
+    template<typename RootTask, typename... Args>
     void Thread::run(Args&&... args) {
         if (thread_.joinable()) {
             throw std::runtime_error("Thread is already running");
         }
 
-        thread_ = std::thread([this](Args&&... args) mutable {
+        std::promise<void> started_promise;
+        std::future<void> started_future = started_promise.get_future();
+
+        thread_ = std::thread([started_promise=std::move(started_promise), this](Args&&... args) mutable {
+            Context context(runtime_, *this);
+
+            std::unique_ptr<RootTask> root_task;
+
             try {
                 if (config_.cpu_affinities) {
                     mantle::set_cpu_affinity(*config_.cpu_affinities);
                 }
 
-                Context context(runtime_);
-                context.attach(*this);
-                {
-                    EventLoop event_loop(context.domain(), std::move(fabric_), std::move(reactor_));
+                event_loop_ = std::make_unique<EventLoop>(context.domain(), std::move(fabric_), std::move(reactor_));
+                root_task = std::make_unique<RootTask>(std::forward<Args>(args)...);
 
-                    // We don't want to hold onto any extra references to this
-                    // so that it can be garbage collected during event loop shutdown.
-                    assert(!fabric_);
+                started_promise.set_value();
+            }
+            catch (const std::exception&) {
+                started_promise.set_exception(std::current_exception());
+            }
 
-                    event_loop_ = &event_loop;
-                    event_loop_->run<TaskImpl>(std::forward<Args>(args)...);
-                    event_loop_ = nullptr;
-                }
-                context.detach(*this);
-            }
-            catch (const std::exception& ex) {
-                std::cerr << ex.what() << std::endl;
-                abort();
-            }
+            event_loop_->run(std::move(root_task));
+            event_loop_.reset();
+
         }, std::forward<Args>(args)...);
+
+        started_future.get();
     }
 
 }

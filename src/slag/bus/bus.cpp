@@ -44,13 +44,25 @@ namespace slag {
             state = &channel_states_[channel_index];
         }
 
-        channel.bind(ChannelId {
+        const ChannelId chid = {
             .valid         = 1,
             .reserved      = 0,
             .thread_index  = thread_index_,
             .channel_nonce = state->nonce,
             .channel_index = static_cast<uint32_t>(channel_index),
-        });
+        };
+
+        try {
+            if (auto&& name = channel.name()) {
+                fabric_->bind_channel(*name, chid);
+            }
+        }
+        catch (const std::exception&) {
+            unused_channel_states_.push_back(channel_index);
+            throw;
+        }
+
+        channel.bind(chid);
     }
 
     void Router::detach(Channel& channel) {
@@ -69,6 +81,10 @@ namespace slag {
         }
         else {
             // Retire this state instead of repeating a nonce.
+        }
+
+        if (auto&& name = channel.name()) {
+            fabric_->unbind_channel(*name);
         }
     }
 
@@ -257,12 +273,23 @@ namespace slag {
         router_.attach(*this);
     }
 
+    Channel::Channel(const std::string& name)
+        : router_(get_router())
+        , name_(name)
+    {
+        router_.attach(*this);
+    }
+
     Channel::~Channel() {
         router_.detach(*this);
     }
 
     ChannelId Channel::id() const {
         return id_;
+    }
+
+    const std::optional<std::string>& Channel::name() const {
+        return name_;
     }
 
     Event& Channel::readable_event() {
