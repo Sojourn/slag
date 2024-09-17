@@ -1,15 +1,14 @@
 #pragma once
 
 #include "slag/core.h"
+#include "slag/resource.h"
 #include "slag/bus.h"
 #include "slag/system.h"
-#include "slag/object.h"
-#include "slag/resource.h"
-#include "slag/driver/shutdown_driver.h"
-#include "slag/driver/region_driver.h"
-#include "slag/driver/router_driver.h"
+#include "slag/driver.h"
 
 #include <memory>
+#include <optional>
+#include <stdexcept>
 
 namespace slag {
 
@@ -58,10 +57,7 @@ namespace slag {
         Executor                      high_priority_executor_;
         Executor                      idle_priority_executor_;
 
-        std::optional<ShutdownDriver> shutdown_driver_;
-        std::optional<RegionDriver>   region_driver_;
-        std::optional<RouterDriver>   router_driver_;
-
+        std::optional<Drivers>        drivers_;
         std::unique_ptr<Task>         root_task_;
     };
 

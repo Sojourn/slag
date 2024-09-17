@@ -56,10 +56,7 @@ namespace slag {
             throw std::runtime_error("Already running");
         }
 
-        shutdown_driver_.emplace(*this);
-        region_driver_.emplace(*this);
-        router_driver_.emplace(*this);
-
+        drivers_.emplace(*this);
         root_task_ = std::move(root_task);
 
         loop();
@@ -168,9 +165,7 @@ namespace slag {
         }
 
         // Destroy drivers to drop any remaining references to resources.
-        shutdown_driver_.reset();
-        region_driver_.reset();
-        router_driver_.reset();
+        drivers_.reset();
     }
 
 }
