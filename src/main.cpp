@@ -1,22 +1,41 @@
 #include <iostream>
+#include <string>
 
 #include "mantle/mantle.h"
 #include "slag/slag.h"
 
 using namespace slag;
 
-struct Worker : ProtoTask {
-    Worker() {
-        throw std::runtime_error("Error!");
+class Worker : public ProtoTask {
+public:
+    Worker()
+        : channel_(std::to_string(get_thread().index()))
+    {
     }
 
     void run() override final {
         SLAG_PT_BEGIN();
         {
-            // Nop.
+            do {
+                SLAG_PT_YIELD();
+                target_ = channel_.query("0");
+            } while (!target_);
+
+            std::cout << get_thread().index() << " ready" << std::endl;
+
+            timer_.set(std::chrono::milliseconds(100));
+            while (!timer_.is_expired()) {
+                std::cout << get_thread().index() << " yielding" << std::endl;
+                SLAG_PT_YIELD();
+            }
         }
         SLAG_PT_END();
     }
+
+private:
+    Channel channel_;
+    std::optional<ChannelId> target_;
+    BasicTimer timer_;
 };
 
 int main(int argc, char** argv) {

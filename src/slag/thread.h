@@ -37,6 +37,7 @@ namespace slag {
         Thread& operator=(Thread&&) = delete;
         Thread& operator=(const Thread&) = delete;
 
+        ThreadIndex index() const;
         const ThreadConfig& config() const;
 
         Runtime& runtime();

@@ -165,6 +165,7 @@ namespace slag {
         void attach(Channel& channel);
         void detach(Channel& channel);
 
+        std::optional<ChannelId> query(const std::string& name) const;
         void send(Channel& channel, ChannelId dst_chid, Ref<Message> message);
         Ptr<Message> receive(Channel& channel);
 
@@ -245,6 +246,7 @@ namespace slag {
         Event& readable_event() override;
         Event& writable_event() override;
 
+        std::optional<ChannelId> query(const std::string& name) const;
         void send(ChannelId dst_chid, Ref<Message> msg);
         Ptr<Message> receive();
 

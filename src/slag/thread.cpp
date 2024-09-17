@@ -20,6 +20,10 @@ namespace slag {
         }
     }
 
+    ThreadIndex Thread::index() const {
+        return config_.index;
+    }
+
     const ThreadConfig& Thread::config() const {
         return config_;
     }

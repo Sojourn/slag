@@ -88,6 +88,10 @@ namespace slag {
         }
     }
 
+    std::optional<ChannelId> Router::query(const std::string& name) const {
+        return fabric_->find_channel(name);
+    }
+
     void Router::send(Channel& channel, ChannelId dst_chid, Ref<Message> message) {
         if (message->bind(channel.id())) {
             ChannelState& src_state = get_state(channel);
@@ -302,6 +306,10 @@ namespace slag {
         Router::ChannelState& state = router_.get_state(*this);
 
         return state.writable_event;
+    }
+
+    std::optional<ChannelId> Channel::query(const std::string& name) const {
+        return router_.query(name);
     }
 
     void Channel::send(ChannelId dst_chid, Ref<Message> msg) {
