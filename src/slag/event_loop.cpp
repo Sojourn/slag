@@ -140,7 +140,7 @@ namespace slag {
         while (root_task_ && !root_task_->is_complete())  {
             // Prime the reactor before (potentially) blocking.
             {
-                constexpr bool non_blocking = false;
+                constexpr bool non_blocking = true;
                 region_.step(non_blocking);
             }
 
