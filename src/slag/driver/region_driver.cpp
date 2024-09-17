@@ -27,8 +27,7 @@ namespace slag {
             else {
                 assert(poll_->result() & POLLIN); // Just curious--spurious steps are fine.
 
-                constexpr bool non_blocking = true;
-                region_.step(non_blocking);
+                // Our job is to wake up the event loop--done.
             }
 
             if (poll_->is_complete()) {
