@@ -167,8 +167,10 @@ namespace slag {
             }
         }
 
-        // Cleanup.
+        // Destroy drivers to drop any remaining references to resources.
+        shutdown_driver_.reset();
         region_driver_.reset();
+        router_driver_.reset();
     }
 
 }
