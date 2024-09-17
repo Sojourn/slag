@@ -23,8 +23,6 @@ namespace slag {
     class Router;
     class Channel;
 
-    using Message = Resource<ResourceType::MESSAGE>;
-
     struct ChannelId {
         uint32_t valid         :  1                      = 0;
         uint32_t reserved      :  1                      = 0;
