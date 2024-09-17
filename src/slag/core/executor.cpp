@@ -35,7 +35,11 @@ namespace slag {
                 task->cancel();
             }
 
-            if (!task->is_complete()) {
+            if (task->is_complete()) {
+                // The task will be cleaned up by another task
+                // waiting on this task's completion event.
+            }
+            else {
                 schedule(*task);
             }
         }
