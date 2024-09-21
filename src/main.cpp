@@ -11,31 +11,44 @@ public:
     Worker()
         : channel_(std::to_string(get_thread().index()))
     {
+        std::cout << (int)get_thread().index() << " constructed" << std::endl;
     }
 
     void run() override final {
-        SLAG_PT_BEGIN();
-        {
-            do {
-                SLAG_PT_YIELD();
+        try {
+            SLAG_PT_BEGIN();
+            {
                 target_ = channel_.query("0");
-            } while (!target_);
+                assert(target_);
 
-            std::cout << get_thread().index() << " ready" << std::endl;
+                std::cout << (int)get_thread().index() << " sending message" << std::endl;
+                channel_.send(*target_, bind(new Message));
 
-            timer_.set(std::chrono::milliseconds(100));
-            while (!timer_.is_expired()) {
-                std::cout << get_thread().index() << " yielding" << std::endl;
-                SLAG_PT_YIELD();
+                timer_.set(std::chrono::milliseconds(100));
+                looping_ = true;
+                while (looping_) {
+                    if (timer_.is_expired()) {
+                        looping_ = false;
+                    }
+                    if (Ptr<Message> message = channel_.receive()) {
+                        std::cout << get_thread().index() << " received message" << std::endl;
+                    }
+
+                    SLAG_PT_YIELD();
+                }
             }
+            SLAG_PT_END();
         }
-        SLAG_PT_END();
+        catch (const std::exception& ex) {
+            std::cout << (int)get_thread().index() << " exception " << ex.what() << std::endl;
+        }
     }
 
 private:
     Channel channel_;
     std::optional<ChannelId> target_;
     BasicTimer timer_;
+    bool looping_ = false;
 };
 
 int main(int argc, char** argv) {
@@ -66,4 +79,3 @@ int main(int argc, char** argv) {
 
     return EXIT_SUCCESS;
 }
-    

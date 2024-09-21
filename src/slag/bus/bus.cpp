@@ -14,14 +14,15 @@ namespace slag {
         , tx_send_mask_(0)
         , temp_packet_array_(512)
     {
-        for (ThreadIndex thread_index = 0; thread_index < MAX_THREAD_COUNT; ++thread_index) {
-            if (Link* link = fabric_->link(thread_index, thread_index_)) {
-                rx_links_[thread_index] = SpscQueueConsumer<Packet>(link->queue());
-                rx_link_mask_ |= (1ull << thread_index);
+        for (ThreadIndex remote_thread_index = 0; remote_thread_index < MAX_THREAD_COUNT; ++remote_thread_index) {
+            if (Link* link = fabric_->link(remote_thread_index, thread_index_)) {
+                rx_links_[remote_thread_index] = SpscQueueConsumer<Packet>(link->queue());
+                rx_link_mask_ |= (1ull << remote_thread_index);
             }
-            if (Link* link = fabric_->link(thread_index_, thread_index)) {
-                tx_links_[thread_index] = SpscQueueProducer<Packet>(link->queue());
-                tx_link_mask_ |= (1ull << thread_index);
+
+            if (Link* link = fabric_->link(thread_index_, remote_thread_index)) {
+                tx_links_[remote_thread_index] = SpscQueueProducer<Packet>(link->queue());
+                tx_link_mask_ |= (1ull << remote_thread_index);
             }
         }
     }
@@ -149,12 +150,12 @@ namespace slag {
         // Flush packets from the backlog.
         {
             while (!tx_backlog_.empty()) {
-                if (Packet& packet = tx_backlog_.front(); forward(packet)) {
+                Packet& packet = tx_backlog_.front();
+                if (forward(packet)) {
                     tx_backlog_.pop_front();
                 }
                 else {
-                    // The link is at capacity.
-                    break;
+                    break; // The link is at capacity.
                 }
             }
 
@@ -224,6 +225,9 @@ namespace slag {
         assert(thread_index_ != packet.dst_chid.thread_index);
 
         if (std::optional<ThreadIndex> next_thread_index = packet.route.next_hop(thread_index_)) {
+            assert(thread_index_ != *next_thread_index);
+            assert(*next_thread_index < MAX_THREAD_COUNT);
+
             SpscQueueProducer<Packet>& producer = tx_links_[*next_thread_index];
             if (producer.insert(packet)) {
                 tx_send_mask_ |= (1ull << *next_thread_index);
@@ -235,6 +239,7 @@ namespace slag {
         }
         else {
             // No route.
+            assert(false);
         }
 
         return false;

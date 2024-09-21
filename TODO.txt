@@ -10,3 +10,5 @@
 
 - Thread spawning should wait until the root task has been initialized, and propagate exceptions from it.
 - Interrupt operation keys need some though--probably can't insert them in the operation table
+
+- Use the amalgamated mantle so we don't have a build target conflict (unit_test)

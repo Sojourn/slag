@@ -32,6 +32,7 @@ namespace slag {
                 task->run();
             }
             catch (const std::exception& ex) {
+                assert(false);
                 task->cancel();
             }
 

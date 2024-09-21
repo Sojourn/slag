@@ -7,4 +7,4 @@ add_compile_options(-g) # add debug information
 
 add_subdirectory(src)
 add_subdirectory(libs)
-# add_subdirectory(unit_test)
+add_subdirectory(slag_unit_test)

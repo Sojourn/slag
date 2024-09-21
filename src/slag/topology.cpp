@@ -32,6 +32,10 @@ namespace slag {
     }
 
     std::optional<size_t> ThreadGraph::edge_index(const Edge edge) const {
+        if (!has_edge(edge)) {
+            return std::nullopt;
+        }
+
         size_t result = 0;
 
         // Count the number of edges in preceding rows.
@@ -40,13 +44,9 @@ namespace slag {
         }
 
         // Count the number of edges in preceding columns.
-        for (ThreadIndex thread_index = 0; thread_index < edge.target; ++thread_index) {
-            if (adjacency_matrix_[edge.source] & (1ull << thread_index)) {
-                result += 1;
-            }
-        }
+        result += __builtin_popcountll(adjacent_nodes(edge.source) & ((1ull << edge.target) - 1));
 
-        return std::nullopt;
+        return result;
     }
 
     bool ThreadGraph::has_edge(const Edge edge) const {
@@ -83,13 +83,17 @@ namespace slag {
 
     // NOTE: This can be done in constant time with SIMD.
     std::optional<ThreadIndex> ThreadRoute::next_hop(ThreadIndex current) const {
+        if (hops_[0] == INVALID_THREAD_INDEX) {
+            return std::nullopt;
+        }
+
         for (size_t i = 0; i < (hops_.size() - 1); ++i) {
             if (hops_[i] == current) {
                 return hops_[i + 1];
             }
         }
 
-        return std::nullopt;
+        return hops_[0];
     }
 
     // NOTE: This can be done in constant time with SIMD.

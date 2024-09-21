@@ -113,7 +113,7 @@ namespace slag {
             });
         }
 
-        if (visited_set != graph.nodes()) {
+        if (const ThreadMask nodes = graph.nodes(); nodes && nodes != visited_set) {
             throw std::runtime_error("Unreachable thread detected");
         }
 
