@@ -45,13 +45,14 @@ namespace slag {
     public:
         ThreadRoute();
 
+        std::optional<ThreadIndex> hop(size_t index) const;
         std::optional<ThreadIndex> first_hop() const;
         std::optional<ThreadIndex> next_hop(ThreadIndex current) const;
 
         void add_hop(ThreadIndex next);
 
     private:
-        std::array<ThreadIndex, 8> hops_;
+        std::array<ThreadIndex, 4> hops_;
     };
 
     using ThreadRouteTable = std::array<ThreadRoute, MAX_THREAD_COUNT>;

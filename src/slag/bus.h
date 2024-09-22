@@ -1,8 +1,9 @@
 #pragma once
 
-#include "slag/core.h"
 #include "slag/object.h"
 #include "slag/resource.h"
+#include "slag/core.h"
+#include "slag/system.h"
 #include "slag/topology.h"
 #include "slag/collections/spsc_queue.h"
 
@@ -64,6 +65,8 @@ namespace slag {
         ChannelId    src_chid;
         ChannelId    dst_chid;
         ThreadRoute  route;
+        uint8_t      hop_index;
+        uint8_t      reserved[3];
         Ref<Message> msg;
     };
     static_assert(sizeof(Packet) == 32);

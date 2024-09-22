@@ -73,6 +73,14 @@ namespace slag {
         }
     }
 
+    std::optional<ThreadIndex> ThreadRoute::hop(const size_t index) const {
+        if (hops_.size() <= index) {
+            return std::nullopt;
+        }
+
+        return (hops_[index] == INVALID_THREAD_INDEX) ? std::nullopt : std::make_optional(hops_[index]);
+    }
+
     std::optional<ThreadIndex> ThreadRoute::first_hop() const {
         if (hops_[0] != INVALID_THREAD_INDEX) {
             return hops_[0];

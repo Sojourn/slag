@@ -103,10 +103,12 @@ namespace slag {
         }
 
         route(Packet {
-            .src_chid = channel.id(),
-            .dst_chid = dst_chid,
-            .route    = thread_routes_[dst_chid.thread_index],
-            .msg      = message,
+            .src_chid  = channel.id(),
+            .dst_chid  = dst_chid,
+            .route     = thread_routes_[dst_chid.thread_index],
+            .hop_index = 0,
+            .reserved  = {0},
+            .msg       = message,
         });
     }
 
@@ -224,7 +226,7 @@ namespace slag {
     bool Router::forward(Packet packet) {
         assert(thread_index_ != packet.dst_chid.thread_index);
 
-        if (std::optional<ThreadIndex> next_thread_index = packet.route.next_hop(thread_index_)) {
+        if (std::optional<ThreadIndex> next_thread_index = packet.route.hop(packet.hop_index++)) {
             assert(thread_index_ != *next_thread_index);
             assert(*next_thread_index < MAX_THREAD_COUNT);
 
@@ -238,8 +240,7 @@ namespace slag {
             }
         }
         else {
-            // No route.
-            assert(false);
+            abort(); // No route.
         }
 
         return false;
