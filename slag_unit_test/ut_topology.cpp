@@ -12,9 +12,9 @@ TEST_CASE("Topology") {
         CHECK(graph.edge_count() == 0);
 
         for (ThreadRoute route : build_thread_route_table(graph, MAX_THREAD_COUNT)) {
-            CHECK(!route.first_hop());
+            CHECK(route.first_hop() == INVALID_THREAD_INDEX);
             for (ThreadIndex thread_index = 0; thread_index < MAX_THREAD_COUNT; ++thread_index) {
-                CHECK(!route.next_hop(thread_index));
+                CHECK(route.next_hop(thread_index) == INVALID_THREAD_INDEX);
             }
         }
     }
@@ -42,8 +42,8 @@ TEST_CASE("Topology") {
                 ThreadRoute route = routes[target];
 
                 if (origin == target) {
-                    CHECK(!route.first_hop());
-                    CHECK(!route.next_hop(origin));
+                    CHECK(route.first_hop() == INVALID_THREAD_INDEX);
+                    CHECK(route.next_hop(origin) == INVALID_THREAD_INDEX);
                 }
                 else {
                     auto next_index = [](ThreadIndex index) {

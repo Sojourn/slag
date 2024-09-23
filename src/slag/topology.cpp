@@ -73,28 +73,20 @@ namespace slag {
         }
     }
 
-    std::optional<ThreadIndex> ThreadRoute::hop(const size_t index) const {
+    ThreadIndex ThreadRoute::hop(const size_t index) const {
         if (hops_.size() <= index) {
-            return std::nullopt;
+            throw std::runtime_error("Hop index out-of-bounds");
         }
 
-        return (hops_[index] == INVALID_THREAD_INDEX) ? std::nullopt : std::make_optional(hops_[index]);
+        return hops_[index];
     }
 
-    std::optional<ThreadIndex> ThreadRoute::first_hop() const {
-        if (hops_[0] != INVALID_THREAD_INDEX) {
-            return hops_[0];
-        }
-
-        return std::nullopt;
+    ThreadIndex ThreadRoute::first_hop() const {
+        return hops_[0];
     }
 
     // NOTE: This can be done in constant time with SIMD.
-    std::optional<ThreadIndex> ThreadRoute::next_hop(ThreadIndex current) const {
-        if (hops_[0] == INVALID_THREAD_INDEX) {
-            return std::nullopt;
-        }
-
+    ThreadIndex ThreadRoute::next_hop(ThreadIndex current) const {
         for (size_t i = 0; i < (hops_.size() - 1); ++i) {
             if (hops_[i] == current) {
                 return hops_[i + 1];
@@ -104,7 +96,6 @@ namespace slag {
         return hops_[0];
     }
 
-    // NOTE: This can be done in constant time with SIMD.
     void ThreadRoute::add_hop(ThreadIndex next) {
         for (size_t i = 0; i < hops_.size(); ++i) {
             if (hops_[i] == INVALID_THREAD_INDEX) {
@@ -113,7 +104,52 @@ namespace slag {
             }
         }
 
-        throw std::runtime_error("Too many hops on thread route");
+        throw std::runtime_error("Too many hops");
+    }
+
+    ThreadRouteTable build_thread_route_table(const ThreadGraph& graph, const ThreadIndex origin) {
+        size_t route_costs[MAX_THREAD_COUNT];
+        for (size_t& cost : route_costs) {
+            cost = std::numeric_limits<size_t>::max();
+        }
+
+        // The origin costs nothing to route to.
+        route_costs[origin] = 0;
+
+        ThreadMask working_set = (1ull << origin);
+        ThreadMask visited_set = 0;
+
+        ThreadRouteTable routes;
+        while (working_set) {
+            const ThreadIndex source = static_cast<ThreadIndex>(__builtin_ctzll(working_set));
+            working_set &= ~(1ull << source);
+            visited_set |= (1ull << source);
+
+            for_each_thread(graph.adjacent_nodes(source), [&](const ThreadIndex target) {
+                const size_t edge_cost = 1;
+                const size_t source_route_cost = route_costs[source];
+                const size_t proposed_route_cost = source_route_cost + edge_cost;
+
+                // Update the best route to the target if we found a cheaper one.
+                size_t& target_route_cost = route_costs[target];
+                if (proposed_route_cost < target_route_cost) {
+                    ThreadRoute new_route = routes[source];
+                    new_route.add_hop(target);
+
+                    routes[target] = new_route;
+                    target_route_cost = source_route_cost + edge_cost;
+                }
+
+                // Add the target to the working set if it hasn't been visited yet.
+                working_set |= (1ull << target) & ~visited_set;
+            });
+        }
+
+        if (const ThreadMask nodes = graph.nodes(); nodes && nodes != visited_set) {
+            throw std::runtime_error("Unreachable thread detected");
+        }
+
+        return routes;
     }
 
 }

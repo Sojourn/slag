@@ -186,7 +186,6 @@ namespace slag {
     }
 
     void Router::finalize(Message& message) {
-        // Not sent or
         assert(!message.origin().valid || (message.origin().thread_index == thread_index_));
 
         if (ChannelState* state = get_state(message.origin())) {
@@ -202,10 +201,6 @@ namespace slag {
     }
 
     void Router::route(Packet packet) {
-        if (UNLIKELY(!packet.route.first_hop())) {
-            return; // The packet is unroutable.
-        }
-
         if (thread_index_ == packet.dst_chid.thread_index) {
             deliver(packet);
         }
@@ -233,13 +228,13 @@ namespace slag {
     bool Router::forward(Packet packet) {
         assert(thread_index_ != packet.dst_chid.thread_index);
 
-        if (std::optional<ThreadIndex> next_thread_index = packet.route.hop(packet.hop_index++)) {
-            assert(thread_index_ != *next_thread_index);
-            assert(*next_thread_index < MAX_THREAD_COUNT);
+        if (const ThreadIndex next_tidx = packet.route.hop(packet.hop_index++); next_tidx != INVALID_THREAD_INDEX) {
+            assert(thread_index_ != next_tidx);
+            assert(next_tidx < MAX_THREAD_COUNT);
 
-            SpscQueueProducer<Packet>& producer = tx_links_[*next_thread_index];
+            SpscQueueProducer<Packet>& producer = tx_links_[next_tidx];
             if (producer.insert(packet)) {
-                tx_send_mask_ |= (1ull << *next_thread_index);
+                tx_send_mask_ |= (1ull << next_tidx);
                 return true;
             }
             else {
@@ -247,7 +242,7 @@ namespace slag {
             }
         }
         else {
-            abort(); // No route.
+            // No route.
         }
 
         return false;

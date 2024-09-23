@@ -45,9 +45,9 @@ namespace slag {
     public:
         ThreadRoute();
 
-        std::optional<ThreadIndex> hop(size_t index) const;
-        std::optional<ThreadIndex> first_hop() const;
-        std::optional<ThreadIndex> next_hop(ThreadIndex current) const;
+        ThreadIndex hop(size_t index) const;
+        ThreadIndex first_hop() const;
+        ThreadIndex next_hop(ThreadIndex current) const;
 
         void add_hop(ThreadIndex next);
 
@@ -56,6 +56,15 @@ namespace slag {
     };
 
     using ThreadRouteTable = std::array<ThreadRoute, MAX_THREAD_COUNT>;
+
+    // Computes shortest paths from an origin thread to all other threads in a graph.
+    // TODO: Add a cost model better than naive #hops.
+    //       - NUMA node.
+    //       - Shared L2/L3 caches.
+    //       - CPU time to route away from (idle? busy?) threads.
+    // TODO: Think about supporting multiple routes to a target and load balancing.
+    //
+    ThreadRouteTable build_thread_route_table(const ThreadGraph& graph, ThreadIndex origin);
 
     template<typename Visitor>
     void for_each_thread(ThreadMask mask, Visitor&& visitor) {
@@ -67,58 +76,6 @@ namespace slag {
             mask &= ~(1ull << thread_index);
             visitor(thread_index);
         }
-    }
-
-    // Computes shortest paths from an origin thread to all other threads in a graph.
-    // TODO: Add a cost model better than naive #hops.
-    //       - NUMA node.
-    //       - Shared L2/L3 caches.
-    //       - CPU time to route away from (idle? busy?) threads.
-    // TODO: Think about supporting multiple routes to a target and load balancing.
-    //
-    inline ThreadRouteTable build_thread_route_table(const ThreadGraph& graph, const ThreadIndex origin) {
-        size_t route_costs[MAX_THREAD_COUNT];
-        for (size_t& cost : route_costs) {
-            cost = std::numeric_limits<size_t>::max();
-        }
-
-        // The origin costs nothing to route to.
-        route_costs[origin] = 0;
-
-        ThreadMask working_set = (1ull << origin);
-        ThreadMask visited_set = 0;
-
-        ThreadRouteTable routes;
-        while (working_set) {
-            const ThreadIndex source = static_cast<ThreadIndex>(__builtin_ctzll(working_set));
-            working_set &= ~(1ull << source);
-            visited_set |= (1ull << source);
-
-            for_each_thread(graph.adjacent_nodes(source), [&](const ThreadIndex target) {
-                const size_t edge_cost = 1;
-                const size_t source_route_cost = route_costs[source];
-                const size_t proposed_route_cost = source_route_cost + edge_cost;
-
-                // Update the best route to the target if we found a cheaper one.
-                size_t& target_route_cost = route_costs[target];
-                if (proposed_route_cost < target_route_cost) {
-                    ThreadRoute new_route = routes[source];
-                    new_route.add_hop(target);
-
-                    routes[target] = new_route;
-                    target_route_cost = source_route_cost + edge_cost;
-                }
-
-                // Add the target to the working set if it hasn't been visited yet.
-                working_set |= (1ull << target) & ~visited_set;
-            });
-        }
-
-        if (const ThreadMask nodes = graph.nodes(); nodes && nodes != visited_set) {
-            throw std::runtime_error("Unreachable thread detected");
-        }
-
-        return routes;
     }
 
 }
