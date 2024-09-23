@@ -1,5 +1,6 @@
 #include "slag/bus.h"
 #include "slag/context.h"
+#include "slag/runtime.h"
 
 namespace slag {
 
@@ -166,12 +167,18 @@ namespace slag {
 
         // Publish and notify threads that their end of the links can be read.
         {
-            // Links try to batch sends and need to be explicitly flushed before we interrupt the target threads.
-            for_each_thread(tx_send_mask_, [&](const ThreadIndex thread_index) {
-                tx_links_[thread_index].flush();
+            // Wake threads we've sent to using `LINK` interrupts.
+            for_each_thread(tx_send_mask_, [&](const ThreadIndex tx_tidx) {
+                tx_links_[tx_tidx].flush();
 
-                // start_interrupt_operation(Interrupt {
-                // }).daemonize();
+                std::cout << thread_index_ << " interrupting " << tx_tidx << std::endl;
+                start_interrupt_operation(
+                    get_runtime().reactor(tx_tidx),
+                    Interrupt {
+                        .source = thread_index_,
+                        .reason = InterruptReason::LINK,
+                    }
+                )->daemonize();
             });
 
             tx_send_mask_ = 0;

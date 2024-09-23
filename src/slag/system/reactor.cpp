@@ -6,9 +6,6 @@
 
 namespace slag {
 
-    // An invalid operation key is used to distinguish an interrupt from a normal operation.
-    static constexpr OperationKey INTERRUPT_OPERATION_KEY;
-
     Reactor::Reactor() {
         memset(&ring_, 0, sizeof(ring_));
 

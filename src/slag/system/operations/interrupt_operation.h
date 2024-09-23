@@ -3,6 +3,7 @@
 #include <liburing.h>
 #include "slag/core.h"
 #include "slag/context.h"
+#include "slag/system/reactor.h"
 #include "slag/system/interrupt.h"
 #include "slag/system/operation.h"
 #include "slag/system/file_descriptor.h"
@@ -11,9 +12,9 @@ namespace slag {
 
     class InterruptOperation final : public Operation {
     public:
-        InterruptOperation(Ref<FileDescriptor> target_ring, const Interrupt interrupt)
+        InterruptOperation(std::shared_ptr<Reactor> reactor, const Interrupt interrupt)
             : Operation(OperationType::INTERRUPT)
-            , target_ring_(target_ring)
+            , reactor_(std::move(reactor))
             , interrupt_(interrupt)
             , result_(-EAGAIN)
         {
@@ -25,9 +26,18 @@ namespace slag {
 
     private:
         void prepare_operation(struct io_uring_sqe& io_sqe) override {
-            (void)io_sqe;
-            abort();
-            // io_uring_prep_nop(&io_sqe);
+            static constexpr int flags = 0;
+
+            unsigned int encoded_interrupt;
+            memcpy(&encoded_interrupt, &interrupt_, sizeof(encoded_interrupt));
+
+            io_uring_prep_msg_ring(
+                &io_sqe,
+                reactor_->borrow_file_descriptor(),
+                encoded_interrupt,
+                encode_operation_key(INTERRUPT_OPERATION_KEY),
+                flags
+            );
         }
 
         void handle_operation_result(int32_t result, bool more) override {
@@ -45,9 +55,9 @@ namespace slag {
         }
 
     private:
-        Ref<FileDescriptor> target_ring_;
-        Interrupt           interrupt_;
-        int32_t             result_;
+        std::shared_ptr<Reactor> reactor_;
+        Interrupt                interrupt_;
+        int32_t                  result_;
     };
 
 }

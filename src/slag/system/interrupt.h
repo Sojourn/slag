@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <cstring>
 #include "slag/core.h"
 #include "slag/topology.h"
 
@@ -18,6 +19,9 @@
     SLAG_APP_INTERRUPT_REASONS(X) \
 
 namespace slag {
+
+    // An invalid operation key is used to distinguish an interrupt from a normal operation.
+    constexpr OperationKey INTERRUPT_OPERATION_KEY;
 
     enum class InterruptReason : uint16_t {
 #define X(SLAG_INTERRUPT_REASON) \
@@ -41,6 +45,9 @@ namespace slag {
         ThreadIndex     source;
         InterruptReason reason;
     };
+
+    // This needs to fit within the `io_uring_sqe.len: unsigned int` field.
+    static_assert(sizeof(Interrupt) <= sizeof(uint32_t));
 
     struct InterruptState {
         ThreadMask sources;
