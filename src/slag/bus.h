@@ -208,6 +208,19 @@ namespace slag {
         ChannelState* get_state(ChannelId chid);
 
     private:
+        struct Metrics {
+            size_t deliver_count = 0;
+            size_t route_count = 0;
+            size_t forward_count = 0;
+            size_t forward_success_count = 0;
+            size_t forward_failure_count = 0;
+            size_t send_count = 0;
+            size_t receive_count = 0;
+            size_t originate_count = 0;
+            size_t interrupt_count = 0;
+            size_t finalize_count = 0;
+        };
+
         std::shared_ptr<Fabric>                fabric_;
         ThreadIndex                            thread_index_;
         ThreadRouteTable                       thread_routes_;
@@ -219,12 +232,14 @@ namespace slag {
         ThreadMask                             tx_link_mask_;
         ThreadMask                             tx_send_mask_;
 
-        Event                                  tx_backlog_event_;
+        Event                                  tx_pending_event_;
         std::deque<Packet>                     tx_backlog_;
 
         std::vector<ChannelState>              channel_states_;
         std::vector<uint32_t>                  unused_channel_states_;
         std::vector<Packet*>                   temp_packet_array_;
+
+        Metrics                                metrics_;
     };
 
     class Channel final

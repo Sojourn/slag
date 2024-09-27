@@ -57,7 +57,6 @@ namespace slag {
             throw std::runtime_error("Thread has already been started");
         }
 
-        reactors_[config.index] = std::make_shared<Reactor>();
         threads_[config.index] = std::make_unique<Thread>(*this, config);
         threads_[config.index]->run<RootTask>(std::forward<Args>(args)...);
     }

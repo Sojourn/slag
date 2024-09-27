@@ -10,6 +10,11 @@ namespace slag {
         , domain_(config_.gc_cpu_affinities)
         , fabric_(std::make_shared<Fabric>(config_.thread_topology))
     {
+        // Initialize reactors early so that they can be interrupted before
+        // the corresponding thread has been started.
+        for_each_thread(config_.thread_topology.nodes(), [this](const ThreadIndex tidx) {
+            reactors_[tidx] = std::make_shared<Reactor>();
+        });
     }
 
     Runtime::~Runtime() {

@@ -29,7 +29,7 @@ namespace slag {
     }
 
     Event& Router::writable_event() {
-        return tx_backlog_event_;
+        return tx_pending_event_;
     }
 
     void Router::attach(Channel& channel) {
@@ -101,6 +101,8 @@ namespace slag {
             if (src_state.outstanding_message_count >= src_state.outstanding_message_limit) {
                 src_state.writable_event.reset();
             }
+
+            metrics_.originate_count += 1;
         }
 
         route(Packet {
@@ -111,6 +113,8 @@ namespace slag {
             .reserved  = {0},
             .msg       = message,
         });
+
+        metrics_.send_count += 1;
     }
 
     Ptr<Message> Router::receive(Channel& channel) {
@@ -119,11 +123,15 @@ namespace slag {
             return {};
         }
 
-        Ptr<Message> msg = state.rx_queue.queue.front().msg;
+        Packet& packet = state.rx_queue.queue.front();
+        Ptr<Message> msg = packet.msg;
+
         state.rx_queue.queue.pop_front();
         if (state.rx_queue.queue.empty()) {
             state.rx_queue.event.reset();
         }
+
+        metrics_.receive_count += 1;
 
         return msg;
     }
@@ -139,6 +147,9 @@ namespace slag {
 
             if (size_t packet_count = rx_links_[thread_index].poll(packets)) {
                 for (size_t packet_index = 0; packet_index < packet_count; ++packet_index) {
+                    Packet& packet = packets[packet_index];
+                    assert(packet.)
+
                     route(*packets[packet_index]);
                 }
 
@@ -161,8 +172,6 @@ namespace slag {
                     break; // The link is at capacity.
                 }
             }
-
-            tx_backlog_event_.set(!tx_backlog_.empty());
         }
 
         // Publish and notify threads that their end of the links can be read.
@@ -179,10 +188,14 @@ namespace slag {
                         .reason = InterruptReason::LINK,
                     }
                 )->daemonize();
+
+                metrics_.interrupt_count += 1;
             });
 
             tx_send_mask_ = 0;
         }
+
+        tx_pending_event_.set(!tx_backlog_.empty());
     }
 
     void Router::finalize(Message& message) {
@@ -198,19 +211,27 @@ namespace slag {
         }
 
         delete &message;
+
+        metrics_.finalize_count += 1;
     }
 
     void Router::route(Packet packet) {
         if (thread_index_ == packet.dst_chid.thread_index) {
             deliver(packet);
+            return;
         }
-        else if (tx_backlog_.empty() && forward(packet)) {
+
+        if (tx_backlog_.empty() && forward(packet)) {
             // The packet was sent.
         }
         else {
             tx_backlog_.push_back(packet);
-            tx_backlog_event_.set();
         }
+
+        // Need to flush to either notify other threads or retry forwarding.
+        tx_pending_event_.set();
+
+        metrics_.route_count += 1;
     }
 
     void Router::deliver(Packet packet) {
@@ -223,10 +244,14 @@ namespace slag {
         else {
             // The channel was destroyed.
         }
+
+        metrics_.deliver_count += 1;
     }
 
     bool Router::forward(Packet packet) {
         assert(thread_index_ != packet.dst_chid.thread_index);
+
+        metrics_.forward_count += 1;
 
         if (const ThreadIndex next_tidx = packet.route.hop(packet.hop_index++); next_tidx != INVALID_THREAD_INDEX) {
             assert(thread_index_ != next_tidx);
@@ -234,7 +259,12 @@ namespace slag {
 
             SpscQueueProducer<Packet>& producer = tx_links_[next_tidx];
             if (producer.insert(packet)) {
+                if (metrics_.forward_success_count > 1024) {
+                    asm("int $3");
+                }
+
                 tx_send_mask_ |= (1ull << next_tidx);
+                metrics_.forward_success_count += 1;
                 return true;
             }
             else {
@@ -245,6 +275,7 @@ namespace slag {
             // No route.
         }
 
+        metrics_.forward_failure_count += 1;
         return false;
     }
 
