@@ -7,29 +7,22 @@ namespace slag {
     Router::Router(std::shared_ptr<Fabric> fabric, ThreadIndex thread_index)
         : fabric_(fabric)
         , thread_index_(thread_index)
-        , thread_routes_(fabric->routes(thread_index))
-        , rx_links_(MAX_THREAD_COUNT)
-        , rx_link_mask_(0)
-        , tx_links_(MAX_THREAD_COUNT)
-        , tx_link_mask_(0)
-        , tx_send_mask_(0)
-        , temp_packet_array_(512)
+        , rx_event_(get_reactor().interrupt_state(InterruptReason::LINK).event)
+        , rx_event_mask_(get_reactor().interrupt_state(InterruptReason::LINK).sources)
+        , tx_event_mask_(0)
     {
-        for (ThreadIndex remote_thread_index = 0; remote_thread_index < MAX_THREAD_COUNT; ++remote_thread_index) {
-            if (Link* link = fabric_->link(remote_thread_index, thread_index_)) {
-                rx_links_[remote_thread_index] = SpscQueueConsumer<Packet>(link->queue());
-                rx_link_mask_ |= (1ull << remote_thread_index);
-            }
+        assert(fabric_);
 
-            if (Link* link = fabric_->link(thread_index_, remote_thread_index)) {
-                tx_links_[remote_thread_index] = SpscQueueProducer<Packet>(link->queue());
-                tx_link_mask_ |= (1ull << remote_thread_index);
-            }
-        }
+        rx_links_.reserve(MAX_THREAD_COUNT);
+        tx_links_.reserve(MAX_THREAD_COUNT);
     }
 
     Event& Router::writable_event() {
-        return tx_pending_event_;
+        return tx_event_;
+    }
+
+    Event& Router::readable_event() {
+        return rx_event_;
     }
 
     void Router::attach(Channel& channel) {
@@ -94,8 +87,8 @@ namespace slag {
         return fabric_->find_channel(name);
     }
 
-    void Router::send(Channel& channel, ChannelId dst_chid, Ref<Message> message) {
-        if (message->bind(channel.id())) {
+    void Router::send(Channel& channel, ChannelId dst_chid, Ref<Message> msg) {
+        if (msg->bind(channel.id())) {
             ChannelState& src_state = get_state(channel);
             src_state.outstanding_message_count += 1;
             if (src_state.outstanding_message_count >= src_state.outstanding_message_limit) {
@@ -106,12 +99,8 @@ namespace slag {
         }
 
         route(Packet {
-            .src_chid  = channel.id(),
             .dst_chid  = dst_chid,
-            .route     = thread_routes_[dst_chid.thread_index],
-            .hop_index = 0,
-            .reserved  = {0},
-            .msg       = message,
+            .msg       = msg,
         });
 
         metrics_.send_count += 1;
@@ -136,66 +125,69 @@ namespace slag {
         return msg;
     }
 
-    bool Router::poll(const ThreadMask sources) {
+    bool Router::poll() {
         size_t total_packet_count = 0;
 
-        for_each_thread(sources & rx_link_mask_, [&](const ThreadIndex thread_index) {
-            std::span<Packet*> packets = {
-                temp_packet_array_.data(),
-                temp_packet_array_.size(),
-            };
+        for_each_thread(rx_event_mask_, [&](const ThreadIndex rx_tidx) {
+            Packet* packets[64];
 
-            if (size_t packet_count = rx_links_[thread_index].poll(packets)) {
+            if (const size_t packet_count = get_rx_link(rx_tidx).poll(packets)) {
                 for (size_t packet_index = 0; packet_index < packet_count; ++packet_index) {
-                    Packet& packet = packets[packet_index];
-                    assert(packet.)
-
-                    route(*packets[packet_index]);
+                    const Packet* packet = packets[packet_index];
+                    assert(packet);
+                    deliver(*packet);
                 }
 
                 total_packet_count += packet_count;
             }
+            else {
+                rx_event_mask_ &= ~(1ull << rx_tidx);
+            }
         });
+
+        rx_event_.set(rx_event_mask_ != 0);
 
         return total_packet_count > 0;
     }
 
     void Router::flush() {
-        // Flush packets from the backlog.
-        {
-            while (!tx_backlog_.empty()) {
-                Packet& packet = tx_backlog_.front();
-                if (forward(packet)) {
-                    tx_backlog_.pop_front();
+        // Flush packets from TX backlogs.
+        for_each_thread(tx_backlog_mask_, [&](const ThreadIndex tx_tidx) {
+            PacketQueue& tx_backlog = get_tx_backlog(tx_tidx);
+            while (!tx_backlog.queue.empty()) {
+                if (forward(tx_backlog.queue.front())) {
+                    tx_backlog.queue.pop_front();
                 }
                 else {
                     break; // The link is at capacity.
                 }
             }
-        }
 
-        // Publish and notify threads that their end of the links can be read.
-        {
-            // Wake threads we've sent to using `LINK` interrupts.
-            for_each_thread(tx_send_mask_, [&](const ThreadIndex tx_tidx) {
-                tx_links_[tx_tidx].flush();
+            // Update the backlog mask if it was cleared.
+            if (tx_backlog.queue.empty()) {
+                tx_backlog_mask_ &= ~(1ull << tx_tidx);
+            }
+        });
 
-                std::cout << thread_index_ << " interrupting " << tx_tidx << std::endl;
-                start_interrupt_operation(
-                    get_runtime().reactor(tx_tidx),
-                    Interrupt {
-                        .source = thread_index_,
-                        .reason = InterruptReason::LINK,
-                    }
-                )->daemonize();
+        for_each_thread(tx_event_mask_, [&](const ThreadIndex tx_tidx) {
+            // Ensure all writes are visible.
+            get_tx_link(tx_tidx).flush();
 
-                metrics_.interrupt_count += 1;
-            });
+            // FIXME: We should probably check the result of this and retry to avoid deadlocking.
+            start_interrupt_operation(
+                get_runtime().reactor(tx_tidx),
+                Interrupt {
+                    .source = thread_index_,
+                    .reason = InterruptReason::LINK,
+                }
+            )->daemonize();
 
-            tx_send_mask_ = 0;
-        }
+            metrics_.interrupt_count += 1;
+        });
 
-        tx_pending_event_.set(!tx_backlog_.empty());
+        tx_event_mask_ = 0;
+
+        update_readiness();
     }
 
     void Router::finalize(Message& message) {
@@ -215,26 +207,28 @@ namespace slag {
         metrics_.finalize_count += 1;
     }
 
-    void Router::route(Packet packet) {
+    void Router::route(const Packet& packet) {
         if (thread_index_ == packet.dst_chid.thread_index) {
             deliver(packet);
             return;
         }
 
-        if (tx_backlog_.empty() && forward(packet)) {
-            // The packet was sent.
+        PacketQueue& tx_backlog = get_tx_backlog(packet.dst_chid.thread_index);
+        if (tx_backlog.queue.empty() && forward(packet)) {
+            assert(tx_event_mask_ & (1ull << packet.dst_chid.thread_index));
         }
         else {
-            tx_backlog_.push_back(packet);
+            tx_backlog.queue.push_back(packet);
+            tx_backlog_mask_ |= 1ull << packet.dst_chid.thread_index;
         }
 
-        // Need to flush to either notify other threads or retry forwarding.
-        tx_pending_event_.set();
+        assert(tx_event_mask_ || tx_backlog_mask_);
+        tx_event_.set();
 
         metrics_.route_count += 1;
     }
 
-    void Router::deliver(Packet packet) {
+    void Router::deliver(const Packet& packet) {
         assert(thread_index_ == packet.dst_chid.thread_index);
 
         if (ChannelState* state = get_state(packet.dst_chid); LIKELY(state)) {
@@ -248,35 +242,25 @@ namespace slag {
         metrics_.deliver_count += 1;
     }
 
-    bool Router::forward(Packet packet) {
-        assert(thread_index_ != packet.dst_chid.thread_index);
+    bool Router::forward(const Packet& packet) {
+        const ThreadIndex dst_tidx = packet.dst_chid.thread_index;
+        assert(thread_index_ != dst_tidx);
 
-        metrics_.forward_count += 1;
-
-        if (const ThreadIndex next_tidx = packet.route.hop(packet.hop_index++); next_tidx != INVALID_THREAD_INDEX) {
-            assert(thread_index_ != next_tidx);
-            assert(next_tidx < MAX_THREAD_COUNT);
-
-            SpscQueueProducer<Packet>& producer = tx_links_[next_tidx];
-            if (producer.insert(packet)) {
-                if (metrics_.forward_success_count > 1024) {
-                    asm("int $3");
-                }
-
-                tx_send_mask_ |= (1ull << next_tidx);
-                metrics_.forward_success_count += 1;
-                return true;
-            }
-            else {
-                // Link is at capacity.
-            }
-        }
-        else {
-            // No route.
+        SpscQueueProducer<Packet>& producer = get_tx_link(dst_tidx);
+        if (!producer.insert(packet)) {
+            // Link is at capacity. Try again later.
+            metrics_.forward_failure_count += 1;
+            return false;
         }
 
-        metrics_.forward_failure_count += 1;
-        return false;
+        tx_event_mask_ |= 1ull << packet.dst_chid.thread_index;
+
+        metrics_.forward_success_count += 1;
+        return true;
+    }
+
+    void Router::update_readiness() {
+        tx_event_.set(tx_event_mask_ || tx_backlog_mask_);
     }
 
     auto Router::get_state(const Channel& channel) -> ChannelState& {
@@ -308,6 +292,32 @@ namespace slag {
         }
 
         return &state;
+    }
+
+    SpscQueueConsumer<Packet>& Router::get_rx_link(ThreadIndex tidx) {
+        if (UNLIKELY(rx_links_.size() <= tidx)) {
+            rx_links_.resize(tidx + 1);
+            rx_links_[tidx] = SpscQueueConsumer<Packet>(fabric_->link(tidx, thread_index_).queue());
+        }
+
+        return rx_links_[tidx];
+    }
+
+    SpscQueueProducer<Packet>& Router::get_tx_link(ThreadIndex tidx) {
+        if (UNLIKELY(tx_links_.size() <= tidx)) {
+            tx_links_.resize(tidx + 1);
+            tx_links_[tidx] = SpscQueueProducer<Packet>(fabric_->link(thread_index_, tidx).queue());
+        }
+
+        return tx_links_[tidx];
+    }
+
+    auto Router::get_tx_backlog(ThreadIndex tidx) -> PacketQueue& {
+        if (UNLIKELY(tx_backlogs_.size() <= tidx)) {
+            tx_backlogs_.resize(tidx + 1);
+        }
+
+        return tx_backlogs_[tidx];
     }
 
     Channel::Channel()

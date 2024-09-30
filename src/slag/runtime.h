@@ -2,7 +2,7 @@
 
 #include <optional>
 #include <vector>
-#include <latch>
+#include <mutex>
 #include "slag/core.h"
 #include "slag/types.h"
 #include "slag/thread.h"
@@ -14,13 +14,12 @@ namespace slag {
     class Thread;
 
     struct RuntimeConfig {
-        ThreadGraph                      thread_topology;
         std::optional<std::span<size_t>> gc_cpu_affinities = std::nullopt;
     };
 
     class Runtime : public Finalizer {
     public:
-        explicit Runtime(const RuntimeConfig& config);
+        explicit Runtime(const RuntimeConfig& config = RuntimeConfig{});
         ~Runtime();
 
         Runtime(Runtime&&) = delete;
@@ -41,24 +40,28 @@ namespace slag {
         void finalize(ObjectGroup group, std::span<Object*> objects) noexcept override;
 
     private:
-        using ThreadArray = std::array<std::unique_ptr<Thread>, MAX_THREAD_COUNT>;
-        using ReactorArray = std::array<std::shared_ptr<Reactor>, MAX_THREAD_COUNT>;
+        RuntimeConfig                         config_;
 
-        RuntimeConfig           config_;
-        Domain                  domain_;
-        std::shared_ptr<Fabric> fabric_;
-        ReactorArray            reactors_;
-        ThreadArray             threads_;
+        mutable std::recursive_mutex          mutex_;
+        Domain                                domain_;
+        std::shared_ptr<Fabric>               fabric_;
+        std::vector<std::unique_ptr<Thread>>  threads_;
+        std::vector<std::shared_ptr<Reactor>> reactors_;
     };
 
     template<typename RootTask, typename... Args>
     void Runtime::spawn_thread(const ThreadConfig& config, Args&&... args) {
-        if (threads_[config.index]) {
-            throw std::runtime_error("Thread has already been started");
-        }
+        Thread& thread = [&]() -> Thread& {
+            std::scoped_lock lock(mutex_);
 
-        threads_[config.index] = std::make_unique<Thread>(*this, config);
-        threads_[config.index]->run<RootTask>(std::forward<Args>(args)...);
+            // The thread expects the corresponding reactor to be available upon construction.
+            reactors_.push_back(std::make_shared<Reactor>());
+
+            const ThreadIndex tidx = static_cast<ThreadIndex>(threads_.size());
+            return *threads_.emplace_back(std::make_unique<Thread>(*this, tidx, config));
+        }();
+
+        thread.run<RootTask>(std::forward<Args>(args)...);
     }
 
 }

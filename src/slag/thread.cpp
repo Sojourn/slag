@@ -6,11 +6,12 @@
 
 namespace slag {
 
-    Thread::Thread(Runtime& runtime, const ThreadConfig& config)
+    Thread::Thread(Runtime& runtime, const ThreadIndex index, const ThreadConfig& config)
         : runtime_(runtime)
+        , index_(index)
         , config_(config)
         , fabric_(runtime_.fabric())
-        , reactor_(runtime_.reactor(config_.index))
+        , reactor_(runtime_.reactor(index))
     {
     }
 
@@ -21,7 +22,7 @@ namespace slag {
     }
 
     ThreadIndex Thread::index() const {
-        return config_.index;
+        return index_;
     }
 
     const ThreadConfig& Thread::config() const {

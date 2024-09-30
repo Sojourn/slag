@@ -9,10 +9,10 @@
 
 namespace slag {
 
-    EventLoop::EventLoop(Domain& domain, std::shared_ptr<Fabric> fabric, std::shared_ptr<Reactor> reactor)
-        : region_(domain, *this)
-        , router_(std::move(fabric), get_thread().config().index)
-        , reactor_(std::move(reactor))
+    EventLoop::EventLoop(const ThreadIndex thread_index, Components components)
+        : region_(components.domain, *this)
+        , router_(std::move(components.fabric), thread_index)
+        , reactor_(std::move(components.reactor))
         , current_priority_(TaskPriority::HIGH) // This will give the root task high-priority.
     {
     }
@@ -82,7 +82,7 @@ namespace slag {
             case ResourceType::SLAG_RESOURCE_TYPE: {                  \
                 using R = Resource<ResourceType::SLAG_RESOURCE_TYPE>; \
                 for (Object* object : objects) {                      \
-                    finalize(static_cast<R&>(*object));  \
+                    finalize(static_cast<R&>(*object));               \
                 }                                                     \
                 break;                                                \
             }                                                         \
@@ -163,9 +163,6 @@ namespace slag {
                 idle_priority_executor_.run(idle_priority_budget);
             }
         }
-
-        // Destroy drivers to drop any remaining references to resources.
-        drivers_.reset();
     }
 
 }

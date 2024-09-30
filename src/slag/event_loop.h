@@ -12,9 +12,17 @@
 
 namespace slag {
 
+    class Thread;
+
     class EventLoop final : private Finalizer {
     public:
-        EventLoop(Domain& domain, std::shared_ptr<Fabric> fabric, std::shared_ptr<Reactor> reactor);
+        struct Components {
+            Domain&                  domain;
+            std::shared_ptr<Fabric>  fabric;
+            std::shared_ptr<Reactor> reactor;
+        };
+
+        EventLoop(ThreadIndex thread_index, Components components);
         ~EventLoop() = default;
 
         EventLoop(EventLoop&&) = delete;

@@ -13,7 +13,6 @@ namespace slag {
         : ProtoTask(TaskPriority::HIGH)
         , event_loop_(event_loop)
         , router_(event_loop.router())
-        , interrupt_state_(event_loop.reactor().interrupt_state(InterruptReason::LINK))
     {
     }
 
@@ -21,15 +20,8 @@ namespace slag {
         SLAG_PT_BEGIN();
 
         while (true) {
-            SLAG_PT_WAIT_EVENT(interrupt_state_.event);
-
-            while (router_.poll(interrupt_state_.sources)) {
-                SLAG_PT_YIELD();
-            }
-
-            // Prime the interrupt state.
-            interrupt_state_.sources = 0;
-            interrupt_state_.event.reset();
+            SLAG_PT_WAIT_READABLE(router_);
+            router_.poll();
         }
 
         SLAG_PT_END();
@@ -47,7 +39,6 @@ namespace slag {
 
         while (true) {
             SLAG_PT_WAIT_WRITABLE(router_);
-
             router_.flush();
         }
 

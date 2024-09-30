@@ -51,7 +51,8 @@ namespace slag {
     }
 
     Reactor& Context::reactor() {
-        return event_loop().reactor();
+        const ThreadIndex thread_index = thread().index();
+        return *runtime().reactor(thread_index);
     }
 
     bool has_context() {

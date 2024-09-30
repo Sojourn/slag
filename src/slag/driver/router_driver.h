@@ -25,9 +25,8 @@ namespace slag {
             void run() override;
 
         private:
-            EventLoop&      event_loop_;
-            Router&         router_;
-            InterruptState& interrupt_state_;
+            EventLoop& event_loop_;
+            Router&    router_;
         };
 
         class TxWorker final : public ProtoTask {

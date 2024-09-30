@@ -9,6 +9,7 @@
 
 #include <optional>
 #include <string>
+#include <map>
 #include <unordered_map>
 #include <array>
 #include <deque>
@@ -61,15 +62,11 @@ namespace slag {
         ChannelId origin_;
     };
 
-    struct alignas(32) Packet {
-        ChannelId    src_chid;
+    struct Packet {
         ChannelId    dst_chid;
-        ThreadRoute  route;
-        uint8_t      hop_index;
-        uint8_t      reserved[3];
         Ref<Message> msg;
     };
-    static_assert(sizeof(Packet) == 32);
+    static_assert(sizeof(Packet) == 16);
 
     class alignas(64) Link {
     public:
@@ -88,35 +85,15 @@ namespace slag {
 
     class Fabric {
     public:
-        explicit Fabric(const ThreadGraph& thread_topology)
-            : thread_topology_(thread_topology)
-            , links_(thread_topology_.edge_count())
-        {
-            for (auto& link :  links_) {
-                link = std::make_unique<Link>();
-            }
-        }
+        // Links between threads are created dynamically on first-use.
+        Link& link(ThreadIndex src_thread, ThreadIndex dst_thread) {
+            std::scoped_lock lock(mutex_);
 
-        ThreadRouteTable routes(ThreadIndex thread_index) const {
-            return build_thread_route_table(thread_topology_, thread_index);
-        }
-
-        Link* link(ThreadIndex src_thread, ThreadIndex dst_thread) {
-            const ThreadGraph::Edge edge = {
-                .source = src_thread,
-                .target = dst_thread,
-            };
-
-            if (std::optional<size_t> edge_index = thread_topology_.edge_index(edge)) {
-                return links_.at(*edge_index).get();
-            }
-            else {
-                return nullptr;
-            }
+            return link_table_[std::make_pair(src_thread, dst_thread)];
         }
 
         std::optional<ChannelId> find_channel(const std::string& name) const {
-            std::scoped_lock lock(channel_mutex_);
+            std::scoped_lock lock(mutex_);
 
             if (auto it = channel_table_.find(name); it != channel_table_.end()) {
                 return it->second;
@@ -126,7 +103,7 @@ namespace slag {
         }
 
         void bind_channel(const std::string& name, ChannelId chid) {
-            std::scoped_lock lock(channel_mutex_);
+            std::scoped_lock lock(mutex_);
 
             ChannelId& row = channel_table_[name];
             if (UNLIKELY(row.valid)) {
@@ -137,7 +114,7 @@ namespace slag {
         }
 
         void unbind_channel(const std::string& name) {
-            std::scoped_lock lock(channel_mutex_);
+            std::scoped_lock lock(mutex_);
 
             auto it = channel_table_.find(name);
             assert(it != channel_table_.end());
@@ -145,22 +122,24 @@ namespace slag {
         }
 
     private:
-        const ThreadGraph                          thread_topology_;
-        std::vector<std::unique_ptr<Link>>         links_;
+        using LinkTable = std::map<std::pair<ThreadIndex, ThreadIndex>, Link>;
+        using ChannelTable = std::unordered_map<std::string, ChannelId>;
 
-        mutable std::mutex                         channel_mutex_;
-        std::unordered_map<std::string, ChannelId> channel_table_;
+        mutable std::mutex mutex_;
+        LinkTable          link_table_;
+        ChannelTable       channel_table_;
     };
 
     class Router final
-        : public Pollable<PollableType::WRITABLE>
+        : public Pollable<PollableType::READABLE> // Poll while set.
+        , public Pollable<PollableType::WRITABLE> // Flush while set.
     {
     public:
         Router(std::shared_ptr<Fabric> fabric, ThreadIndex thread_index);
 
         virtual ~Router() = default;
 
-        // This event is set when the router is ready to be flushed.
+        Event& readable_event() override;
         Event& writable_event() override;
 
         void attach(Channel& channel);
@@ -171,7 +150,7 @@ namespace slag {
         Ptr<Message> receive(Channel& channel);
 
         // Returns true if any packets were processed.
-        bool poll(ThreadMask sources = (MAX_THREAD_COUNT - 1));
+        bool poll();
 
         void flush();
 
@@ -179,9 +158,11 @@ namespace slag {
         void finalize(Message& message);
 
     private:
-        void route(Packet packet);
-        void deliver(Packet packet);
-        bool forward(Packet packet);
+        void route(const Packet& packet);
+        void deliver(const Packet& packet);
+        bool forward(const Packet& packet);
+
+        void update_readiness();
 
     private:
         friend class Channel;
@@ -207,6 +188,11 @@ namespace slag {
         ChannelState& get_state(const Channel& channel);
         ChannelState* get_state(ChannelId chid);
 
+        // Get or create.    
+        SpscQueueConsumer<Packet>& get_rx_link(ThreadIndex tidx);
+        SpscQueueProducer<Packet>& get_tx_link(ThreadIndex tidx);
+        PacketQueue& get_tx_backlog(ThreadIndex tidx);
+
     private:
         struct Metrics {
             size_t deliver_count = 0;
@@ -223,21 +209,19 @@ namespace slag {
 
         std::shared_ptr<Fabric>                fabric_;
         ThreadIndex                            thread_index_;
-        ThreadRouteTable                       thread_routes_;
-
-        std::vector<SpscQueueConsumer<Packet>> rx_links_;
-        ThreadMask                             rx_link_mask_;
-
-        std::vector<SpscQueueProducer<Packet>> tx_links_;
-        ThreadMask                             tx_link_mask_;
-        ThreadMask                             tx_send_mask_;
-
-        Event                                  tx_pending_event_;
-        std::deque<Packet>                     tx_backlog_;
 
         std::vector<ChannelState>              channel_states_;
         std::vector<uint32_t>                  unused_channel_states_;
-        std::vector<Packet*>                   temp_packet_array_;
+
+        Event&                                 rx_event_;
+        ThreadMask&                            rx_event_mask_;
+        std::vector<SpscQueueConsumer<Packet>> rx_links_;
+
+        Event                                  tx_event_;
+        ThreadMask                             tx_event_mask_;
+        std::vector<SpscQueueProducer<Packet>> tx_links_;
+        std::vector<PacketQueue>               tx_backlogs_;
+        ThreadMask                             tx_backlog_mask_;
 
         Metrics                                metrics_;
     };

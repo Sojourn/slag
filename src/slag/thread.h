@@ -22,14 +22,13 @@ namespace slag {
     class Runtime;
 
     struct ThreadConfig {
-        ThreadIndex index = INVALID_THREAD_INDEX;
         std::optional<std::string> name;
         std::optional<std::span<size_t>> cpu_affinities = std::nullopt;
     };
 
     class Thread {
     public:
-        Thread(Runtime& runtime, const ThreadConfig& config);
+        Thread(Runtime& runtime, ThreadIndex index, const ThreadConfig& config);
         ~Thread();
 
         Thread(Thread&&) = delete;
@@ -48,7 +47,8 @@ namespace slag {
 
     private:
         Runtime&                   runtime_;
-        ThreadConfig               config_;
+        const ThreadIndex          index_;
+        const ThreadConfig         config_;
         std::shared_ptr<Fabric>    fabric_;
         std::shared_ptr<Reactor>   reactor_;
         std::unique_ptr<EventLoop> event_loop_;
@@ -74,7 +74,12 @@ namespace slag {
                     mantle::set_cpu_affinity(*config_.cpu_affinities);
                 }
 
-                event_loop_ = std::make_unique<EventLoop>(context.domain(), std::move(fabric_), std::move(reactor_));
+                event_loop_ = std::make_unique<EventLoop>(index_, EventLoop::Components {
+                    .domain = context.domain(),
+                    .fabric = std::move(fabric_),
+                    .reactor = std::move(reactor_),
+                });
+
                 root_task = std::make_unique<RootTask>(std::forward<Args>(args)...);
 
                 started_promise.set_value();

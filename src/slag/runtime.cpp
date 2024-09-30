@@ -8,17 +8,17 @@ namespace slag {
     Runtime::Runtime(const RuntimeConfig& config)
         : config_(config)
         , domain_(config_.gc_cpu_affinities)
-        , fabric_(std::make_shared<Fabric>(config_.thread_topology))
+        , fabric_(std::make_shared<Fabric>())
     {
-        // Initialize reactors early so that they can be interrupted before
-        // the corresponding thread has been started.
-        for_each_thread(config_.thread_topology.nodes(), [this](const ThreadIndex tidx) {
-            reactors_[tidx] = std::make_shared<Reactor>();
-        });
     }
 
     Runtime::~Runtime() {
-        if (threads_.empty()) {
+        size_t thread_count;
+        {
+            std::scoped_lock lock(mutex_);
+            thread_count = threads_.size();
+        }
+        if (thread_count == 0) {
             // Unblock the domain so we can shutdown.
             Region dummy_region(domain_, *this);
             dummy_region.stop();
@@ -36,15 +36,15 @@ namespace slag {
     }
 
     std::shared_ptr<Fabric> Runtime::fabric() {
+        std::scoped_lock lock(mutex_);
+
         return fabric_;
     }
 
     std::shared_ptr<Reactor> Runtime::reactor(ThreadIndex thread_index) {
-        if (std::shared_ptr<Reactor>& reactor = reactors_.at(thread_index)) {
-            return reactor;
-        }
+        std::scoped_lock lock(mutex_);
 
-        throw std::runtime_error("Inactive reactor");
+        return reactors_.at(thread_index);
     }
 
     void Runtime::finalize(ObjectGroup, std::span<Object*>) noexcept {

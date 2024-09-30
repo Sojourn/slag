@@ -24,7 +24,7 @@ public:
                 std::cout << (int)get_thread().index() << " sending message" << std::endl;
                 channel_.send(*target_, bind(new Message));
 
-                timer_.set(std::chrono::milliseconds(100));
+                timer_.set(std::chrono::milliseconds(1000));
                 looping_ = true;
                 while (looping_) {
                     if (timer_.is_expired()) {
@@ -37,6 +37,8 @@ public:
                     SLAG_PT_YIELD();
                 }
             }
+
+            asm("int $3");
             SLAG_PT_END();
         }
         catch (const std::exception& ex) {
@@ -55,19 +57,10 @@ int main(int argc, char** argv) {
     (void)argc;
     (void)argv;
 
-    RuntimeConfig config;
-
-    // Four threads in a ring.
-    config.thread_topology.add_edge({0, 1});
-    config.thread_topology.add_edge({1, 2});
-    config.thread_topology.add_edge({2, 3});
-    config.thread_topology.add_edge({3, 0});
-
     try {
-        Runtime runtime(config);
-        for (ThreadIndex thread_index = 0; thread_index < 4; ++thread_index) {
+        Runtime runtime;
+        for (size_t i = 0; i < 4; ++i) {
             runtime.spawn_thread<Worker>(ThreadConfig {
-                .index          = thread_index,
                 .name           = "worker",
                 .cpu_affinities = std::nullopt,
             });
